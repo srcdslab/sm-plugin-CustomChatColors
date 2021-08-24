@@ -3254,8 +3254,6 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const players[], int p
 		BfReadString(bf, g_msgText, sizeof(g_msgText), false);
 	}
 
-	LogError("ent_idx %d, chat %d, msg_name %s, msgSender %s, msgText %s", g_msgAuthor, g_msgIsChat, g_msgName, g_msgSender, g_msgText);
-
 	if (strlen(g_msgName) == 0 || strlen(g_msgSender) == 0)
 		return Plugin_Continue;
 
@@ -3337,7 +3335,6 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const players[], int p
 
 		if (strlen(sAuthorTag) > 0)
 		{
-			LogError("MsgName: %s, TagColor: %stest, AuthorTag: %s, g_msgSender: %s", g_msgName, sTagColor, sAuthorTag, g_msgSender);
 			if (bTagAlpha)
 			{
 				int hexColor = StringToInt(sTagColor, 16);
@@ -3365,11 +3362,7 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const players[], int p
 		}
 	}
 
-	LogError("ent_idx %d, chat %d, msg_name %s, msgSender %s, msgText %s", g_msgAuthor, g_msgIsChat, g_msgName, g_msgSender, g_msgText);
-
 	Format(g_msgFinal, sizeof(g_msgFinal), "%t", g_msgName, g_msgSender, g_msgText);
-
-	LogError("Final msg: %s", g_msgFinal);
 
 	return Plugin_Handled;
 }
