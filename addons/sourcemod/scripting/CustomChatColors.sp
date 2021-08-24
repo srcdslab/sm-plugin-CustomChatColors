@@ -58,16 +58,17 @@ char g_sClientSID[MAXPLAYERS + 1][32];
 
 int g_iClientEnable[MAXPLAYERS + 1] = { 1, ...};
 char g_sClientTag[MAXPLAYERS + 1][64];
-char g_sClientTagColor[MAXPLAYERS + 1][12];
-char g_sClientNameColor[MAXPLAYERS + 1][12];
-char g_sClientChatColor[MAXPLAYERS + 1][12];
+char g_sClientTagColor[MAXPLAYERS + 1][32];
+char g_sClientNameColor[MAXPLAYERS + 1][32];
+char g_sClientChatColor[MAXPLAYERS + 1][32];
 
 int g_iDefaultClientEnable[MAXPLAYERS + 1] = { 1, ... };
 char g_sDefaultClientTag[MAXPLAYERS + 1][32];
 char g_sDefaultClientTagColor[MAXPLAYERS + 1][12];
 char g_sDefaultClientNameColor[MAXPLAYERS + 1][12];
 char g_sDefaultClientChatColor[MAXPLAYERS + 1][12];
-char g_sColorsArray[120][2][32] = { {"aliceblue", "F0F8FF" }, { "aqua", "00FFFF" }, { "aquamarine", "7FFFD4" }, { "azure", "007FFF" }, { "beige", "F5F5DC" }, { "black", "000000" }, { "blue", "99CCFF" }, { "blueviolet", "8A2BE2" }, { "brown", "A52A2A" }, { "burlywood", "DEB887" }, { "cadetblue", "5F9EA0" }, { "chocolate", "D2691E" }, { "corrupted", "A32C2E" }, { "crimson", "DC143C" }, { "cyan", "00FFFF" }, { "darkblue", "00008B" }, { "darkcyan", "008B8B" }, { "darkgoldenrod", "B8860B" }, { "darkgray", "A9A9A9" }, { "darkgrey", "A9A9A9" }, { "darkgreen", "006400" }, { "darkkhaki", "BDB76B" }, { "darkmagenta", "8B008B" }, { "darkolivegreen", "556B2F" }, { "darkorange", "FF8C00" }, { "darkorchid", "9932CC" }, { "darkred", "8B0000" }, { "darksalmon", "E9967A" }, { "darkseagreen", "8FBC8F" }, { "darkslateblue", "483D8B" }, { "darkturquoise", "00CED1" }, { "darkviolet", "9400D3" }, { "deeppink", "FF1493" }, { "deepskyblue", "00BFFF" }, { "dimgray", "696969" }, { "dodgerblue", "1E90FF" }, { "firebrick", "B22222" }, { "floralwhite", "FFFAF0" }, { "forestgreen", "228B22" }, { "frozen", "4983B3" }, { "fuchsia", "FF00FF" }, { "fullblue", "0000FF" }, { "fullred", "FF0000" }, { "ghostwhite", "F8F8FF" }, { "gold", "FFD700" }, { "gray", "CCCCCC" }, { "green", "3EFF3E" }, { "greenyellow", "ADFF2F" }, { "hotpink", "FF69B4" }, { "indianred", "CD5C5C" }, { "indigo", "4B0082" }, { "ivory", "FFFFF0" }, { "khaki", "F0E68C" }, { "lightblue", "ADD8E6" }, { "lightcoral", "F08080" }, { "lightcyan", "E0FFFF" }, { "lightgoldenrodyellow", "FAFAD2" }, { "lightgray", "D3D3D3" }, { "lightgrey", "D3D3D3" }, { "lightgreen", "99FF99" }, { "lightpink", "FFB6C1" }, { "lightsalmon", "FFA07A" }, { "lightseagreen", "20B2AA" }, { "lightskyblue", "87CEFA" }, { "lightslategray", "778899" }, { "lightslategrey", "778899" }, { "lightsteelblue", "B0C4DE" }, { "lightyellow", "FFFFE0" }, { "lime", "00FF00" }, { "limegreen", "32CD32" }, { "magenta", "FF00FF" }, { "maroon", "800000" }, { "mediumaquamarine", "66CDAA" }, { "mediumblue", "0000CD" }, { "mediumorchid", "BA55D3" }, { "mediumturquoise", "48D1CC" }, { "mediumvioletred", "C71585" }, { "midnightblue", "191970" }, { "mintcream", "F5FFFA" }, { "mistyrose", "FFE4E1" }, { "moccasin", "FFE4B5" }, { "navajowhite", "FFDEAD" }, { "navy", "000080" }, { "oldlace", "FDF5E6" }, { "olive", "9EC34F" }, { "olivedrab", "6B8E23" }, { "orange", "FFA500" }, { "orangered", "FF4500" }, { "orchid", "DA70D6" }, { "palegoldenrod", "EEE8AA" }, { "palegreen", "98FB98" }, { "palevioletred", "D87093" }, { "pink", "FFC0CB" }, { "plum", "DDA0DD" }, { "powderblue", "B0E0E6" }, { "purple", "800080" }, { "red", "FF4040" }, { "rosybrown", "BC8F8F" }, { "royalblue", "4169E1" }, { "saddlebrown", "8B4513" }, { "salmon", "FA8072" }, { "sandybrown", "F4A460" }, { "seagreen", "2E8B57" }, { "seashell", "FFF5EE" }, { "silver", "C0C0C0" }, { "skyblue", "87CEEB" }, { "slateblue", "6A5ACD" }, { "slategray", "708090" }, { "slategrey", "708090" }, { "snow", "FFFAFA" }, { "springgreen", "00FF7F" }, { "steelblue", "4682B4" }, { "tan", "D2B48C" }, { "teal", "008080" }, { "tomato", "FF6347" }, { "turquoise", "40E0D0" }, { "violet", "EE82EE" }, { "white", "FFFFFF" }, { "yellow", "FFFF00" }, { "yellowgreen", "9ACD32" } }; //you want colors? here bomb array fak u
+
+ArrayList g_sColorsArray = null;
 
 int g_iClientBanned[MAXPLAYERS + 1] = { -1, ...};
 bool g_bWaitingForChatInput[MAXPLAYERS + 1];
@@ -104,6 +105,8 @@ int g_bSQLDeleteTagRetry[MAXPLAYERS + 1] = { 0, ... };
 
 bool g_bSQLite = true;
 bool g_bLate = false;
+
+bool g_bProto;
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -210,6 +213,8 @@ public void OnPluginStart()
 
 	SQLInitialize();
 
+	LoadColorArray();
+
 	if (g_bLate)
 		LateLoad();
 }
@@ -218,6 +223,8 @@ public void OnPluginEnd()
 {
 	if (g_hDatabase != null)
 		delete g_hDatabase;
+	if (g_sColorsArray != null)
+		delete g_sColorsArray;
 }
 
 public void OnConfigsExecuted()
@@ -225,6 +232,7 @@ public void OnConfigsExecuted()
 	g_cSmCategoryColor.GetString(g_sSmCategoryColor, sizeof(g_sSmCategoryColor));
 	g_cSmNameColor.GetString(g_sSmNameColor, sizeof(g_sSmNameColor));
 	g_cSmChatColor.GetString(g_sSmChatColor, sizeof(g_sSmChatColor));
+	g_bProto = CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "GetUserMessageType") == FeatureStatus_Available && GetUserMessageType() == UM_Protobuf;
 }
 
 public void OnClientDisconnect(int client)
@@ -281,6 +289,57 @@ stock void LateLoad()
 
 		ResetClient(i);
 		OnClientPostAdminCheck(i);
+	}
+}
+
+stock void LoadColorArray()
+{
+	StringMap smTrie = MC_GetTrie();
+	StringMapSnapshot smTrieSnapshot = smTrie.Snapshot();
+	if (smTrie != null)
+	{
+		if (g_sColorsArray != null)
+			delete g_sColorsArray;
+
+		g_sColorsArray = new ArrayList(smTrie.Size);
+
+		for (int i = 0; i < smTrie.Size; i++)
+		{
+			char key[64];
+
+			smTrieSnapshot.GetKey(i, key, sizeof(key));
+
+			g_sColorsArray.PushString(key);
+		}
+	}
+	SortColors();
+}
+
+stock void SortColors()
+{
+	if (g_sColorsArray == null)
+		return;
+
+	char temp[64];
+
+    // Sorting strings using bubble sort
+	for (int j = 0; j < g_sColorsArray.Length - 1; j++)
+	{
+		for (int i = j + 1; i < g_sColorsArray.Length; i++)
+		{
+			char keyJ[64];
+			char keyI[64];
+			g_sColorsArray.GetString(j, keyJ, sizeof(keyJ));
+			g_sColorsArray.GetString(i, keyI, sizeof(keyI));
+			if (strcmp(keyJ, keyI) > 0)
+			{
+				Format(temp, sizeof(temp), "%s", keyJ);
+				Format(keyJ, sizeof(keyJ), "%s", keyI);
+				Format(keyI, sizeof(keyI), "%s", temp);
+				g_sColorsArray.SetString(j, keyJ);
+				g_sColorsArray.SetString(i, keyI);
+			}
+		}
 	}
 }
 
@@ -1270,19 +1329,41 @@ bool ForceColor(int client, char Key[64])
 	char SID[64];
 	GetClientAuthId(iTarget, AuthId_Steam2, SID, sizeof(SID));
 
-	if (IsValidHex(sCol))
+	if (IsSource2009() && IsValidHex(sCol))
 	{
 		if (sCol[0] != '#')
 			Format(sCol, sizeof(sCol), "#%s", sCol);
 
 		SetColor(SID, Key, sCol, -1, true);
 
+		if (sCol[0] == '#' && IsSource2009())
+		{
+			if (!strcmp(Key, "namecolor"))
+				CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} name color to: \x07%s%s{default}!", iTarget, sCol[0], sCol[0]);
+			else if (!strcmp(Key, "tagcolor"))
+				CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} tag color to: \x07%s%s{default}!", iTarget, sCol[0], sCol[0]);
+			else
+				CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} text color to: \x07%s%s{default}!", iTarget, sCol[0], sCol[0]);
+		}
+	}
+	else if (!IsSource2009())
+	{
+		StringMap smTrie = MC_GetTrie();
+		char value[32];
+		if (!smTrie.GetString(sCol, value, sizeof(value)))
+		{
+			CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid color name given.");
+			return false;
+		}
+
+		SetColor(SID, Key, sCol, -1, true);
+
 		if (!strcmp(Key, "namecolor"))
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} name color to: \x07%s#%s{default}!", iTarget, sCol[1], sCol[1]);
+			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} name color to: {%s}%s{default}!", iTarget, sCol[0], sCol[0]);
 		else if (!strcmp(Key, "tagcolor"))
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} tag color to: \x07%s#%s{default}!", iTarget, sCol[1], sCol[1]);
+			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} tag color to: {%s}%s{default}!", iTarget, sCol[0], sCol[0]);
 		else
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} text color to: \x07%s#%s{default}!", iTarget, sCol[1], sCol[1]);
+			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} text color to: {%s}%s{default}!", iTarget, sCol[0], sCol[0]);
 	}
 	else
 	{
@@ -1776,9 +1857,6 @@ public Action Command_Say(int client, const char[] command, int argc)
 			g_bWaitingForChatInput[client] = false;
 			ReplaceString(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput), "\"", "'");
 
-			if (g_sReceivedChatInput[client][0] != '#' && !StrEqual(g_sInputType[client], "ChangeTag") && !StrEqual(g_sInputType[client], "MenuForceTag"))
-				Format(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#%s", g_sReceivedChatInput[client]);
-
 			if (StrEqual(g_sInputType[client], "ChangeTag"))
 			{
 				if (SetTag(SID, g_sReceivedChatInput[client], client))
@@ -1788,13 +1866,23 @@ public Action Command_Say(int client, const char[] command, int argc)
 			}
 			else if (StrEqual(g_sInputType[client], "ColorTag"))
 			{
-				if (IsValidHex(g_sReceivedChatInput[client]))
+				if (IsSource2009() && IsValidHex(g_sReceivedChatInput[client]))
 				{
 					if (SetColor(SID, "tagcolor", g_sReceivedChatInput[client], client))
 					{
-						ReplaceString(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#", "");
-						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}tag color{default} to: \x07%s#%s", g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
+						if (g_sReceivedChatInput[client][0] != '#')
+							Format(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#%s", g_sReceivedChatInput[client]);
+						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}tag color{default} to: \x07%s%s", g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
 					}
+				}
+				else if (!IsSource2009())
+				{
+					StringMap smTrie = MC_GetTrie();
+					char value[32];
+					if (smTrie.GetString(g_sReceivedChatInput[client], value, sizeof(value)) && SetColor(SID, "tagcolor", g_sReceivedChatInput[client], client))
+						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}tag color{default} to: {%s}%s{default}!", g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
+					else
+						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid color name given.");
 				}
 				else
 				{
@@ -1803,13 +1891,23 @@ public Action Command_Say(int client, const char[] command, int argc)
 			}
 			else if (StrEqual(g_sInputType[client], "ColorName"))
 			{
-				if (IsValidHex(g_sReceivedChatInput[client]))
+				if (IsSource2009() && IsValidHex(g_sReceivedChatInput[client]))
 				{
 					if (SetColor(SID, "namecolor", g_sReceivedChatInput[client], client))
 					{
-						ReplaceString(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#", "");
-						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}name color{default} to: \x07%s#%s", g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
+						if (g_sReceivedChatInput[client][0] != '#')
+							Format(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#%s", g_sReceivedChatInput[client]);
+						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}name color{default} to: \x07%s%s", g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
 					}
+				}
+				else if (!IsSource2009())
+				{
+					StringMap smTrie = MC_GetTrie();
+					char value[32];
+					if (smTrie.GetString(g_sReceivedChatInput[client], value, sizeof(value)) && SetColor(SID, "namecolor", g_sReceivedChatInput[client], client))
+						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}name color{default} to: {%s}%s{default}!", g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
+					else
+						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid color name given.");
 				}
 				else
 				{
@@ -1822,9 +1920,19 @@ public Action Command_Say(int client, const char[] command, int argc)
 				{
 					if (SetColor(SID, "textcolor", g_sReceivedChatInput[client], client))
 					{
-						ReplaceString(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#", "");
-						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}text color{default} to: \x07%s#%s", g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
+						if (g_sReceivedChatInput[client][0] != '#')
+							Format(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#%s", g_sReceivedChatInput[client]);
+						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}text color{default} to: \x07%s%s{default}!", g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
 					}
+				}
+				else if (!IsSource2009())
+				{
+					StringMap smTrie = MC_GetTrie();
+					char value[32];
+					if (smTrie.GetString(g_sReceivedChatInput[client], value, sizeof(value)) && SetColor(SID, "textcolor", g_sReceivedChatInput[client], client))
+						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}text color{default} to: {%s}%s{default}!", g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
+					else
+						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid color name given.");
 				}
 				else
 				{
@@ -1844,8 +1952,13 @@ public Action Command_Say(int client, const char[] command, int argc)
 				{
 					if (SetColor(g_sATargetSID[client], "tagcolor", g_sReceivedChatInput[client], client, true))
 					{
-						ReplaceString(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#", "");
-						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} tag color to: \x07%s#%s{default}!", g_iATarget[client], g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
+						if (g_sReceivedChatInput[client][0] == '#' && IsSource2009())
+						{
+							ReplaceString(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#", "");
+							CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} tag color to: \x07%s#%s{default}!", g_iATarget[client], g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
+						}
+						else
+							CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} tag color to: {%s}%s{default}!", g_iATarget[client], g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
 					}
 				}
 				else
@@ -1859,8 +1972,13 @@ public Action Command_Say(int client, const char[] command, int argc)
 				{
 					if (SetColor(g_sATargetSID[client], "namecolor", g_sReceivedChatInput[client], client, true))
 					{
-						ReplaceString(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#", "");
-						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} name color to: \x07%s#%s{default}!", g_iATarget[client], g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
+						if (g_sReceivedChatInput[client][0] == '#' && IsSource2009())
+						{
+							ReplaceString(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#", "");
+							CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} name color to: \x07%s#%s{default}!", g_iATarget[client], g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
+						}
+						else
+							CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} name color to: {%s}%s{default}!", g_iATarget[client], g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
 					}
 				}
 				else
@@ -1874,8 +1992,13 @@ public Action Command_Say(int client, const char[] command, int argc)
 				{
 					if (SetColor(g_sATargetSID[client], "textcolor", g_sReceivedChatInput[client], client, true))
 					{
-						ReplaceString(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#", "");
-						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} text color to: \x07%s#%s{default}!", g_iATarget[client], g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
+						if (g_sReceivedChatInput[client][0] == '#' && IsSource2009())
+						{
+							ReplaceString(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#", "");
+							CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} text color to: \x07%s#%s{default}!", g_iATarget[client], g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
+						}
+						else
+							CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} text color to: {%s}%s{default}!", g_iATarget[client], g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
 					}
 				}
 				else
@@ -2168,11 +2291,17 @@ public Action Command_SetTagColor(int client, int args)
 
 	if (IsValidHex(col))
 	{
-		Format(col, sizeof(col), "#%s", col);
 		if (SetColor(SID, "tagcolor", col, client))
 		{
-			ReplaceString(col, sizeof(col), "#", "");
-			CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}tag color{default} to: \x07%s#%s", col, col);
+			if (col[0] == '#' && IsSource2009())
+			{
+				ReplaceString(col, sizeof(col), "#", "");
+				CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}tag color{default} to: \x07%s#%s", col, col);
+			}
+			else
+			{
+				CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}tag color{default} to: {%s}%s", col, col);
+			}
 		}
 	}
 	else
@@ -2243,11 +2372,17 @@ public Action Command_SetNameColor(int client, int args)
 
 	if (IsValidHex(col))
 	{
-		Format(col, sizeof(col), "#%s", col);
 		if (SetColor(SID, "namecolor", col, client))
 		{
-			ReplaceString(col, sizeof(col), "#", "");
-			CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}name color{default} to: \x07%s#%s", col, col);
+			if (col[0] == '#' && IsSource2009())
+			{
+				ReplaceString(col, sizeof(col), "#", "");
+				CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}name color{default} to: \x07%s#%s", col, col);
+			}
+			else
+			{
+				CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}name color{default} to: {%s}%s", col, col);
+			}
 		}
 	}
 	else
@@ -2318,11 +2453,17 @@ public Action Command_SetTextColor(int client, int args)
 
 	if (IsValidHex(col))
 	{
-		Format(col, sizeof(col), "#%s", col);
 		if (SetColor(SID, "textcolor", col, client))
 		{
-			ReplaceString(col, sizeof(col), "#", "");
-			CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}text color{default} to: \x07%s#%s", col, col);
+			if (col[0] == '#' && IsSource2009())
+			{
+				ReplaceString(col, sizeof(col), "#", "");
+				CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}text color{default} to: \x07%s#%s", col, col);
+			}
+			else
+			{
+				CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}text color{default} to: {%s}%s", col, col);
+			}
 		}
 	}
 	else
@@ -3208,10 +3349,18 @@ public int MenuHandler_TagPrefs(Menu MenuTPrefs, MenuAction action, int param1, 
 			ColorsMenu.SetTitle("Pick a color:");
 			ColorsMenu.ExitBackButton = true;
 
-			for (int i = 0; i < 120; i++)
+			StringMap smTrie = MC_GetTrie();
+			if (smTrie!= null && g_sColorsArray != null)
 			{
-				Format(info, sizeof(info), "%s (#%s)", g_sColorsArray[i][0], g_sColorsArray[i][1]);
-				ColorsMenu.AddItem(g_sColorsArray[i][1], info);
+				for (int i = 0; i < g_sColorsArray.Length; i++)
+				{
+					char key[64];
+					char value[64];
+					g_sColorsArray.GetString(i, key, sizeof(key));
+					smTrie.GetString(key, value, sizeof(value));
+					Format(info, sizeof(info), "%s (%s)", key, value);
+					ColorsMenu.AddItem(key, info);
+				}
 			}
 
 			ColorsMenu.Display(param1, MENU_TIME_FOREVER);
@@ -3282,10 +3431,18 @@ public int MenuHandler_NameColor(Menu MenuNColor, MenuAction action, int param1,
 			ColorsMenu.SetTitle("Pick a color:");
 			ColorsMenu.ExitBackButton = true;
 
-			for (int i = 0; i < 120; i++)
+			StringMap smTrie = MC_GetTrie();
+			if (smTrie!= null && g_sColorsArray != null)
 			{
-				Format(info, sizeof(info), "%s (#%s)", g_sColorsArray[i][0], g_sColorsArray[i][1]);
-				ColorsMenu.AddItem(g_sColorsArray[i][1], info);
+				for (int i = 0; i < g_sColorsArray.Length; i++)
+				{
+					char key[64];
+					char value[64];
+					g_sColorsArray.GetString(i, key, sizeof(key));
+					smTrie.GetString(key, value, sizeof(value));
+					Format(info, sizeof(info), "%s (%s)", key, value);
+					ColorsMenu.AddItem(key, info);
+				}
 			}
 
 			if (HasFlag(param1, Admin_Cheats))
@@ -3359,10 +3516,18 @@ public int MenuHandler_ChatColor(Menu MenuCColor, MenuAction action, int param1,
 			ColorsMenu.SetTitle("Pick a color:");
 			ColorsMenu.ExitBackButton = true;
 
-			for (int i = 0; i < 120; i++)
+			StringMap smTrie = MC_GetTrie();
+			if (smTrie!= null && g_sColorsArray != null)
 			{
-				Format(info, sizeof(info), "%s (#%s)", g_sColorsArray[i][0], g_sColorsArray[i][1]);
-				ColorsMenu.AddItem(g_sColorsArray[i][1], info);
+				for (int i = 0; i < g_sColorsArray.Length; i++)
+				{
+					char key[64];
+					char value[64];
+					g_sColorsArray.GetString(i, key, sizeof(key));
+					smTrie.GetString(key, value, sizeof(value));
+					Format(info, sizeof(info), "%s (%s)", key, value);
+					ColorsMenu.AddItem(key, info);
+				}
 			}
 
 			ColorsMenu.Display(param1, MENU_TIME_FOREVER);
@@ -3393,14 +3558,19 @@ public int MenuHandler_TagColorSub(Menu MenuTCSub, MenuAction action, int param1
 	{
 		char SID[64];
 		char Selected[64];
-		char SelectedFinal[64];
 		MenuTCSub.GetItem(param2, Selected, sizeof(Selected));
 		GetClientAuthId(param1, AuthId_Steam2, SID, sizeof(SID));
 
-		Format(SelectedFinal, sizeof(SelectedFinal), "#%s", Selected);
-
-		if (SetColor(SID, "tagcolor", SelectedFinal, param1))
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}tag color{default} to: \x07%s%s", Selected, SelectedFinal);
+		if (SetColor(SID, "tagcolor", Selected, param1))
+		{
+			if (Selected[0] == '#' && IsSource2009())
+			{
+				ReplaceString(Selected, sizeof(Selected), "#", "");
+				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}tag color{default} to: \x07%s#%s", Selected, Selected);
+			}
+			else
+				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}tag color{default} to: {%s}%s", Selected, Selected);
+		}
 
 		Menu_TagPrefs(param1);
 	}
@@ -3426,14 +3596,19 @@ public int MenuHandler_NameColorSub(Menu MenuNCSub, MenuAction action, int param
 	{
 		char SID[64];
 		char Selected[64];
-		char SelectedFinal[64];
 		MenuNCSub.GetItem(param2, Selected, sizeof(Selected));
 		GetClientAuthId(param1, AuthId_Steam2, SID, sizeof(SID));
 
-		Format(SelectedFinal, sizeof(SelectedFinal), "#%s", Selected);
-
-		if (SetColor(SID, "namecolor", SelectedFinal, param1))
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}name color{default} to: \x07%s%s", Selected, SelectedFinal);
+		if (SetColor(SID, "namecolor", Selected, param1))
+		{
+			if (Selected[0] == '#' && IsSource2009())
+			{
+				ReplaceString(Selected, sizeof(Selected), "#", "");
+				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}name color{default} to: \x07%s#%s", Selected, Selected);
+			}
+			else
+				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}name color{default} to: {%s}%s", Selected, Selected);
+		}
 
 		Menu_NameColor(param1);
 	}
@@ -3459,14 +3634,19 @@ public int MenuHandler_ChatColorSub(Menu MenuCCSub, MenuAction action, int param
 	{
 		char SID[64];
 		char Selected[64];
-		char SelectedFinal[64];
 		MenuCCSub.GetItem(param2, Selected, sizeof(Selected));
 		GetClientAuthId(param1, AuthId_Steam2, SID, sizeof(SID));
 
-		Format(SelectedFinal, sizeof(SelectedFinal), "#%s", Selected);
-
-		if (SetColor(SID, "textcolor", SelectedFinal, param1))
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}text color{default} to: \x07%s%s", Selected, SelectedFinal);
+		if (SetColor(SID, "textcolor", Selected, param1))
+		{
+			if (Selected[0] == '#' && IsSource2009())
+			{
+				ReplaceString(Selected, sizeof(Selected), "#", "");
+				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}text color{default} to: \x07%s#%s", Selected, Selected);
+			}
+			else
+				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}text color{default} to: {%s}%s", Selected, Selected);
+		}
 
 		Menu_ChatColor(param1);
 	}
@@ -3512,11 +3692,25 @@ stock void ResetClient(int client)
 public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const players[], int playersNum, bool reliable, bool init)
 {
 	char sAuthorTag[64];
-	g_msgAuthor = BfReadByte(bf);
-	g_msgIsChat = view_as<bool>(BfReadByte(bf));
-	BfReadString(bf, g_msgName, sizeof(g_msgName), false);
-	BfReadString(bf, g_msgSender, sizeof(g_msgSender), false);
-	BfReadString(bf, g_msgText, sizeof(g_msgText), false);
+
+	if (g_bProto)
+	{
+		g_msgAuthor = PbReadInt(bf, "ent_idx");
+		g_msgIsChat = PbReadBool(bf, "chat");
+		PbReadString(bf, "msg_name", g_msgName, sizeof(g_msgName));
+		PbReadString(bf, "params", g_msgSender, sizeof(g_msgSender), 0);
+		PbReadString(bf, "params", g_msgText, sizeof(g_msgText), 1);
+	}
+	else
+	{
+		g_msgAuthor = BfReadByte(bf);
+		g_msgIsChat = view_as<bool>(BfReadByte(bf));
+		BfReadString(bf, g_msgName, sizeof(g_msgName), false);
+		BfReadString(bf, g_msgSender, sizeof(g_msgSender), false);
+		BfReadString(bf, g_msgText, sizeof(g_msgText), false);
+	}
+
+	LogError("ent_idx %d, chat %d, msg_name %s, msgSender %s, msgText %s", g_msgAuthor, g_msgIsChat, g_msgName, g_msgSender, g_msgText);
 
 	if (strlen(g_msgName) == 0 || strlen(g_msgSender) == 0)
 		return Plugin_Continue;
@@ -3531,13 +3725,13 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const players[], int p
 
 	CCC_GetTag(g_msgAuthor, sAuthorTag, sizeof(sAuthorTag));
 
-	bool bNameAlpha;
-	bool bChatAlpha;
-	bool bTagAlpha;
 	bool bIsAction;
-	int xiNameColor = CCC_GetColor(g_msgAuthor, view_as<CCC_ColorType>(CCC_NameColor), bNameAlpha);
-	int xiChatColor = CCC_GetColor(g_msgAuthor, view_as<CCC_ColorType>(CCC_ChatColor), bChatAlpha);
-	int xiTagColor = CCC_GetColor(g_msgAuthor, view_as<CCC_ColorType>(CCC_TagColor), bTagAlpha);
+	char sNameColor[32];
+	char sChatColor[32];
+	char sTagColor[32];
+	bool bNameAlpha = CCC_GetColor(g_msgAuthor, view_as<CCC_ColorType>(CCC_NameColor), sNameColor);
+	bool bChatAlpha = CCC_GetColor(g_msgAuthor, view_as<CCC_ColorType>(CCC_ChatColor), sChatColor);
+	bool bTagAlpha = CCC_GetColor(g_msgAuthor, view_as<CCC_ColorType>(CCC_TagColor), sTagColor);
 
 	if (!strncmp(g_msgText, "/me", 3, false))
 	{
@@ -3582,91 +3776,54 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const players[], int p
 		CFormatColor(g_msgText, sizeof(g_msgText), g_msgAuthor);
 	}
 
-	if (!bIsAction)
+	StringMap smTrie = MC_GetTrie();
+	char value[32];
+
+	if (!bIsAction && g_iClientEnable[g_msgAuthor])
 	{
-		if (xiNameColor == COLOR_TEAM || !g_iClientEnable[g_msgAuthor])
+		if (bNameAlpha)
 		{
-			Format(g_msgSender, sizeof(g_msgSender), "\x03%s", g_msgSender);
-		}
-		else if (xiNameColor == COLOR_CGREEN)
-		{
-			Format(g_msgSender, sizeof(g_msgSender), "\x04%s", g_msgSender);
-		}
-		else if (xiNameColor == COLOR_OLIVE)
-		{
-			Format(g_msgSender, sizeof(g_msgSender), "\x05%s", g_msgSender);
-		}
-		else if (xiNameColor == COLOR_NULL)
-		{
-			Format(g_msgSender, sizeof(g_msgSender), "", g_msgSender);
-		}
-		else if (!bNameAlpha)
-		{
-			Format(g_msgSender, sizeof(g_msgSender), "\x07%06X%s", xiNameColor, g_msgSender);
+			int hexColor = StringToInt(sNameColor, 16);
+			Format(g_msgSender, sizeof(g_msgSender), "\x07%06X%s", hexColor, g_msgSender);
 		}
 		else
 		{
-			Format(g_msgSender, sizeof(g_msgSender), "\x08%08X%s", xiNameColor, g_msgSender);
+			Format(g_msgSender, sizeof(g_msgSender), "%s%s", sNameColor, g_msgSender);
 		}
 
-		if (g_iClientEnable[g_msgAuthor] && strlen(sAuthorTag) > 0)
+		if (strlen(sAuthorTag) > 0)
 		{
-			if (xiTagColor == COLOR_TEAM)
+			LogError("MsgName: %s, TagColor: %stest, AuthorTag: %s, g_msgSender: %s", g_msgName, sTagColor, sAuthorTag, g_msgSender);
+			if (bTagAlpha)
 			{
-				Format(g_msgSender, sizeof(g_msgSender), "\x03%s%s", sAuthorTag, g_msgSender);
-			}
-			else if (xiTagColor == COLOR_CGREEN)
-			{
-				Format(g_msgSender, sizeof(g_msgSender), "\x04%s%s", sAuthorTag, g_msgSender);
-			}
-			else if (xiTagColor == COLOR_OLIVE)
-			{
-				Format(g_msgSender, sizeof(g_msgSender), "\x05%s%s", sAuthorTag, g_msgSender);
-			}
-			else if (xiTagColor == COLOR_NONE)
-			{
-				Format(g_msgSender, sizeof(g_msgSender), "\x01%s%s", sAuthorTag, g_msgSender);
-			}
-			else if (!bTagAlpha)
-			{
-				Format(g_msgSender, sizeof(g_msgSender), "\x07%06X%s%s", xiTagColor, sAuthorTag, g_msgSender);
+				int hexColor = StringToInt(sTagColor, 16);
+				Format(g_msgSender, sizeof(g_msgSender), "\x07%06X%s%s", hexColor, sAuthorTag, g_msgSender);
 			}
 			else
 			{
-				Format(g_msgSender, sizeof(g_msgSender), "\x08%08X%s%s", xiTagColor, sAuthorTag, g_msgSender);
+				Format(g_msgSender, sizeof(g_msgSender), "%s%s%s", sTagColor, sAuthorTag, g_msgSender);
 			}
 		}
 
-		if (g_msgText[0] == '>' && GetConVarInt(g_cvar_GreenText) > 0)
+		if (g_msgText[0] == '>' && GetConVarInt(g_cvar_GreenText) > 0 && smTrie.GetString("green", value, sizeof(value)))
 		{
-			Format(g_msgText, sizeof(g_msgText), "\x0714C800%s", g_msgText);
+			Format(g_msgText, sizeof(g_msgText), "%s%s", value, g_msgText);
 		}
-		else if (xiChatColor == COLOR_NONE || !g_iClientEnable[g_msgAuthor])
+
+		if (bChatAlpha)
 		{
-		}
-		else if (xiChatColor == COLOR_TEAM)
-		{
-			Format(g_msgText, sizeof(g_msgText), "\x03%s", g_msgText);
-		}
-		else if (xiChatColor == COLOR_CGREEN)
-		{
-			Format(g_msgText, sizeof(g_msgText), "\x04%s", g_msgText);
-		}
-		else if (xiChatColor == COLOR_OLIVE)
-		{
-			Format(g_msgText, sizeof(g_msgText), "\x05%s", g_msgText);
-		}
-		else if (!bChatAlpha)
-		{
-			Format(g_msgText, sizeof(g_msgText), "\x07%06X%s", xiChatColor, g_msgText);
+			int hexColor = StringToInt(sChatColor, 16);
+			Format(g_msgText, sizeof(g_msgText), "\x07%06X%s", hexColor, g_msgText);
 		}
 		else
 		{
-			Format(g_msgText, sizeof(g_msgText), "\x08%08X%s", xiChatColor, g_msgText);
+			Format(g_msgText, sizeof(g_msgText), "%s%s", sChatColor, g_msgText);
 		}
 	}
 
 	Format(g_msgFinal, sizeof(g_msgFinal), "%t", g_msgName, g_msgSender, g_msgText);
+
+	LogError("Final msg: %s", g_msgFinal);
 
 	return Plugin_Handled;
 }
@@ -3717,11 +3874,15 @@ public Action Event_PlayerSay(Handle event, const char[] name, bool dontBroadcas
 
 	Handle SayText2 = StartMessage("SayText2", players, playersNum, USERMSG_RELIABLE | USERMSG_BLOCKHOOKS);
 
-	if (GetFeatureStatus(FeatureType_Native, "GetUserMessageType") == FeatureStatus_Available && GetUserMessageType() == UM_Protobuf)
+	if (g_bProto)
 	{
 		PbSetInt(SayText2, "ent_idx", g_msgAuthor);
 		PbSetBool(SayText2, "chat", g_msgIsChat);
-		PbSetString(SayText2, "text", g_msgFinal);
+		PbSetString(SayText2, "msg_name", g_msgFinal);
+		PbAddString(SayText2, "params", "");
+		PbAddString(SayText2, "params", "");
+		PbAddString(SayText2, "params", "");
+		PbAddString(SayText2, "params", "");
 		EndMessage();
 	}
 	else
@@ -3831,8 +3992,11 @@ public int Native_GetColor(Handle plugin, int numParams)
 	if (!client || client > MaxClients || !IsClientInGame(client))
 	{
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid client or client is not in game");
-		return COLOR_NONE;
+		return false;
 	}
+
+	StringMap smTrie = MC_GetTrie();
+	char value[32] = "";
 
 	switch(GetNativeCell(2))
 	{
@@ -3840,28 +4004,37 @@ public int Native_GetColor(Handle plugin, int numParams)
 		{
 			if (StrEqual(g_sClientTagColor[client], "T", false))
 			{
-				SetNativeCellRef(3, false);
-				return COLOR_TEAM;
+				smTrie.GetString("teamcolor", value, sizeof(value));
+				SetNativeString(3, value, sizeof(value));
+				return false;
 			}
 			else if (StrEqual(g_sClientTagColor[client], "G", false))
 			{
-				SetNativeCellRef(3, false);
-				return COLOR_CGREEN;
+				smTrie.GetString("green", value, sizeof(value));
+				SetNativeString(3, value, sizeof(value));
+				return false;
 			}
 			else if (StrEqual(g_sClientTagColor[client], "O", false))
 			{
-				SetNativeCellRef(3, false);
-				return COLOR_OLIVE;
+				smTrie.GetString("olive", value, sizeof(value));
+				SetNativeString(3, value, sizeof(value));
+				return false;
 			}
-			else if (strlen(g_sClientTagColor[client]) == 6 || strlen(g_sClientTagColor[client]) == 8)
+			else if (IsSource2009() && (strlen(g_sClientTagColor[client]) == 6 || strlen(g_sClientTagColor[client]) == 8))
 			{
-				SetNativeCellRef(3, strlen(g_sClientTagColor[client]) == 8);
-				return StringToInt(g_sClientTagColor[client], 16);
+				SetNativeString(3, g_sClientTagColor[client], sizeof(g_sClientTagColor[]));
+				return true;
+			}
+			else if (smTrie.GetString(g_sClientTagColor[client], value, sizeof(value)))
+			{
+				smTrie.GetString(g_sClientTagColor[client], value, sizeof(value));
+				SetNativeString(3, value, sizeof(value));
+				return false;
 			}
 			else
 			{
-				SetNativeCellRef(3, false);
-				return COLOR_NONE;
+				SetNativeString(3, value, sizeof(value));
+				return false;
 			}
 		}
 
@@ -3869,28 +4042,36 @@ public int Native_GetColor(Handle plugin, int numParams)
 		{
 			if (StrEqual(g_sClientNameColor[client], "G", false))
 			{
-				SetNativeCellRef(3, false);
-				return COLOR_CGREEN;
+				smTrie.GetString("green", value, sizeof(value));
+				SetNativeString(3, value, sizeof(value));
+				return false;
 			}
 			else if (StrEqual(g_sClientNameColor[client], "X", false))
 			{
-				SetNativeCellRef(3, false);
-				return COLOR_NULL;
+				SetNativeString(3, value, sizeof(value));
+				return false;
 			}
 			else if (StrEqual(g_sClientNameColor[client], "O", false))
 			{
-				SetNativeCellRef(3, false);
-				return COLOR_OLIVE;
+				smTrie.GetString("olive", value, sizeof(value));
+				SetNativeString(3, value, sizeof(value));
+				return false;
 			}
-			else if (strlen(g_sClientNameColor[client]) == 6 || strlen(g_sClientNameColor[client]) == 8)
+			else if (IsSource2009() && (strlen(g_sClientNameColor[client]) == 6 || strlen(g_sClientNameColor[client]) == 8))
 			{
-				SetNativeCellRef(3, strlen(g_sClientNameColor[client]) == 8);
-				return StringToInt(g_sClientNameColor[client], 16);
+				SetNativeString(3, g_sClientNameColor[client], sizeof(g_sClientNameColor[]));
+				return true;
+			}
+			else if (smTrie.GetString(g_sClientNameColor[client], value, sizeof(value)))
+			{
+				smTrie.GetString(g_sClientNameColor[client], value, sizeof(value));
+				SetNativeString(3, value, sizeof(value));
+				return false;
 			}
 			else
 			{
-				SetNativeCellRef(3, false);
-				return COLOR_TEAM;
+				SetNativeString(3, value, sizeof(value));
+				return false;
 			}
 		}
 
@@ -3898,33 +4079,42 @@ public int Native_GetColor(Handle plugin, int numParams)
 		{
 			if (StrEqual(g_sClientChatColor[client], "T", false))
 			{
-				SetNativeCellRef(3, false);
-				return COLOR_TEAM;
+				smTrie.GetString("teamcolor", value, sizeof(value));
+				SetNativeString(3, value, sizeof(value));
+				return false;
 			}
 			else if (StrEqual(g_sClientChatColor[client], "G", false))
 			{
-				SetNativeCellRef(3, false);
-				return COLOR_CGREEN;
+				smTrie.GetString("green", value, sizeof(value));
+				SetNativeString(3, value, sizeof(value));
+				return false;
 			}
 			else if (StrEqual(g_sClientChatColor[client], "O", false))
 			{
-				SetNativeCellRef(3, false);
-				return COLOR_OLIVE;
+				smTrie.GetString("olive", value, sizeof(value));
+				SetNativeString(3, value, sizeof(value));
+				return false;
 			}
-			else if (strlen(g_sClientChatColor[client]) == 6 || strlen(g_sClientChatColor[client]) == 8)
+			else if (IsSource2009() && (strlen(g_sClientChatColor[client]) == 6 || strlen(g_sClientChatColor[client]) == 8))
 			{
-				SetNativeCellRef(3, strlen(g_sClientChatColor[client]) == 8);
-				return StringToInt(g_sClientChatColor[client], 16);
+				SetNativeString(3, g_sClientChatColor[client], sizeof(g_sClientChatColor[]));
+				return true;
+			}
+			else if (smTrie.GetString(g_sClientChatColor[client], value, sizeof(value)))
+			{
+				smTrie.GetString(g_sClientChatColor[client], value, sizeof(value));
+				SetNativeString(3, value, sizeof(value));
+				return false;
 			}
 			else
 			{
-				SetNativeCellRef(3, false);
-				return COLOR_NONE;
+				SetNativeString(3, value, sizeof(value));
+				return false;
 			}
 		}
 	}
 
-	return COLOR_NONE;
+	return false;
 }
 
 public int Native_SetColor(Handle plugin, int numParams)

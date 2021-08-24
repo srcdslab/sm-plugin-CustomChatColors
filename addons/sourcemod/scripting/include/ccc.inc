@@ -20,18 +20,20 @@ enum CCC_ColorType {
 #define COLOR_CGREEN	-3 //0x40FF40
 #define COLOR_OLIVE		-4 //0x99FF99
 #define COLOR_TEAM		-5
+#define COLOR_NORMAL	-6
 
 /**
  * Gets a client's color as a hexadecimal integer.
  *
  * @param client		Client index
  * @param type			Color type to retreive
- * @param alpha			Pass a boolean variable by reference here and it will be true if the color has alpha specified or false if it doesn't (or is a stock color)
- * @return				Color as a hexadecimal integer (use %X in formatting to get a hexadecimal string)
+ * @param color			Color string buffer
+ * @param size			Size of color string buffer
+ * @return				Is the color an hex value
  *
  * On error/errors:		Invalid client index or client is not in game
  */
-native int CCC_GetColor(int client, CCC_ColorType type, bool &alpha = false);
+native bool CCC_GetColor(int client, CCC_ColorType type, char[] color);
 
 /**
  * Sets a client's color as a hexadecimal integer.
