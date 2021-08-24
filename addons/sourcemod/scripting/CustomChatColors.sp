@@ -3358,7 +3358,10 @@ public int MenuHandler_TagPrefs(Menu MenuTPrefs, MenuAction action, int param1, 
 					char value[64];
 					g_sColorsArray.GetString(i, key, sizeof(key));
 					smTrie.GetString(key, value, sizeof(value));
-					Format(info, sizeof(info), "%s (%s)", key, value);
+					if (IsSource2009() && value[0] == '#')
+						Format(info, sizeof(info), "%s (%s)", key, value);
+					else
+						Format(info, sizeof(info), "%s", key);
 					ColorsMenu.AddItem(key, info);
 				}
 			}
@@ -3440,7 +3443,10 @@ public int MenuHandler_NameColor(Menu MenuNColor, MenuAction action, int param1,
 					char value[64];
 					g_sColorsArray.GetString(i, key, sizeof(key));
 					smTrie.GetString(key, value, sizeof(value));
-					Format(info, sizeof(info), "%s (%s)", key, value);
+					if (IsSource2009() && value[0] == '#')
+						Format(info, sizeof(info), "%s (%s)", key, value);
+					else
+						Format(info, sizeof(info), "%s", key);
 					ColorsMenu.AddItem(key, info);
 				}
 			}
@@ -3525,7 +3531,10 @@ public int MenuHandler_ChatColor(Menu MenuCColor, MenuAction action, int param1,
 					char value[64];
 					g_sColorsArray.GetString(i, key, sizeof(key));
 					smTrie.GetString(key, value, sizeof(value));
-					Format(info, sizeof(info), "%s (%s)", key, value);
+					if (IsSource2009() && value[0] == '#')
+						Format(info, sizeof(info), "%s (%s)", key, value);
+					else
+						Format(info, sizeof(info), "%s", key);
 					ColorsMenu.AddItem(key, info);
 				}
 			}
@@ -3801,7 +3810,7 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const players[], int p
 			}
 			else
 			{
-				Format(g_msgSender, sizeof(g_msgSender), "%s%s%s", sTagColor, sAuthorTag, g_msgSender);
+				Format(g_msgSender, sizeof(g_msgSender), " %s%s%s", sTagColor, sAuthorTag, g_msgSender);
 			}
 		}
 
@@ -3813,13 +3822,15 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const players[], int p
 		if (bChatAlpha)
 		{
 			int hexColor = StringToInt(sChatColor, 16);
-			Format(g_msgText, sizeof(g_msgText), "\x07%06X%s", hexColor, g_msgText);
+			Format(g_msgText, sizeof(g_msgText), " \x07%06X%s", hexColor, g_msgText);
 		}
 		else
 		{
 			Format(g_msgText, sizeof(g_msgText), "%s%s", sChatColor, g_msgText);
 		}
 	}
+
+	LogError("ent_idx %d, chat %d, msg_name %s, msgSender %s, msgText %s", g_msgAuthor, g_msgIsChat, g_msgName, g_msgSender, g_msgText);
 
 	Format(g_msgFinal, sizeof(g_msgFinal), "%t", g_msgName, g_msgSender, g_msgText);
 
