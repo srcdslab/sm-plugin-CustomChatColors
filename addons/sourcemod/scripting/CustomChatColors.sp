@@ -4,16 +4,15 @@
 #include <sourcemod>
 #include <regex>
 #include <multicolors>
-//#undef REQUIRE_PLUGIN
 #include <adminmenu>
 #include <ccc>
 
-#define PLUGIN_VERSION					"7.0"
+#define PLUGIN_VERSION					"7.1"
 
 #define DATABASE_NAME					"ccc"
 
 #define MAX_CHAT_TRIGGER_LENGTH			32
-#define MAX_CHAT_LENGTH					192
+#define MAX_CHAT_LENGTH					256
 
 #define REPLACE_LIST_MAX_LENGTH			255
 
@@ -48,8 +47,6 @@ ConVar g_cSmChatColor;
 char g_sSmCategoryColor[32];
 char g_sSmNameColor[32];
 char g_sSmChatColor[32];
-
-//Handle g_hAdminMenu = null;
 
 char g_sReplaceList[REPLACE_LIST_MAX_LENGTH][2][MAX_CHAT_LENGTH];
 int g_iReplaceListSize = 0;
@@ -136,12 +133,6 @@ public void OnPluginStart()
 {
 	LoadTranslations("common.phrases");
 	LoadTranslations("allchat.phrases");
-
-	//new Handle g_hTemporary = null;
-	//if(LibraryExists("adminmenu") && ((g_hTemporary = GetAdminTopMenu()) != null))
-	//{
-	//	OnAdminMenuReady(g_hTemporary);
-	//}
 
 	UserMsg SayText2 = GetUserMessageId("SayText2");
 
@@ -1203,34 +1194,6 @@ public void OnSQLDelete_Ban(Handle hParent, Handle hChild, const char[] err, any
 	delete pack;
 }
 
-/* public OnLibraryRemoved(const char name[])
-{
-	if (StrEqual(name, "adminmenu"))
-	{
-		g_hAdminMenu = null;
-	}
-}
-
-public OnAdminMenuReady(Handle CCCAMenu)
-{
-	if (CCCAMenu == g_hAdminMenu)
-	{
-		return;
-	}
-
-	g_hAdminMenu = CCCAMenu;
-	new TopMenuObject:MenuObject = AddToTopMenu(g_hAdminMenu, "CCCCmds", TopMenuObject_Category, Handle_Commands, INVALID_TOPMENUOBJECT);
-
-	if (MenuObject == INVALID_TOPMENUOBJECT)
-	{
-		return;
-	}
-
-	AddToTopMenu(g_hAdminMenu, "CCCReset", TopMenuObject_Item, Handle_AMenuReset, MenuObject, "sm_cccreset", ADMFLAG_SLAY);
-	AddToTopMenu(g_hAdminMenu, "CCCBan", TopMenuObject_Item, Handle_AMenuBan, MenuObject, "sm_cccban", ADMFLAG_SLAY);
-	AddToTopMenu(g_hAdminMenu, "CCCUnBan", TopMenuObject_Item, Handle_AMenuUnBan, MenuObject, "sm_cccunban", ADMFLAG_SLAY);
-} */
-
 bool MakeStringPrintable(char[] str, int str_len_max, const char[] empty) //function taken from Forlix FloodCheck (http://forlix.org/gameaddons/floodcheck.shtml)
 {
 	int r = 0;
@@ -1298,14 +1261,48 @@ bool HasFlag(int client, AdminFlag ADMFLAG)
 	return false;
 }
 
-bool ForceColor(int client, char Key[64])
+bool ChangeSingleTag(int client, int iTarget, char sTag[64], bool bAdmin)
+{
+	ReplaceString(sTag, sizeof(sTag), "\"", "'");
+
+	char SID[64];
+	GetClientAuthId(iTarget, AuthId_Steam2, SID, sizeof(SID));
+
+	if (SetTag(SID, sTag, client, bAdmin))
+	{
+		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} tag to: {green}%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sTag);
+		return true;
+	}
+	return false;
+}
+
+bool ChangeTag(int client, bool bAdmin)
 {
 	int iTarget;
 	char sTarget[64];
-	char sCol[64];
-	GetCmdArg(1, sTarget, sizeof(sTarget));
-	GetCmdArg(2, sCol, sizeof(sCol));
+	char sTag[64];
 
+	if (bAdmin)
+	{
+		GetCmdArg(1, sTarget, sizeof(sTarget));
+		GetCmdArg(2, sTag, sizeof(sTag));
+
+		if ((iTarget = FindTarget(client, sTarget, true)) == -1)
+		{
+			return false;
+		}
+	}
+	else
+	{
+		iTarget = client;		
+		GetCmdArg(1, sTag, sizeof(sTag));
+	}
+
+	return ChangeSingleTag(client, iTarget, sTag, bAdmin);
+}
+
+bool ChangeSingleColor(int client, int iTarget, char Key[64], char sCol[64], bool bAdmin)
+{
 	if (IsValidRGBNum(sCol))
 	{
 		char g[8];
@@ -1321,11 +1318,6 @@ bool ForceColor(int client, char Key[64])
 		Format(sCol, 64, "#%06X", hex);
 	}
 
-	if ((iTarget = FindTarget(client, sTarget, true)) == -1)
-	{
-		return false;
-	}
-
 	char SID[64];
 	GetClientAuthId(iTarget, AuthId_Steam2, SID, sizeof(SID));
 
@@ -1334,43 +1326,65 @@ bool ForceColor(int client, char Key[64])
 		if (sCol[0] != '#')
 			Format(sCol, sizeof(sCol), "#%s", sCol);
 
-		SetColor(SID, Key, sCol, -1, true);
+		SetColor(SID, Key, sCol, iTarget, bAdmin);
 
-		if (sCol[0] == '#' && IsSource2009())
-		{
-			if (!strcmp(Key, "namecolor"))
-				CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} name color to: \x07%s%s{default}!", iTarget, sCol[0], sCol[0]);
-			else if (!strcmp(Key, "tagcolor"))
-				CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} tag color to: \x07%s%s{default}!", iTarget, sCol[0], sCol[0]);
-			else
-				CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} text color to: \x07%s%s{default}!", iTarget, sCol[0], sCol[0]);
-		}
+		if (!strcmp(Key, "namecolor"))
+			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} name color to: \x07%s%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sCol[0], sCol[0]);
+		else if (!strcmp(Key, "tagcolor"))
+			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} tag color to: \x07%s%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sCol[0], sCol[0]);
+		else
+			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} text color to: \x07%s%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sCol[0], sCol[0]);
 	}
-	else if (!IsSource2009())
+	else if ((IsSource2009() && !IsValidHex(sCol)) || !IsSource2009())
 	{
 		StringMap smTrie = MC_GetTrie();
 		char value[32];
 		if (!smTrie.GetString(sCol, value, sizeof(value)))
 		{
-			CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid color name given.");
+			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid color name given.");
 			return false;
 		}
 
-		SetColor(SID, Key, sCol, -1, true);
+		SetColor(SID, Key, sCol, iTarget, bAdmin);
 
 		if (!strcmp(Key, "namecolor"))
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} name color to: {%s}%s{default}!", iTarget, sCol[0], sCol[0]);
+			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} name color to: {%s}%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sCol[0], sCol[0]);
 		else if (!strcmp(Key, "tagcolor"))
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} tag color to: {%s}%s{default}!", iTarget, sCol[0], sCol[0]);
+			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} tag color to: {%s}%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sCol[0], sCol[0]);
 		else
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} text color to: {%s}%s{default}!", iTarget, sCol[0], sCol[0]);
+			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} text color to: {%s}%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sCol[0], sCol[0]);
 	}
 	else
 	{
-		CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid HEX|RGB color code given.");
+		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid HEX|RGB|name color code given.");
+		return false;
+	}
+	return true;
+}
+
+bool ChangeColor(int client, char Key[64], bool bAdmin)
+{
+	int iTarget;
+	char sTarget[64];
+	char sCol[64];
+
+	if (bAdmin)
+	{
+		GetCmdArg(1, sTarget, sizeof(sTarget));
+		GetCmdArg(2, sCol, sizeof(sCol));
+
+		if ((iTarget = FindTarget(client, sTarget, true)) == -1)
+		{
+			return false;
+		}
+	}
+	else
+	{
+		iTarget = client;		
+		GetCmdArg(1, sCol, sizeof(sCol));
 	}
 
-	return true;
+	return ChangeSingleColor(client, iTarget, Key, sCol, bAdmin);
 }
 
 bool IsValidRGBNum(char[] arg)
@@ -1845,167 +1859,29 @@ public Action Command_Say(int client, const char[] command, int argc)
 
 		if (g_bWaitingForChatInput[client])
 		{
-			char SID[64];
-			GetClientAuthId(client, AuthId_Steam2, SID, sizeof(SID));
+			g_bWaitingForChatInput[client] = false;
 
 			if (text[strlen(text)-1] == '"')
-			{
 				text[strlen(text)-1] = '\0';
-			}
 
 			strcopy(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), text[1]);
-			g_bWaitingForChatInput[client] = false;
-			ReplaceString(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput), "\"", "'");
 
 			if (StrEqual(g_sInputType[client], "ChangeTag"))
-			{
-				if (SetTag(SID, g_sReceivedChatInput[client], client))
-				{
-					CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}tag{default} to: {green}%s{default}", g_sReceivedChatInput[client]);
-				}
-			}
+				ChangeSingleTag(client, client, g_sReceivedChatInput[client], false);
 			else if (StrEqual(g_sInputType[client], "ColorTag"))
-			{
-				if (IsSource2009() && IsValidHex(g_sReceivedChatInput[client]))
-				{
-					if (SetColor(SID, "tagcolor", g_sReceivedChatInput[client], client))
-					{
-						if (g_sReceivedChatInput[client][0] != '#')
-							Format(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#%s", g_sReceivedChatInput[client]);
-						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}tag color{default} to: \x07%s%s", g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
-					}
-				}
-				else if (!IsSource2009())
-				{
-					StringMap smTrie = MC_GetTrie();
-					char value[32];
-					if (smTrie.GetString(g_sReceivedChatInput[client], value, sizeof(value)) && SetColor(SID, "tagcolor", g_sReceivedChatInput[client], client))
-						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}tag color{default} to: {%s}%s{default}!", g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
-					else
-						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid color name given.");
-				}
-				else
-				{
-					CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid HEX Color code given.");
-				}
-			}
+				ChangeSingleColor(client, client, "tagcolor", g_sReceivedChatInput[client], false);
 			else if (StrEqual(g_sInputType[client], "ColorName"))
-			{
-				if (IsSource2009() && IsValidHex(g_sReceivedChatInput[client]))
-				{
-					if (SetColor(SID, "namecolor", g_sReceivedChatInput[client], client))
-					{
-						if (g_sReceivedChatInput[client][0] != '#')
-							Format(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#%s", g_sReceivedChatInput[client]);
-						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}name color{default} to: \x07%s%s", g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
-					}
-				}
-				else if (!IsSource2009())
-				{
-					StringMap smTrie = MC_GetTrie();
-					char value[32];
-					if (smTrie.GetString(g_sReceivedChatInput[client], value, sizeof(value)) && SetColor(SID, "namecolor", g_sReceivedChatInput[client], client))
-						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}name color{default} to: {%s}%s{default}!", g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
-					else
-						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid color name given.");
-				}
-				else
-				{
-					CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid HEX Color code given.");
-				}
-			}
+				ChangeSingleColor(client, client, "namecolor", g_sReceivedChatInput[client], false);
 			else if (StrEqual(g_sInputType[client], "ColorText"))
-			{
-				if (IsValidHex(g_sReceivedChatInput[client]))
-				{
-					if (SetColor(SID, "textcolor", g_sReceivedChatInput[client], client))
-					{
-						if (g_sReceivedChatInput[client][0] != '#')
-							Format(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#%s", g_sReceivedChatInput[client]);
-						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}text color{default} to: \x07%s%s{default}!", g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
-					}
-				}
-				else if (!IsSource2009())
-				{
-					StringMap smTrie = MC_GetTrie();
-					char value[32];
-					if (smTrie.GetString(g_sReceivedChatInput[client], value, sizeof(value)) && SetColor(SID, "textcolor", g_sReceivedChatInput[client], client))
-						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}text color{default} to: {%s}%s{default}!", g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
-					else
-						CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid color name given.");
-				}
-				else
-				{
-					CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid HEX Color code given.");
-				}
-			}
+				ChangeSingleColor(client, client, "textcolor", g_sReceivedChatInput[client], false);
 			else if (StrEqual(g_sInputType[client], "MenuForceTag"))
-			{
-				if (SetTag(g_sATargetSID[client], g_sReceivedChatInput[client], client, true))
-				{
-					CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} tag to: {green}%s{default}!", g_iATarget[client], g_sReceivedChatInput[client]);
-				}
-			}
+				ChangeSingleTag(client, g_iATarget[client], g_sReceivedChatInput[client], true);
 			else if (StrEqual(g_sInputType[client], "MenuForceTagColor"))
-			{
-				if (IsValidHex(g_sReceivedChatInput[client]))
-				{
-					if (SetColor(g_sATargetSID[client], "tagcolor", g_sReceivedChatInput[client], client, true))
-					{
-						if (g_sReceivedChatInput[client][0] == '#' && IsSource2009())
-						{
-							ReplaceString(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#", "");
-							CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} tag color to: \x07%s#%s{default}!", g_iATarget[client], g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
-						}
-						else
-							CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} tag color to: {%s}%s{default}!", g_iATarget[client], g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
-					}
-				}
-				else
-				{
-					CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Invalid HEX Color code given.");
-				}
-			}
+				ChangeSingleColor(client, g_iATarget[client], "tagcolor", g_sReceivedChatInput[client], true);
 			else if (StrEqual(g_sInputType[client], "MenuForceNameColor"))
-			{
-				if (IsValidHex(g_sReceivedChatInput[client]))
-				{
-					if (SetColor(g_sATargetSID[client], "namecolor", g_sReceivedChatInput[client], client, true))
-					{
-						if (g_sReceivedChatInput[client][0] == '#' && IsSource2009())
-						{
-							ReplaceString(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#", "");
-							CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} name color to: \x07%s#%s{default}!", g_iATarget[client], g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
-						}
-						else
-							CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} name color to: {%s}%s{default}!", g_iATarget[client], g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
-					}
-				}
-				else
-				{
-					CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Invalid HEX Color code given.");
-				}
-			}
+				ChangeSingleColor(client, g_iATarget[client], "namecolor", g_sReceivedChatInput[client], true);
 			else if (StrEqual(g_sInputType[client], "MenuForceTextColor"))
-			{
-				if (IsValidHex(g_sReceivedChatInput[client]))
-				{
-					if (SetColor(g_sATargetSID[client], "textcolor", g_sReceivedChatInput[client], client, true))
-					{
-						if (g_sReceivedChatInput[client][0] == '#' && IsSource2009())
-						{
-							ReplaceString(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "#", "");
-							CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} text color to: \x07%s#%s{default}!", g_iATarget[client], g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
-						}
-						else
-							CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Successfully set {green}%N's{default} text color to: {%s}%s{default}!", g_iATarget[client], g_sReceivedChatInput[client], g_sReceivedChatInput[client]);
-					}
-				}
-				else
-				{
-					CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Invalid HEX Color code given.");
-				}
-			}
+				ChangeSingleColor(client, g_iATarget[client], "textcolor", g_sReceivedChatInput[client], true);
 
 			return Plugin_Handled;
 		}
@@ -2033,21 +1909,7 @@ public Action Command_ForceTag(int client, int args)
 		return Plugin_Handled;
 	}
 
-	int iTarget;
-	char sTarget[64];
-	char sTag[64];
-	GetCmdArg(1, sTarget, sizeof(sTarget));
-	GetCmdArg(2, sTag, sizeof(sTag));
-
-	if ((iTarget = FindTarget(client, sTarget, true)) == -1)
-	{
-		return Plugin_Handled;
-	}
-
-	char SID[64];
-	GetClientAuthId(iTarget, AuthId_Steam2, SID, sizeof(SID));
-
-	SetTag(SID, sTag, client, true);
+	ChangeTag(client, true);
 
 	return Plugin_Handled;
 }
@@ -2060,11 +1922,11 @@ public Action Command_ForceTagColor(int client, int args)
 {
 	if (args < 2)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_forcetagcolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB CODE>");
+		ReplyToCommand(client, "[SM] Usage: sm_forcetagcolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		return Plugin_Handled;
 	}
 
-	ForceColor(client, "tagcolor");
+	ChangeColor(client, "tagcolor", true);
 
 	return Plugin_Handled;
 }
@@ -2077,11 +1939,11 @@ public Action Command_ForceNameColor(int client, int args)
 {
 	if (args < 2)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_forcenamecolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB CODE>");
+		ReplyToCommand(client, "[SM] Usage: sm_forcenamecolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		return Plugin_Handled;
 	}
 
-	ForceColor(client, "namecolor");
+	ChangeColor(client, "namecolor", true);
 
 	return Plugin_Handled;
 }
@@ -2094,11 +1956,11 @@ public Action Command_ForceTextColor(int client, int args)
 {
 	if (args < 2)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_forcetextcolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB CODE>");
+		ReplyToCommand(client, "[SM] Usage: sm_forcetextcolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		return Plugin_Handled;
 	}
 
-	ForceColor(client, "textcolor");
+	ChangeColor(client, "textcolor", true);
 
 	return Plugin_Handled;
 }
@@ -2216,17 +2078,7 @@ public Action Command_SetTag(int client, int args)
 		return Plugin_Handled;
 	}
 
-	char SID[64];
-	char arg[64];
-	GetCmdArgString(arg, sizeof(arg));
-	GetClientAuthId(client, AuthId_Steam2, SID, sizeof(SID));
-
-	ReplaceString(arg, sizeof(arg), "\"", "'");
-
-	if (SetTag(SID, arg, client))
-	{
-		CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}tag{default} to: {green}%s{default}", arg);
-	}
+	ChangeTag(client, false);
 
 	return Plugin_Handled;
 }
@@ -2265,49 +2117,12 @@ public Action Command_SetTagColor(int client, int args)
 
 	if (args < 1)
 	{
-		PrintToChat(client, "[SM] Usage: sm_tagcolor <RRGGBB HEX|0-255 0-255 0-255 RGB CODE>");
+		PrintToChat(client, "[SM] Usage: sm_tagcolor <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		Menu_TagPrefs(client);
 		return Plugin_Handled;
 	}
 
-	char SID[64];
-	char col[64];
-	GetCmdArg(1, col, sizeof(col));
-	GetClientAuthId(client, AuthId_Steam2, SID, sizeof(SID));
-
-	if (IsValidRGBNum(col))
-	{
-		char g[8];
-		char b[8];
-		GetCmdArg(2, g, sizeof(g));
-		GetCmdArg(3, b, sizeof(b));
-		int hex;
-		hex |= ((StringToInt(col) & 0xFF) << 16);
-		hex |= ((StringToInt(g) & 0xFF) << 8);
-		hex |= ((StringToInt(b) & 0xFF) << 0);
-
-		Format(col, 64, "%06X", hex);
-	}
-
-	if (IsValidHex(col))
-	{
-		if (SetColor(SID, "tagcolor", col, client))
-		{
-			if (col[0] == '#' && IsSource2009())
-			{
-				ReplaceString(col, sizeof(col), "#", "");
-				CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}tag color{default} to: \x07%s#%s", col, col);
-			}
-			else
-			{
-				CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}tag color{default} to: {%s}%s", col, col);
-			}
-		}
-	}
-	else
-	{
-		CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid HEX|RGB color code given.");
-	}
+	ChangeColor(client, "tagcolor", false);
 
 	return Plugin_Handled;
 }
@@ -2346,49 +2161,12 @@ public Action Command_SetNameColor(int client, int args)
 
 	if (args < 1)
 	{
-		PrintToChat(client, "[SM] Usage: sm_namecolor <RRGGBB HEX|0-255 0-255 0-255 RGB CODE>");
+		PrintToChat(client, "[SM] Usage: sm_namecolor <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		Menu_NameColor(client);
 		return Plugin_Handled;
 	}
 
-	char SID[64];
-	char col[64];
-	GetCmdArg(1, col, sizeof(col));
-	GetClientAuthId(client, AuthId_Steam2, SID, sizeof(SID));
-
-	if (IsValidRGBNum(col))
-	{
-		char g[8];
-		char b[8];
-		GetCmdArg(2, g, sizeof(g));
-		GetCmdArg(3, b, sizeof(b));
-		int hex;
-		hex |= ((StringToInt(col) & 0xFF) << 16);
-		hex |= ((StringToInt(g) & 0xFF) << 8);
-		hex |= ((StringToInt(b) & 0xFF) << 0);
-
-		Format(col, 64, "%06X", hex);
-	}
-
-	if (IsValidHex(col))
-	{
-		if (SetColor(SID, "namecolor", col, client))
-		{
-			if (col[0] == '#' && IsSource2009())
-			{
-				ReplaceString(col, sizeof(col), "#", "");
-				CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}name color{default} to: \x07%s#%s", col, col);
-			}
-			else
-			{
-				CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}name color{default} to: {%s}%s", col, col);
-			}
-		}
-	}
-	else
-	{
-		CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid HEX|RGB color code given.");
-	}
+	ChangeColor(client, "namecolor", false);
 
 	return Plugin_Handled;
 }
@@ -2427,49 +2205,12 @@ public Action Command_SetTextColor(int client, int args)
 
 	if (args < 1)
 	{
-		PrintToChat(client, "[SM] Usage: sm_textcolor <RRGGBB HEX|0-255 0-255 0-255 RGB CODE>");
+		PrintToChat(client, "[SM] Usage: sm_textcolor <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		Menu_ChatColor(client);
 		return Plugin_Handled;
 	}
 
-	char SID[64];
-	char col[64];
-	GetCmdArg(1, col, sizeof(col));
-	GetClientAuthId(client, AuthId_Steam2, SID, sizeof(SID));
-
-	if (IsValidRGBNum(col))
-	{
-		char g[8];
-		char b[8];
-		GetCmdArg(2, g, sizeof(g));
-		GetCmdArg(3, b, sizeof(b));
-		int hex;
-		hex |= ((StringToInt(col) & 0xFF) << 16);
-		hex |= ((StringToInt(g) & 0xFF) << 8);
-		hex |= ((StringToInt(b) & 0xFF) << 0);
-
-		Format(col, 64, "%06X", hex);
-	}
-
-	if (IsValidHex(col))
-	{
-		if (SetColor(SID, "textcolor", col, client))
-		{
-			if (col[0] == '#' && IsSource2009())
-			{
-				ReplaceString(col, sizeof(col), "#", "");
-				CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}text color{default} to: \x07%s#%s", col, col);
-			}
-			else
-			{
-				CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}text color{default} to: {%s}%s", col, col);
-			}
-		}
-	}
-	else
-	{
-		CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid HEX|RGB color code given.");
-	}
+	ChangeColor(client, "textcolor", false);
 
 	return Plugin_Handled;
 }
@@ -2519,70 +2260,6 @@ public Action Command_ToggleTag(int client, int args)
 //  888  Y8P  888 888        888  Y88888 888     888
 //  888   "   888 888        888   Y8888 Y88b. .d88P
 //  888       888 8888888888 888    Y888  "Y88888P"
-
-/* public Handle_Commands(Handle menu, TopMenuAction action, TopMenuObject:object_id, param1, char buffer[], maxlength)
-{
-		if (action == TopMenuAction_DisplayOption)
-		{
-			Format(buffer, maxlength, "%s", "CCC Commands", param1);
-		}
-		else if (action == TopMenuAction_DisplayTitle)
-		{
-			Format(buffer, maxlength, "%s", "CCC Commands:", param1);
-		}
-		else if (action == TopMenuAction_SelectOption)
-		{
-			PrintToChat(param1, "ur gay");
-		}
-}
-
-public Handle_AMenuReset(Handle menu, TopMenuAction action, TopMenuObject:object_id, param1, char buffer[], maxlength)
-{
-	if(action == TopMenuAction_DisplayOption)
-	{
-		Format(buffer, maxlength, "Reset", param1);
-	}
-	else if(action == TopMenuAction_SelectOption)
-	{
-		new Handle MenuAReset = CreateMenu(MenuHandler_AdminReset);
-		SetMenuTitle(MenuAReset, "Select a Target (Reset Tag/Colors)");
-		SetMenuExitBackButton(MenuAReset, true);
-
-		AddTargetsToMenu2(MenuAReset, 0, COMMAND_FILTER_NO_BOTS|COMMAND_FILTER_CONNECTED);
-
-		DisplayMenu(MenuAReset, param1, MENU_TIME_FOREVER);
-	}
-}
-
-public Handle_AMenuBan(Handle menu, TopMenuAction action, TopMenuObject:object_id, param1, char buffer[], maxlength)
-{
-	if (action == TopMenuAction_DisplayOption)
-	{
-		Format(buffer, maxlength, "Ban", param1);
-	}
-	else if (action == TopMenuAction_SelectOption)
-	{
-		new Handle MenuABan = CreateMenu(MenuHandler_AdminBan);
-		SetMenuTitle(MenuABan, "Select a Target (Ban from Tag/Colors)");
-		SetMenuExitBackButton(MenuABan, true);
-
-		AddTargetsToMenu2(MenuABan, 0, COMMAND_FILTER_NO_BOTS|COMMAND_FILTER_CONNECTED);
-
-		DisplayMenu(MenuABan, param1, MENU_TIME_FOREVER);
-	}
-}
-
-public Handle_AMenuUnBan(Handle menu, TopMenuAction action, TopMenuObject:object_id, param1, char buffer[], maxlength)
-{
-	if(action == TopMenuAction_DisplayOption)
-	{
-		Format(buffer, maxlength, "Unban", param1);
-	}
-	else if(action == TopMenuAction_SelectOption)
-	{
-		AdminMenu_UnBanList(param1);
-	}
-} */
 
 public void AdminMenu_UnBanList(int client)
 {
@@ -2655,10 +2332,6 @@ public int MenuHandler_AdminUnBan(Menu MenuAUnBan, MenuAction action, int param1
 		{
 			CReplyToCommand(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Player no longer available.");
 
-			/*if (g_hAdminMenu != null)
-			{
-				DisplayTopMenu(g_hAdminMenu, param1, TopMenuPosition_LastCategory);
-			}*/
 			Menu_Admin(param1);
 		}
 		else
@@ -2666,12 +2339,6 @@ public int MenuHandler_AdminUnBan(Menu MenuAUnBan, MenuAction action, int param1
 			GetClientAuthId(target, AuthId_Steam2, SID, sizeof(SID));
 
 			UnBanCCC(SID, param1, target);
-
-			/*if (g_hAdminMenu != null)
-			{
-				DisplayTopMenu(g_hAdminMenu, param1, TopMenuPosition_LastCategory);
-				return;
-			}*/
 		}
 
 		Menu_Admin(param1);
@@ -2965,11 +2632,6 @@ public int MenuHandler_AdminReset(Menu MenuAReset, MenuAction action, int param1
 		{
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Player no longer available.");
 
-			/*if (g_hAdminMenu != null)
-			{
-				DisplayTopMenu(g_hAdminMenu, param1, TopMenuPosition_LastCategory);
-				return;
-			}*/
 			Menu_Admin(param1);
 		}
 		else
@@ -3013,11 +2675,6 @@ public int MenuHandler_AdminBan(Menu MenuABan, MenuAction action, int param1, in
 		{
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Player no longer available.");
 
-			/*if (g_hAdminMenu != null)
-			{
-				DisplayTopMenu(g_hAdminMenu, param1, TopMenuPosition_LastCategory);
-				return;
-			}*/
 			Menu_Admin(param1);
 		}
 		else
@@ -3074,27 +2731,49 @@ public int MenuHandler_AdminBanTime(Menu MenuABTime, MenuAction action, int para
 		{
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Player no longer available.");
 
-			/*if (g_hAdminMenu != null)
-			{
-				DisplayTopMenu(g_hAdminMenu, param1, TopMenuPosition_LastCategory);
-				return;
-			}*/
-
 			Menu_Admin(param1);
 		}
 
 		BanCCC(g_sATargetSID[param1], param1, g_iATarget[param1], Selected);
 
-		/*if (g_hAdminMenu != null)
-		{
-			DisplayTopMenu(g_hAdminMenu, param1, TopMenuPosition_LastCategory);
-			return;
-		}*/
-
 		Menu_Admin(param1);
 	}
 
 	return 0;
+}
+
+public void Menu_Input(Menu MenuAF, int param1, int param2, char Key[32])
+{
+	char Selected[32];
+	MenuAF.GetItem(param2, Selected, sizeof(Selected));
+
+	int userid = StringToInt(Selected);
+	int target = GetClientOfUserId(userid);
+
+	CPrintToChatAll("Client: %d, Target %d, Target %d, Target %d", param1, param2, target, userid);
+
+	if (!target)
+	{
+		CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Player no longer available.");
+		Menu_Admin(param1);
+	}
+	else
+	{
+		char SID[64];
+		GetClientAuthId(target, AuthId_Steam2, SID, sizeof(SID));
+		g_iATarget[param1] = target;
+		g_sATargetSID[param1] = SID;
+		g_bWaitingForChatInput[param1] = true;
+		g_sInputType[param1] = Key;
+		if (StrEqual("MenuForceTag", Key))
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Please enter what you want {green}%N's{default} tag to be.", target);
+		else if (StrEqual("MenuForceTagColor", Key))
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Please enter what you want {green}%N's{default} tag color to be (#{red}RR{green}GG{blue}BB{default} HEX only!).", target);
+		else if (StrEqual("MenuForceNameColor", Key))
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Please enter what you want {green}%N's{default} name color to be (#{red}RR{green}GG{blue}BB{default} HEX only!).", target);
+		else if (StrEqual("MenuForceTextColor", Key))
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Please enter what you want {green}%N's{default} text color to be (#{red}RR{green}GG{blue}BB{default} HEX only!).", target);
+	}
 }
 
 public int MenuHandler_AdminForceTag(Menu MenuAFTag, MenuAction action, int param1, int param2)
@@ -3113,27 +2792,7 @@ public int MenuHandler_AdminForceTag(Menu MenuAFTag, MenuAction action, int para
 
 	if (action == MenuAction_Select)
 	{
-		char Selected[32];
-		char SID[64];
-		MenuAFTag.GetItem(param2, Selected, sizeof(Selected));
-		int target;
-		int userid = StringToInt(Selected);
-		target = GetClientOfUserId(userid);
-
-		if (!target)
-		{
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Player no longer available.");
-			Menu_Admin(param1);
-		}
-		else
-		{
-			GetClientAuthId(target, AuthId_Steam2, SID, sizeof(SID));
-			g_iATarget[param1] = target;
-			g_sATargetSID[param1] = SID;
-			g_bWaitingForChatInput[param1] = true;
-			g_sInputType[param1] = "MenuForceTag";
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Please enter what you want {green}%N's{default} tag to be.", target);
-		}
+		Menu_Input(MenuAFTag, param1, param2, "MenuForceTag");
 
 		Menu_Admin(param1);
 	}
@@ -3157,30 +2816,7 @@ public int MenuHandler_AdminForceTagColor(Menu MenuAFTColor, MenuAction action, 
 
 	if (action == MenuAction_Select)
 	{
-		char Selected[32];
-		MenuAFTColor.GetItem(param2, Selected, sizeof(Selected));
-		int target;
-		int userid = StringToInt(Selected);
-
-		target = GetClientOfUserId(userid);
-
-		if (!target)
-		{
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Player no longer available.");
-			Menu_Admin(param1);
-		}
-		else
-		{
-			char SID[64];
-			GetClientAuthId(target, AuthId_Steam2, SID, sizeof(SID));
-
-			g_iATarget[param1] = target;
-			g_sATargetSID[param1] = SID;
-			g_bWaitingForChatInput[param1] = true;
-			g_sInputType[param1] = "MenuForceTagColor";
-
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Please enter what you want {green}%N's{default} tag color to be (#{red}RR{green}GG{blue}BB{default} HEX only!).", target);
-		}
+		Menu_Input(MenuAFTColor, param1, param2, "MenuForceTagColor");
 
 		Menu_Admin(param1);
 	}
@@ -3204,27 +2840,7 @@ public int MenuHandler_AdminForceNameColor(Menu MenuAFNColor, MenuAction action,
 
 	if (action == MenuAction_Select)
 	{
-		char Selected[32];
-		char SID[64];
-		MenuAFNColor.GetItem(param2, Selected, sizeof(Selected));
-		int target;
-		int userid = StringToInt(Selected);
-		target = GetClientOfUserId(userid);
-
-		if (!target)
-		{
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Player no longer available.");
-			Menu_Admin(param1);
-		}
-		else
-		{
-			GetClientAuthId(target, AuthId_Steam2, SID, sizeof(SID));
-			g_iATarget[param1] = target;
-			g_sATargetSID[param1] = SID;
-			g_bWaitingForChatInput[param1] = true;
-			g_sInputType[param1] = "MenuForceNameColor";
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Please enter what you want {green}%N's{default} name color to be (#{red}RR{green}GG{blue}BB{default} HEX only!).", target);
-		}
+		Menu_Input(MenuAFNColor, param1, param2, "MenuForceNameColor");
 
 		Menu_Admin(param1);
 	}
@@ -3248,27 +2864,7 @@ public int MenuHandler_AdminForceTextColor(Menu MenuAFTeColor, MenuAction action
 
 	if (action == MenuAction_Select)
 	{
-		char Selected[32];
-		char SID[64];
-		MenuAFTeColor.GetItem(param2, Selected, sizeof(Selected));
-		int target;
-		int userid = StringToInt(Selected);
-		target = GetClientOfUserId(userid);
-
-		if (!target)
-		{
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Player no longer available.");
-			Menu_Admin(param1);
-		}
-		else
-		{
-			GetClientAuthId(target, AuthId_Steam2, SID, sizeof(SID));
-			g_iATarget[param1] = target;
-			g_sATargetSID[param1] = SID;
-			g_bWaitingForChatInput[param1] = true;
-			g_sInputType[param1] = "MenuForceTextColor";
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Please enter what you want {green}%N's{default} text color to be (#{red}RR{green}GG{blue}BB{default} HEX only!).", target);
-		}
+		Menu_Input(MenuAFTeColor, param1, param2, "MenuForceTextColor");
 
 		Menu_Admin(param1);
 	}
@@ -3292,6 +2888,28 @@ public void Menu_TagPrefs(int client)
 	MenuTPrefs.AddItem("ColorTag", "Change Tag Color (Chat input)");
 
 	MenuTPrefs.Display(client, MENU_TIME_FOREVER);
+}
+
+public void Menu_AddColors(Menu ColorsMenu)
+{
+	char info[64];
+	StringMap smTrie = MC_GetTrie();
+
+	if (smTrie!= null && g_sColorsArray != null)
+	{
+		for (int i = 0; i < g_sColorsArray.Length; i++)
+		{
+			char key[64];
+			char value[64];
+			g_sColorsArray.GetString(i, key, sizeof(key));
+			smTrie.GetString(key, value, sizeof(value));
+			if (IsSource2009() && value[0] == '#')
+				Format(info, sizeof(info), "%s (%s)", key, value);
+			else
+				Format(info, sizeof(info), "%s", key);
+			ColorsMenu.AddItem(key, info);
+		}
+	}	
 }
 
 public int MenuHandler_TagPrefs(Menu MenuTPrefs, MenuAction action, int param1, int param2)
@@ -3345,26 +2963,10 @@ public int MenuHandler_TagPrefs(Menu MenuTPrefs, MenuAction action, int param1, 
 		else
 		{
 			Menu ColorsMenu = new Menu(MenuHandler_TagColorSub);
-			char info[64];
 			ColorsMenu.SetTitle("Pick a color:");
 			ColorsMenu.ExitBackButton = true;
 
-			StringMap smTrie = MC_GetTrie();
-			if (smTrie!= null && g_sColorsArray != null)
-			{
-				for (int i = 0; i < g_sColorsArray.Length; i++)
-				{
-					char key[64];
-					char value[64];
-					g_sColorsArray.GetString(i, key, sizeof(key));
-					smTrie.GetString(key, value, sizeof(value));
-					if (IsSource2009() && value[0] == '#')
-						Format(info, sizeof(info), "%s (%s)", key, value);
-					else
-						Format(info, sizeof(info), "%s", key);
-					ColorsMenu.AddItem(key, info);
-				}
-			}
+			Menu_AddColors(ColorsMenu);
 
 			ColorsMenu.Display(param1, MENU_TIME_FOREVER);
 			return 0;
@@ -3428,28 +3030,10 @@ public int MenuHandler_NameColor(Menu MenuNColor, MenuAction action, int param1,
 		else
 		{
 			Menu ColorsMenu = new Menu(MenuHandler_NameColorSub);
-			char info[64];
-			char SID[64];
-			GetClientAuthId(param1, AuthId_Steam2, SID, sizeof(SID));
 			ColorsMenu.SetTitle("Pick a color:");
 			ColorsMenu.ExitBackButton = true;
 
-			StringMap smTrie = MC_GetTrie();
-			if (smTrie!= null && g_sColorsArray != null)
-			{
-				for (int i = 0; i < g_sColorsArray.Length; i++)
-				{
-					char key[64];
-					char value[64];
-					g_sColorsArray.GetString(i, key, sizeof(key));
-					smTrie.GetString(key, value, sizeof(value));
-					if (IsSource2009() && value[0] == '#')
-						Format(info, sizeof(info), "%s (%s)", key, value);
-					else
-						Format(info, sizeof(info), "%s", key);
-					ColorsMenu.AddItem(key, info);
-				}
-			}
+			Menu_AddColors(ColorsMenu);
 
 			if (HasFlag(param1, Admin_Cheats))
 			{
@@ -3518,26 +3102,10 @@ public int MenuHandler_ChatColor(Menu MenuCColor, MenuAction action, int param1,
 		else
 		{
 			Menu ColorsMenu = new Menu(MenuHandler_ChatColorSub);
-			char info[64];
 			ColorsMenu.SetTitle("Pick a color:");
 			ColorsMenu.ExitBackButton = true;
 
-			StringMap smTrie = MC_GetTrie();
-			if (smTrie!= null && g_sColorsArray != null)
-			{
-				for (int i = 0; i < g_sColorsArray.Length; i++)
-				{
-					char key[64];
-					char value[64];
-					g_sColorsArray.GetString(i, key, sizeof(key));
-					smTrie.GetString(key, value, sizeof(value));
-					if (IsSource2009() && value[0] == '#')
-						Format(info, sizeof(info), "%s (%s)", key, value);
-					else
-						Format(info, sizeof(info), "%s", key);
-					ColorsMenu.AddItem(key, info);
-				}
-			}
+			Menu_AddColors(ColorsMenu);
 
 			ColorsMenu.Display(param1, MENU_TIME_FOREVER);
 			return 0;
@@ -3565,21 +3133,10 @@ public int MenuHandler_TagColorSub(Menu MenuTCSub, MenuAction action, int param1
 
 	if (action == MenuAction_Select)
 	{
-		char SID[64];
 		char Selected[64];
 		MenuTCSub.GetItem(param2, Selected, sizeof(Selected));
-		GetClientAuthId(param1, AuthId_Steam2, SID, sizeof(SID));
 
-		if (SetColor(SID, "tagcolor", Selected, param1))
-		{
-			if (Selected[0] == '#' && IsSource2009())
-			{
-				ReplaceString(Selected, sizeof(Selected), "#", "");
-				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}tag color{default} to: \x07%s#%s", Selected, Selected);
-			}
-			else
-				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}tag color{default} to: {%s}%s", Selected, Selected);
-		}
+		ChangeSingleColor(param1, param1, "tagcolor", Selected, false);
 
 		Menu_TagPrefs(param1);
 	}
@@ -3603,21 +3160,10 @@ public int MenuHandler_NameColorSub(Menu MenuNCSub, MenuAction action, int param
 
 	if (action == MenuAction_Select)
 	{
-		char SID[64];
 		char Selected[64];
 		MenuNCSub.GetItem(param2, Selected, sizeof(Selected));
-		GetClientAuthId(param1, AuthId_Steam2, SID, sizeof(SID));
 
-		if (SetColor(SID, "namecolor", Selected, param1))
-		{
-			if (Selected[0] == '#' && IsSource2009())
-			{
-				ReplaceString(Selected, sizeof(Selected), "#", "");
-				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}name color{default} to: \x07%s#%s", Selected, Selected);
-			}
-			else
-				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}name color{default} to: {%s}%s", Selected, Selected);
-		}
+		ChangeSingleColor(param1, param1, "namecolor", Selected, false);
 
 		Menu_NameColor(param1);
 	}
@@ -3641,21 +3187,10 @@ public int MenuHandler_ChatColorSub(Menu MenuCCSub, MenuAction action, int param
 
 	if (action == MenuAction_Select)
 	{
-		char SID[64];
 		char Selected[64];
 		MenuCCSub.GetItem(param2, Selected, sizeof(Selected));
-		GetClientAuthId(param1, AuthId_Steam2, SID, sizeof(SID));
 
-		if (SetColor(SID, "textcolor", Selected, param1))
-		{
-			if (Selected[0] == '#' && IsSource2009())
-			{
-				ReplaceString(Selected, sizeof(Selected), "#", "");
-				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}text color{default} to: \x07%s#%s", Selected, Selected);
-			}
-			else
-				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Successfully set your {green}text color{default} to: {%s}%s", Selected, Selected);
-		}
+		ChangeSingleColor(param1, param1, "textcolor", Selected, false);
 
 		Menu_ChatColor(param1);
 	}
