@@ -408,7 +408,7 @@ stock Action SQLTableCreation_Tag(Handle timer)
 	if (g_bSQLite)
 		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Tag, "CREATE TABLE IF NOT EXISTS `ccc_tag` (`steamid` TEXT NOT NULL, `enable` INTEGER NOT NULL DEFAULT 1, `name` TEXT NOT NULL, `flag` VARCHAR(32), `tag` TEXT, `tag_color` TEXT, `name_color` TEXT, `chat_color` TEXT, PRIMARY KEY(`steamid`));");
 	else
-		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Tag, "CREATE TABLE IF NOT EXISTS `ccc_tag` (`steamid` VARCHAR(32) NOT NULL, `enable` INT NOT NULL DEFAULT 1, `name` VARCHAR(32) NOT NULL, `flag` VARCHAR(32), `tag` VARCHAR(32), `tag_color` VARCHAR(6), `name_color` VARCHAR(6), `chat_color` VARCHAR(6), PRIMARY KEY(`steamid`)) CHARACTER SET utf8 COLLATE utf8_general_ci;");
+		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Tag, "CREATE TABLE IF NOT EXISTS `ccc_tag` (`steamid` VARCHAR(32) NOT NULL, `enable` INT NOT NULL DEFAULT 1, `name` VARCHAR(32) NOT NULL, `flag` VARCHAR(32), `tag` VARCHAR(32), `tag_color` VARCHAR(32), `name_color` VARCHAR(32), `chat_color` VARCHAR(32), PRIMARY KEY(`steamid`)) CHARACTER SET utf8 COLLATE utf8_general_ci;");
 	return Plugin_Stop;
 }
 
