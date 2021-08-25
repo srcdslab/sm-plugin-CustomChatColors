@@ -113,6 +113,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("CCC_LoadClient", Native_LoadClient);
 	CreateNative("CCC_ReloadConfig", Native_ReloadConfig);
 
+	CreateNative("CCC_GetColorKey", Native_GetColorKey);
 	CreateNative("CCC_GetColor", Native_GetColor);
 	CreateNative("CCC_SetColor", Native_SetColor);
 	CreateNative("CCC_GetTag", Native_GetTag);
@@ -3265,15 +3266,16 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const players[], int p
 	if (strlen(g_msgText) == 0)
 		return Plugin_Handled;
 
-	CCC_GetTag(g_msgAuthor, sAuthorTag, sizeof(sAuthorTag));
 
 	bool bIsAction;
-	char sNameColor[32];
-	char sChatColor[32];
-	char sTagColor[32];
-	bool bNameAlpha = CCC_GetColor(g_msgAuthor, view_as<CCC_ColorType>(CCC_NameColor), sNameColor);
-	bool bChatAlpha = CCC_GetColor(g_msgAuthor, view_as<CCC_ColorType>(CCC_ChatColor), sChatColor);
-	bool bTagAlpha = CCC_GetColor(g_msgAuthor, view_as<CCC_ColorType>(CCC_TagColor), sTagColor);
+	char sNameColorKey[32];
+	char sChatColorKey[32];
+	char sTagColorKey[32];
+
+	CCC_GetTag(g_msgAuthor, sAuthorTag, sizeof(sAuthorTag));
+	bool bNameFound = CCC_GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_NameColor), sNameColorKey, sizeof(sNameColorKey));
+	bool bChatFound = CCC_GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_NameColor), sChatColorKey, sizeof(sChatColorKey));
+	bool bTagFound = CCC_GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_NameColor), sTagColorKey, sizeof(sTagColorKey));
 
 	if (!strncmp(g_msgText, "/me", 3, false))
 	{
@@ -3318,53 +3320,31 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const players[], int p
 		CFormatColor(g_msgText, sizeof(g_msgText), g_msgAuthor);
 	}
 
-	StringMap smTrie = MC_GetTrie();
-	char value[32];
-
 	if (!bIsAction && g_iClientEnable[g_msgAuthor])
 	{
-		if (bNameAlpha)
-		{
-			int hexColor = StringToInt(sNameColor, 16);
-			Format(g_msgSender, sizeof(g_msgSender), "\x07%06X%s", hexColor, g_msgSender);
-		}
-		else
-		{
-			Format(g_msgSender, sizeof(g_msgSender), "%s%s", sNameColor, g_msgSender);
-		}
+		char sValue[32];
+		if (bNameFound)
+			Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s", CCC_GetColor(sNameColorKey, sValue, sizeof(sValue)) ? "#" : "", sNameColorKey, g_msgSender);
 
-		if (strlen(sAuthorTag) > 0)
-		{
-			if (bTagAlpha)
-			{
-				int hexColor = StringToInt(sTagColor, 16);
-				Format(g_msgSender, sizeof(g_msgSender), "\x07%06X%s%s", hexColor, sAuthorTag, g_msgSender);
-			}
-			else
-			{
-				Format(g_msgSender, sizeof(g_msgSender), " %s%s%s", sTagColor, sAuthorTag, g_msgSender);
-			}
-		}
+		if (bTagFound && strlen(sAuthorTag) > 0)
+			Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s%s", CCC_GetColor(sTagColorKey, sValue, sizeof(sValue)) ? "#" : "", sTagColorKey, sAuthorTag, g_msgSender);
 
-		if (g_msgText[0] == '>' && GetConVarInt(g_cvar_GreenText) > 0 && smTrie.GetString("green", value, sizeof(value)))
-		{
-			Format(g_msgText, sizeof(g_msgText), "%s%s", value, g_msgText);
-		}
+		StringMap smTrie = MC_GetTrie();
+		if (g_msgText[0] == '>' && GetConVarInt(g_cvar_GreenText) > 0 && smTrie.GetString("green", sValue, sizeof(sValue)))
+			Format(g_msgText, sizeof(g_msgText), "{green}%s", g_msgText);
 
-		if (bChatAlpha)
-		{
-			int hexColor = StringToInt(sChatColor, 16);
-			Format(g_msgText, sizeof(g_msgText), " \x07%06X%s", hexColor, g_msgText);
-		}
-		else
-		{
-			Format(g_msgText, sizeof(g_msgText), "%s%s", sChatColor, g_msgText);
-		}
+		if (bChatFound)
+			Format(g_msgText, sizeof(g_msgText), "{%s%s}%s", CCC_GetColor(sChatColorKey, sValue, sizeof(sValue)) ? "#" : "", sChatColorKey, g_msgText);
 	}
 
 	Format(g_msgFinal, sizeof(g_msgFinal), "%t", g_msgName, g_msgSender, g_msgText);
 
-	return Plugin_Handled;
+	if (g_msgAuthor)
+		CPrintToChat(g_msgAuthor, g_msgFinal);
+	else
+		PrintToChat(g_msgAuthor, g_msgFinal);
+
+	return Plugin_Stop;
 }
 
 public Action Event_PlayerSay(Handle event, const char[] name, bool dontBroadcast)
@@ -3524,7 +3504,72 @@ stock bool ConfigForward(int client)
 	return true;
 }
 
-public int Native_GetColor(Handle plugin, int numParams)
+stock bool GetColorKey(int client, CCC_ColorType colorType, char[] key, int size)
+{
+	StringMap smTrie = MC_GetTrie();
+	bool bFound = true;
+	char value[32];
+
+	strcopy(key, size, "");
+
+	switch(colorType)
+	{
+		case CCC_TagColor:
+		{
+			if (StrEqual(g_sClientTagColor[client], "T", false))
+				strcopy(key, size, "teamcolor");
+			else if (StrEqual(g_sClientTagColor[client], "G", false))
+				strcopy(key, size, "green");
+			else if (StrEqual(g_sClientTagColor[client], "O", false))
+				strcopy(key, size, "olive");
+			else if (IsSource2009() && IsValidHex(g_sClientTagColor[client]))
+				strcopy(key, size, g_sClientTagColor[client]);
+			else if (smTrie.GetString(g_sClientTagColor[client], value, sizeof(value)))
+				strcopy(key, size, g_sClientTagColor[client]);
+			else
+				bFound = false;
+		}
+
+		case CCC_NameColor:
+		{
+			if (StrEqual(g_sClientNameColor[client], "G", false))
+				strcopy(key, size, "green");
+			else if (StrEqual(g_sClientNameColor[client], "X", false))
+				strcopy(key, size, "");
+			else if (StrEqual(g_sClientNameColor[client], "O", false))
+				strcopy(key, size, "olive");
+			else if (IsSource2009() && IsValidHex(g_sClientNameColor[client]))
+				strcopy(key, size, g_sClientNameColor[client]);
+			else if (smTrie.GetString(g_sClientNameColor[client], value, sizeof(value)))
+				strcopy(key, size, g_sClientNameColor[client]);
+			else
+				bFound = false;
+		}
+
+		case CCC_ChatColor:
+		{
+			if (StrEqual(g_sClientChatColor[client], "T", false))
+				strcopy(key, size, "teamcolor");
+			else if (StrEqual(g_sClientChatColor[client], "G", false))
+				strcopy(key, size, "green");
+			else if (StrEqual(g_sClientChatColor[client], "O", false))
+				strcopy(key, size, "olive");
+			else if (IsSource2009() && IsValidHex(g_sClientChatColor[client]))
+				strcopy(key, size, g_sClientChatColor[client]);
+			else if (smTrie.GetString(g_sClientChatColor[client], value, sizeof(value)))
+				strcopy(key, size, g_sClientChatColor[client]);
+			else
+				bFound = false;
+		}
+		default:
+		{
+			bFound = false;
+		}
+	}
+	return bFound;
+}
+
+public int Native_GetColorKey(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 
@@ -3534,126 +3579,44 @@ public int Native_GetColor(Handle plugin, int numParams)
 		return false;
 	}
 
-	StringMap smTrie = MC_GetTrie();
-	char value[32] = "";
+	CCC_ColorType colorType = view_as<CCC_ColorType>(GetNativeCell(2));
+	int size = GetNativeCell(4);
 
-	switch(GetNativeCell(2))
+	char[] key = new char[size];
+
+	bool bFound = GetColorKey(client, colorType, key, size);
+
+	SetNativeString(3, key, size);
+
+	return bFound;
+}
+
+stock bool GetColor(char key[32], char[] value, int size)
+{
+	if (IsSource2009() && IsValidHex(key))
 	{
-		case CCC_TagColor:
-		{
-			if (StrEqual(g_sClientTagColor[client], "T", false))
-			{
-				smTrie.GetString("teamcolor", value, sizeof(value));
-				SetNativeString(3, value, sizeof(value));
-				return false;
-			}
-			else if (StrEqual(g_sClientTagColor[client], "G", false))
-			{
-				smTrie.GetString("green", value, sizeof(value));
-				SetNativeString(3, value, sizeof(value));
-				return false;
-			}
-			else if (StrEqual(g_sClientTagColor[client], "O", false))
-			{
-				smTrie.GetString("olive", value, sizeof(value));
-				SetNativeString(3, value, sizeof(value));
-				return false;
-			}
-			else if (IsSource2009() && (strlen(g_sClientTagColor[client]) == 6 || strlen(g_sClientTagColor[client]) == 8))
-			{
-				SetNativeString(3, g_sClientTagColor[client], sizeof(g_sClientTagColor[]));
-				return true;
-			}
-			else if (smTrie.GetString(g_sClientTagColor[client], value, sizeof(value)))
-			{
-				smTrie.GetString(g_sClientTagColor[client], value, sizeof(value));
-				SetNativeString(3, value, sizeof(value));
-				return false;
-			}
-			else
-			{
-				SetNativeString(3, value, sizeof(value));
-				return false;
-			}
-		}
-
-		case CCC_NameColor:
-		{
-			if (StrEqual(g_sClientNameColor[client], "G", false))
-			{
-				smTrie.GetString("green", value, sizeof(value));
-				SetNativeString(3, value, sizeof(value));
-				return false;
-			}
-			else if (StrEqual(g_sClientNameColor[client], "X", false))
-			{
-				SetNativeString(3, value, sizeof(value));
-				return false;
-			}
-			else if (StrEqual(g_sClientNameColor[client], "O", false))
-			{
-				smTrie.GetString("olive", value, sizeof(value));
-				SetNativeString(3, value, sizeof(value));
-				return false;
-			}
-			else if (IsSource2009() && (strlen(g_sClientNameColor[client]) == 6 || strlen(g_sClientNameColor[client]) == 8))
-			{
-				SetNativeString(3, g_sClientNameColor[client], sizeof(g_sClientNameColor[]));
-				return true;
-			}
-			else if (smTrie.GetString(g_sClientNameColor[client], value, sizeof(value)))
-			{
-				smTrie.GetString(g_sClientNameColor[client], value, sizeof(value));
-				SetNativeString(3, value, sizeof(value));
-				return false;
-			}
-			else
-			{
-				SetNativeString(3, value, sizeof(value));
-				return false;
-			}
-		}
-
-		case CCC_ChatColor:
-		{
-			if (StrEqual(g_sClientChatColor[client], "T", false))
-			{
-				smTrie.GetString("teamcolor", value, sizeof(value));
-				SetNativeString(3, value, sizeof(value));
-				return false;
-			}
-			else if (StrEqual(g_sClientChatColor[client], "G", false))
-			{
-				smTrie.GetString("green", value, sizeof(value));
-				SetNativeString(3, value, sizeof(value));
-				return false;
-			}
-			else if (StrEqual(g_sClientChatColor[client], "O", false))
-			{
-				smTrie.GetString("olive", value, sizeof(value));
-				SetNativeString(3, value, sizeof(value));
-				return false;
-			}
-			else if (IsSource2009() && (strlen(g_sClientChatColor[client]) == 6 || strlen(g_sClientChatColor[client]) == 8))
-			{
-				SetNativeString(3, g_sClientChatColor[client], sizeof(g_sClientChatColor[]));
-				return true;
-			}
-			else if (smTrie.GetString(g_sClientChatColor[client], value, sizeof(value)))
-			{
-				smTrie.GetString(g_sClientChatColor[client], value, sizeof(value));
-				SetNativeString(3, value, sizeof(value));
-				return false;
-			}
-			else
-			{
-				SetNativeString(3, value, sizeof(value));
-				return false;
-			}
-		}
+		strcopy(value, size, key);
+		return true;
 	}
-
+	StringMap smTrie = MC_GetTrie();
+	smTrie.GetString(key, value, size);
 	return false;
+}
+
+public int Native_GetColor(Handle plugin, int numParams)
+{
+	char key[32];
+	GetNativeString(1, key, sizeof(key));
+
+	int size = GetNativeCell(3);
+
+	char[] value = new char[size];
+
+	bool bAlpha = GetColor(key, value, size);
+
+	SetNativeString(2, value, size);
+
+	return bAlpha;
 }
 
 public int Native_SetColor(Handle plugin, int numParams)

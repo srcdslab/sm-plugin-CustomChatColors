@@ -33,7 +33,20 @@ enum CCC_ColorType {
  *
  * On error/errors:		Invalid client index or client is not in game
  */
-native bool CCC_GetColor(int client, CCC_ColorType type, char[] color);
+native bool CCC_GetColor(char key[32], char[] color, int size);
+
+/**
+ * Gets a client's color as a hexadecimal integer.
+ *
+ * @param client		Client index
+ * @param type			Color type to retreive
+ * @param color			Color string buffer
+ * @param size			Size of color string buffer
+ * @return				Is a key set for this client
+ *
+ * On error/errors:		Invalid client index or client is not in game
+ */
+native bool CCC_GetColorKey(int client, CCC_ColorType type, char[] color, int size);
 
 /**
  * Sets a client's color as a hexadecimal integer.
