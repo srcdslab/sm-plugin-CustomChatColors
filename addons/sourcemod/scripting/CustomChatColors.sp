@@ -3274,8 +3274,8 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const players[], int p
 
 	CCC_GetTag(g_msgAuthor, sAuthorTag, sizeof(sAuthorTag));
 	bool bNameFound = CCC_GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_NameColor), sNameColorKey, sizeof(sNameColorKey));
-	bool bChatFound = CCC_GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_NameColor), sChatColorKey, sizeof(sChatColorKey));
-	bool bTagFound = CCC_GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_NameColor), sTagColorKey, sizeof(sTagColorKey));
+	bool bChatFound = CCC_GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_ChatColor), sChatColorKey, sizeof(sChatColorKey));
+	bool bTagFound = CCC_GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_TagColor), sTagColorKey, sizeof(sTagColorKey));
 
 	if (!strncmp(g_msgText, "/me", 3, false))
 	{
@@ -3315,19 +3315,14 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const players[], int p
 		}
 	}
 
-	if (!g_msgAuthor || HasFlag(g_msgAuthor, Admin_Generic) || HasFlag(g_msgAuthor, Admin_Custom1))
-	{
-		CFormatColor(g_msgText, sizeof(g_msgText), g_msgAuthor);
-	}
-
+	char sValue[32];
 	if (!bIsAction && g_iClientEnable[g_msgAuthor])
 	{
-		char sValue[32];
 		if (bNameFound)
 			Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s", CCC_GetColor(sNameColorKey, sValue, sizeof(sValue)) ? "#" : "", sNameColorKey, g_msgSender);
 
-		if (bTagFound && strlen(sAuthorTag) > 0)
-			Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s%s", CCC_GetColor(sTagColorKey, sValue, sizeof(sValue)) ? "#" : "", sTagColorKey, sAuthorTag, g_msgSender);
+		if (strlen(sAuthorTag) > 0)
+			Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s%s", CCC_GetColor(sTagColorKey, sValue, sizeof(sValue)) ? "#" : "", bTagFound ? sTagColorKey : "default", sAuthorTag, g_msgSender);
 
 		StringMap smTrie = MC_GetTrie();
 		if (g_msgText[0] == '>' && GetConVarInt(g_cvar_GreenText) > 0 && smTrie.GetString("green", sValue, sizeof(sValue)))
@@ -3337,14 +3332,22 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const players[], int p
 			Format(g_msgText, sizeof(g_msgText), "{%s%s}%s", CCC_GetColor(sChatColorKey, sValue, sizeof(sValue)) ? "#" : "", sChatColorKey, g_msgText);
 	}
 
+	if (!bIsAction && IsSource2009() && !HasFlag(g_msgAuthor, Admin_Generic) && !HasFlag(g_msgAuthor, Admin_Custom1))
+	{
+		sNameColorKey = "teamcolor";
+		Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s", CCC_GetColor(sNameColorKey, sValue, sizeof(sValue)) ? "#" : "", sNameColorKey, g_msgSender);
+		CFormatColor(g_msgSender, sizeof(g_msgSender), g_msgAuthor);
+	}
+
 	Format(g_msgFinal, sizeof(g_msgFinal), "%t", g_msgName, g_msgSender, g_msgText);
 
-	if (g_msgAuthor)
-		CPrintToChat(g_msgAuthor, g_msgFinal);
-	else
-		PrintToChat(g_msgAuthor, g_msgFinal);
+	if (!g_msgAuthor || HasFlag(g_msgAuthor, Admin_Generic) || HasFlag(g_msgAuthor, Admin_Custom1))
+	{
+		CFormatColor(g_msgFinal, sizeof(g_msgFinal), g_msgAuthor);
+		MC_AddWhiteSpace(g_msgFinal, sizeof(g_msgFinal));
+	}
 
-	return Plugin_Stop;
+	return Plugin_Handled;
 }
 
 public Action Event_PlayerSay(Handle event, const char[] name, bool dontBroadcast)
