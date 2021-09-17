@@ -1989,7 +1989,7 @@ public Action Command_SmMsay(int client, int args)
 
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
 {
-	if (client <= 0 || BaseComm_IsClientGagged(client))
+	if (client <= 0 || (IsClientInGame(client) && BaseComm_IsClientGagged(client)))
 		return Plugin_Continue;
 
 	int startidx;
