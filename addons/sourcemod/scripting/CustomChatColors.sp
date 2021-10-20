@@ -3496,6 +3496,11 @@ stock void ResetClient(int client)
 	ClearValues(client);
 }
 
+public bool IsClientEnabled()
+{
+	return (HasFlag(g_msgAuthor, Admin_Generic) || HasFlag(g_msgAuthor, Admin_Custom1)) && g_iClientEnable[g_msgAuthor];
+}
+
 public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const players[], int playersNum, bool reliable, bool init)
 {
 	char sAuthorTag[64];
@@ -3578,7 +3583,7 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const players[], int p
 	}
 
 	char sValue[32];
-	if (!bIsAction && g_iClientEnable[g_msgAuthor])
+	if (!bIsAction && IsClientEnabled())
 	{
 		if (bNameFound)
 			Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s", CCC_GetColor(sNameColorKey, sValue, sizeof(sValue)) ? "#" : "", sNameColorKey, g_msgSender);
@@ -3594,7 +3599,7 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const players[], int p
 			Format(g_msgText, sizeof(g_msgText), "{%s%s}%s", CCC_GetColor(sChatColorKey, sValue, sizeof(sValue)) ? "#" : "", sChatColorKey, g_msgText);
 	}
 
-	if (!bIsAction && IsSource2009() && !HasFlag(g_msgAuthor, Admin_Generic) && !HasFlag(g_msgAuthor, Admin_Custom1))
+	if (!bIsAction && IsSource2009() && (!IsClientEnabled() || (IsClientEnabled() && g_msgAuthor && g_sClientTag[g_msgAuthor][0] == '\0')))
 	{
 		sNameColorKey = "teamcolor";
 		Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s", CCC_GetColor(sNameColorKey, sValue, sizeof(sValue)) ? "#" : "", sNameColorKey, g_msgSender);
@@ -3603,7 +3608,7 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const players[], int p
 
 	Format(g_msgFinal, sizeof(g_msgFinal), "%t", g_msgName, g_msgSender, g_msgText);
 
-	if (!g_msgAuthor || HasFlag(g_msgAuthor, Admin_Generic) || HasFlag(g_msgAuthor, Admin_Custom1))
+	if (!g_msgAuthor || IsClientEnabled())
 	{
 		CFormatColor(g_msgFinal, sizeof(g_msgFinal), g_msgAuthor);
 		MC_AddWhiteSpace(g_msgFinal, sizeof(g_msgFinal));
