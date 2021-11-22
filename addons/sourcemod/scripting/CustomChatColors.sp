@@ -217,6 +217,8 @@ public void OnPluginStart()
 	loadedForward = CreateGlobalForward("CCC_OnUserConfigLoaded", ET_Ignore, Param_Cell);
 	configReloadedForward = CreateGlobalForward("CCC_OnConfigReloaded", ET_Ignore);
 
+	g_bProto = CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "GetUserMessageType") == FeatureStatus_Available && GetUserMessageType() == UM_Protobuf;
+
 	AutoExecConfig(true);
 
 	ResetReplace();
@@ -258,7 +260,6 @@ public void OnConfigsExecuted()
 	g_cSmCategoryColor.GetString(g_sSmCategoryColor, sizeof(g_sSmCategoryColor));
 	g_cSmNameColor.GetString(g_sSmNameColor, sizeof(g_sSmNameColor));
 	g_cSmChatColor.GetString(g_sSmChatColor, sizeof(g_sSmChatColor));
-	g_bProto = CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "GetUserMessageType") == FeatureStatus_Available && GetUserMessageType() == UM_Protobuf;
 }
 
 public void OnClientDisconnect(int client)
