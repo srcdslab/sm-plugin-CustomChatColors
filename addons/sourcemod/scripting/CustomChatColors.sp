@@ -435,7 +435,7 @@ stock Action SQLReconnect(Handle hTimer)
 stock Action SQLSetNames(Handle timer)
 {
 	if (!g_bSQLite)
-		SQL_TQuery(g_hDatabase, OnSqlSetNames, "SET NAMES \"UTF8\"");
+		SQL_TQuery(g_hDatabase, OnSqlSetNames, "SET NAMES \"UTF8MB4\"");
 }
 
 stock Action SQLTableCreation_Tag(Handle timer)
@@ -443,7 +443,7 @@ stock Action SQLTableCreation_Tag(Handle timer)
 	if (g_bSQLite)
 		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Tag, "CREATE TABLE IF NOT EXISTS `ccc_tag` (`steamid` TEXT NOT NULL, `enable` INTEGER NOT NULL DEFAULT 1, `name` TEXT NOT NULL, `flag` VARCHAR(32), `tag` TEXT, `tag_color` TEXT, `name_color` TEXT, `chat_color` TEXT, PRIMARY KEY(`steamid`));");
 	else
-		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Tag, "CREATE TABLE IF NOT EXISTS `ccc_tag` (`steamid` VARCHAR(32) NOT NULL, `enable` INT NOT NULL DEFAULT 1, `name` VARCHAR(32) NOT NULL, `flag` VARCHAR(32), `tag` VARCHAR(32), `tag_color` VARCHAR(32), `name_color` VARCHAR(32), `chat_color` VARCHAR(32), PRIMARY KEY(`steamid`)) CHARACTER SET utf8 COLLATE utf8_general_ci;");
+		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Tag, "CREATE TABLE IF NOT EXISTS `ccc_tag` (`steamid` VARCHAR(32) NOT NULL, `enable` INT NOT NULL DEFAULT 1, `name` VARCHAR(32) NOT NULL, `flag` VARCHAR(32), `tag` VARCHAR(32), `tag_color` VARCHAR(32), `name_color` VARCHAR(32), `chat_color` VARCHAR(32), PRIMARY KEY(`steamid`)) CHARACTER SET utf8 COLLATE utf8mb4_unicode_ci;");
 	return Plugin_Stop;
 }
 
@@ -452,7 +452,7 @@ stock Action SQLTableCreation_Ban(Handle timer)
 	if (g_bSQLite)
 		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Ban, "CREATE TABLE IF NOT EXISTS `ccc_ban` (`steamid` TEXT NOT NULL, `name` TEXT NOT NULL, `issuer_steamid` TEXT NOT NULL, `issuer_name` TEXT NOT NULL, `length` INTEGER NOT NULL, PRIMARY KEY(`steamid`));");
 	else
-		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Ban, "CREATE TABLE IF NOT EXISTS `ccc_ban` (`steamid` VARCHAR(32) NOT NULL, `name` VARCHAR(32) NOT NULL, `issuer_steamid` VARCHAR(32) NOT NULL, `issuer_name` VARCHAR(32) NOT NULL, `length` INT NOT NULL, PRIMARY KEY(`steamid`)) CHARACTER SET utf8 COLLATE utf8_general_ci;");
+		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Ban, "CREATE TABLE IF NOT EXISTS `ccc_ban` (`steamid` VARCHAR(32) NOT NULL, `name` VARCHAR(32) NOT NULL, `issuer_steamid` VARCHAR(32) NOT NULL, `issuer_name` VARCHAR(32) NOT NULL, `length` INT NOT NULL, PRIMARY KEY(`steamid`)) CHARACTER SET utf8 COLLATE utf8mb4_unicode_ci;");
 	return Plugin_Stop;
 }
 
@@ -461,7 +461,7 @@ stock Action SQLTableCreation_Replace(Handle timer)
 	if (g_bSQLite)
 		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Replace, "CREATE TABLE IF NOT EXISTS `ccc_replace` (`trigger` TEXT NOT NULL, `value` TEXT NOT NULL, PRIMARY KEY(`trigger`));");
 	else
-		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Replace, "CREATE TABLE IF NOT EXISTS `ccc_replace` (`trigger` VARCHAR(32) NOT NULL, `value` VARCHAR(255) NOT NULL, PRIMARY KEY(`trigger`)) CHARACTER SET utf8 COLLATE utf8_general_ci;");
+		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Replace, "CREATE TABLE IF NOT EXISTS `ccc_replace` (`trigger` VARCHAR(32) NOT NULL, `value` VARCHAR(255) NOT NULL, PRIMARY KEY(`trigger`)) CHARACTER SET utf8 COLLATE utf8mb4_unicode_ci;");
 	return Plugin_Stop;
 }
 
