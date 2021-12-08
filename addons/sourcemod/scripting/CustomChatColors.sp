@@ -17,6 +17,8 @@
 
 #define REPLACE_LIST_MAX_LENGTH			255
 
+#define MAX_SQL_QUERY_LENGTH			1024
+
 #define CHAT_SYMBOL '@'
 
 public Plugin myinfo =
@@ -471,7 +473,7 @@ stock Action SQLSelect_Replace(Handle timer)
 	if (g_hDatabase == null)
 		return Plugin_Stop;
 
-	char sQuery[256];
+	char sQuery[MAX_SQL_QUERY_LENGTH];
 
 	Format(sQuery, sizeof(sQuery), "SELECT `trigger`, `value` FROM `ccc_replace`;");
 	SQL_TQuery(g_hDatabase, OnSQLSelect_Replace, sQuery, 0, DBPrio_High);
@@ -483,7 +485,7 @@ stock Action SQLSelect_Ban(Handle timer, any client)
 	if (g_hDatabase == null)
 		return Plugin_Stop;
 
-	char sQuery[256];
+	char sQuery[MAX_SQL_QUERY_LENGTH];
 	char sClientSteamID[32];
 
 	GetClientAuthId(client, AuthId_Steam2, sClientSteamID, sizeof(sClientSteamID));
@@ -578,7 +580,7 @@ stock Action SQLSelect_Tag(Handle timer, any data)
 	pack.ReadCell();
 	pack.ReadString(sClientSteamID, sizeof(sClientSteamID));
 
-	char sQuery[256];
+	char sQuery[MAX_SQL_QUERY_LENGTH];
 
 	Format(sQuery, sizeof(sQuery), "SELECT `steamid`, `enable`, `tag`, `tag_color`, `name_color`, `chat_color` FROM `ccc_tag` WHERE `steamid` = '%s';", sClientSteamID);
 	SQL_TQuery(g_hDatabase, OnSQLSelect_Tag, sQuery, data, DBPrio_High);
@@ -590,15 +592,20 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
-	char sQuery[256];
+	char sQuery[MAX_SQL_QUERY_LENGTH];
 	char sTrigger[MAX_CHAT_TRIGGER_LENGTH];
+	char sTriggerEscaped[2*MAX_CHAT_TRIGGER_LENGTH+1];
 	char sValue[MAX_CHAT_LENGTH];
+	char sValueEscaped[2*MAX_CHAT_LENGTH+1];
 
 	pack.ReadCell();
 	pack.ReadString(sTrigger, sizeof(sTrigger));
 	pack.ReadString(sValue, sizeof(sValue));
 
-	Format(sQuery, sizeof(sQuery), "INSERT INTO `ccc_replace` (`trigger`, `value`) VALUES ('%s', '%s');", sTrigger, sValue);
+	SQL_EscapeString(g_hDatabase, sTrigger, sTriggerEscaped, sizeof(sTriggerEscaped));
+	SQL_EscapeString(g_hDatabase, sValue, sValueEscaped, sizeof(sValueEscaped));
+
+	Format(sQuery, sizeof(sQuery), "INSERT INTO `ccc_replace` (`trigger`, `value`) VALUES ('%s', '%s');", sTriggerEscaped, sValueEscaped);
 	SQL_TQuery(g_hDatabase, OnSQLInsert_Replace, sQuery, data);
 	return Plugin_Stop;
 }
@@ -608,7 +615,7 @@ stock Action SQLDelete_Replace(Handle timer, any data)
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
-	char sQuery[256];
+	char sQuery[MAX_SQL_QUERY_LENGTH];
 	char sTrigger[MAX_CHAT_TRIGGER_LENGTH];
 
 	pack.ReadCell();
@@ -652,6 +659,7 @@ stock Action SQLInsert_Tag(Handle timer, any data)
 	char sName[32];
 	char sFlag[32];
 	char sTag[32];
+	char sTagEscaped[2*32+1];
 	char sTagColor[32];
 	char sNameColor[32];
 	char sChatColor[32];
@@ -666,7 +674,9 @@ stock Action SQLInsert_Tag(Handle timer, any data)
 	pack.ReadString(sNameColor, sizeof(sNameColor));
 	pack.ReadString(sChatColor, sizeof(sChatColor));
 
-	char sQuery[256];
+	SQL_EscapeString(g_hDatabase, sTag, sTagEscaped, sizeof(sTagEscaped));
+
+	char sQuery[MAX_SQL_QUERY_LENGTH];
 
 	Format(
 		sQuery,
@@ -676,7 +686,7 @@ stock Action SQLInsert_Tag(Handle timer, any data)
 		sName,
 		iEnable,
 		sFlag,
-		sTag,
+		sTagEscaped,
 		sTagColor,
 		sNameColor,
 		sChatColor
@@ -718,6 +728,7 @@ stock Action SQLUpdate_Tag(Handle timer, any data)
 	char sName[32];
 	char sFlag[32];
 	char sTag[32];
+	char sTagEscaped[2*32+1];
 	char sTagColor[32];
 	char sNameColor[32];
 	char sChatColor[32];
@@ -732,7 +743,9 @@ stock Action SQLUpdate_Tag(Handle timer, any data)
 	pack.ReadString(sNameColor, sizeof(sNameColor));
 	pack.ReadString(sChatColor, sizeof(sChatColor));
 
-	char sQuery[256];
+	SQL_EscapeString(g_hDatabase, sTag, sTagEscaped, sizeof(sTagEscaped));
+
+	char sQuery[MAX_SQL_QUERY_LENGTH];
 
 	Format(
 		sQuery,
@@ -741,7 +754,7 @@ stock Action SQLUpdate_Tag(Handle timer, any data)
 		sName,
 		iEnable,
 		sFlag,
-		sTag,
+		sTagEscaped,
 		sTagColor,
 		sNameColor,
 		sChatColor,
@@ -761,7 +774,7 @@ stock Action SQLDelete_Tag(Handle timer, any data)
 	pack.ReadCell();
 	pack.ReadString(sSteamID, sizeof(sSteamID));
 
-	char sQuery[256];
+	char sQuery[MAX_SQL_QUERY_LENGTH];
 
 	Format(sQuery, sizeof(sQuery), "DELETE FROM `ccc_tag` WHERE `steamid` = '%s';", sSteamID);
 	SQL_TQuery(g_hDatabase, OnSQLDelete_Tag, sQuery, data);
@@ -822,7 +835,7 @@ stock Action SQLInsert_Ban(Handle timer, any data)
 		time = 0;
 	}
 
-	char sQuery[256];
+	char sQuery[MAX_SQL_QUERY_LENGTH];
 	char sClientName[32];
 	char sTargetName[32];
 	char sClientSteamID[32];
@@ -849,7 +862,7 @@ stock Action SQLDelete_Ban(Handle timer, any data)
 	// target
 	int target = pack.ReadCell();
 
-	char sQuery[256];
+	char sQuery[MAX_SQL_QUERY_LENGTH];
 	char sTargetSteamID[32];
 
 	GetClientAuthId(target, AuthId_Steam2, sTargetSteamID, sizeof(sTargetSteamID));
