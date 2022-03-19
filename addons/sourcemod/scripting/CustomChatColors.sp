@@ -6,9 +6,10 @@
 #include <multicolors>
 #include <adminmenu>
 #include <basecomm>
+#include <sourcecomms>
 #include <ccc>
 
-#define PLUGIN_VERSION					"7.2"
+#define PLUGIN_VERSION					"7.3"
 
 #define DATABASE_NAME					"ccc"
 
@@ -24,7 +25,7 @@
 public Plugin myinfo =
 {
 	name        = "Custom Chat Colors & Tags & Allchat",
-	author      = "Dr. McKay, edit by id/Obus, BotoX, maxime1907",
+	author      = "Dr. McKay, edit by id/Obus, BotoX, maxime1907, .Rushaway",
 	description = "Processes chat and provides colors & custom tags & allchat & chat ignoring",
 	version     = PLUGIN_VERSION,
 	url         = "http://www.doctormckay.com"
@@ -1825,7 +1826,7 @@ public Action Command_ReloadConfig(int client, int args)
 	LateLoad();
 
 	LogAction(client, -1, "Reloaded Custom Chat Colors");
-	ReplyToCommand(client, "[CCC] Reloaded ccc.");
+	CReplyToCommand(client, "{green}[CCC] {default}Reloaded ccc.");
 	Call_StartForward(configReloadedForward);
 	Call_Finish();
 	return Plugin_Handled;
@@ -1847,7 +1848,7 @@ public Action Command_SmSay(int client, int args)
 {
 	if (args < 1)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_say <message>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_say <message>");
 		return Plugin_Handled;	
 	}
 	
@@ -1864,7 +1865,7 @@ public Action Command_SmCsay(int client, int args)
 {
 	if (args < 1)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_csay <message>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_csay <message>");
 		return Plugin_Handled;	
 	}
 	
@@ -1882,7 +1883,7 @@ public Action Command_SmChat(int client, int args)
 {
 	if (args < 1)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_chat <message>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_chat <message>");
 		return Plugin_Handled;	
 	}
 	
@@ -1897,9 +1898,17 @@ public Action Command_SmChat(int client, int args)
 
 public Action Command_SmPsay(int client, int args)
 {
+	int IsGagged = SourceComms_GetClientGagType(client);
+
+	if(IsGagged > 0)
+	{
+		CReplyToCommand(client, "{green}[SM] {default}You are {red}not allowed {default}to use this command {red}since you are gagged{default}.");
+		return Plugin_Handled;
+	}
+
 	if (args < 2)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_psay <name or #userid> <message>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_psay <name or #userid> <message>");
 		return Plugin_Handled;	
 	}
 
@@ -1923,7 +1932,7 @@ public Action Command_SmHsay(int client, int args)
 {
 	if (args < 1)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_hsay <message>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_hsay <message>");
 		return Plugin_Handled;  
 	}
 	
@@ -1951,7 +1960,7 @@ public Action Command_SmTsay(int client, int args)
 {
 	if (args < 1)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_tsay <message>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_tsay <message>");
 		return Plugin_Handled;  
 	}
 	
@@ -1988,7 +1997,7 @@ public Action Command_SmMsay(int client, int args)
 {
 	if (args < 1)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_msay <message>");
+		CReplyToCommand(client, "{green}[SM] {default} Usage: sm_msay <message>");
 		return Plugin_Handled;	
 	}
 	
@@ -2183,7 +2192,7 @@ public Action Command_ForceTag(int client, int args)
 {
 	if (args < 2)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_forcetag <name|#userid|@filter> <tag text>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_forcetag <name|#userid|@filter> <tag text>");
 		return Plugin_Handled;
 	}
 
@@ -2200,7 +2209,7 @@ public Action Command_ForceTagColor(int client, int args)
 {
 	if (args < 2)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_forcetagcolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_forcetagcolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		return Plugin_Handled;
 	}
 
@@ -2217,7 +2226,7 @@ public Action Command_ForceNameColor(int client, int args)
 {
 	if (args < 2)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_forcenamecolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_forcenamecolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		return Plugin_Handled;
 	}
 
@@ -2234,7 +2243,7 @@ public Action Command_ForceTextColor(int client, int args)
 {
 	if (args < 2)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_forcetextcolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_forcetextcolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		return Plugin_Handled;
 	}
 
@@ -2251,7 +2260,7 @@ public Action Command_CCCReset(int client, int args)
 {
 	if (args < 1)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_cccreset <name|#userid|@filter>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_cccreset <name|#userid|@filter>");
 		return Plugin_Handled;
 	}
 
@@ -2281,7 +2290,7 @@ public Action Command_CCCBan(int client, int args)
 {
 	if (args < 1)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_cccban <name|#userid|@filter> <optional:time>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_cccban <name|#userid|@filter> <optional:time>");
 		return Plugin_Handled;
 	}
 
@@ -2316,7 +2325,7 @@ public Action Command_CCCUnban(int client, int args)
 {
 	if (args < 1)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_cccunban <name|#userid|@filter>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_cccunban <name|#userid|@filter>");
 		return Plugin_Handled;
 	}
 
@@ -2351,7 +2360,7 @@ public Action Command_SetTag(int client, int args)
 
 	if (args < 1)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_tag <tag text>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_tag <tag text>");
 		Menu_Main(client);
 		return Plugin_Handled;
 	}
@@ -2395,7 +2404,7 @@ public Action Command_SetTagColor(int client, int args)
 
 	if (args < 1)
 	{
-		PrintToChat(client, "[SM] Usage: sm_tagcolor <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
+		CPrintToChat(client, "{green}[SM] {default}Usage: sm_tagcolor <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		Menu_TagPrefs(client);
 		return Plugin_Handled;
 	}
@@ -2439,7 +2448,7 @@ public Action Command_SetNameColor(int client, int args)
 
 	if (args < 1)
 	{
-		PrintToChat(client, "[SM] Usage: sm_namecolor <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
+		CPrintToChat(client, "{green}[SM] {default}Usage: sm_namecolor <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		Menu_NameColor(client);
 		return Plugin_Handled;
 	}
@@ -2483,7 +2492,7 @@ public Action Command_SetTextColor(int client, int args)
 
 	if (args < 1)
 	{
-		PrintToChat(client, "[SM] Usage: sm_textcolor <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
+		CPrintToChat(client, "{green}[SM] {default}Usage: sm_textcolor <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		Menu_ChatColor(client);
 		return Plugin_Handled;
 	}
