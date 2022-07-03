@@ -440,6 +440,7 @@ stock Action SQLSetNames(Handle timer)
 {
 	if (!g_bSQLite)
 		SQL_TQuery(g_hDatabase, OnSqlSetNames, "SET NAMES \"UTF8MB4\"");
+	return Plugin_Continue;
 }
 
 stock Action SQLTableCreation_Tag(Handle timer)
@@ -2129,6 +2130,7 @@ void SendPanelToAll(int from, char[] message)
 public int Handler_DoNothing(Menu menu, MenuAction action, int param1, int param2)
 {
 	/* Do nothing */
+	return 0;
 }
 
 void DisplayCenterTextToAll(int client, const char[] message)
@@ -3563,7 +3565,7 @@ public bool IsClientEnabled()
 	return (HasFlag(g_msgAuthor, Admin_Generic) || HasFlag(g_msgAuthor, Admin_Custom1)) && g_iClientEnable[g_msgAuthor];
 }
 
-public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const players[], int playersNum, bool reliable, bool init)
+public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, int playersNum, bool reliable, bool init)
 {
 	char sAuthorTag[64];
 
@@ -3683,11 +3685,11 @@ public Action Event_PlayerSay(Handle event, const char[] name, bool dontBroadcas
 {
 	if (g_msgAuthor == -1 || GetClientOfUserId(GetEventInt(event, "userid")) != g_msgAuthor)
 	{
-		return;
+		return Plugin_Continue;
 	}
 
 	if (strlen(g_msgText) == 0)
-		return;
+		return Plugin_Continue;
 
 	int[] players = new int[MaxClients + 1];
 	int playersNum = 0;
@@ -3720,7 +3722,7 @@ public Action Event_PlayerSay(Handle event, const char[] name, bool dontBroadcas
 	if (!playersNum)
 	{
 		g_msgAuthor = -1;
-		return;
+		return Plugin_Continue;
 	}
 
 	Handle SayText2 = StartMessage("SayText2", players, playersNum, USERMSG_RELIABLE | USERMSG_BLOCKHOOKS);
@@ -3745,6 +3747,7 @@ public Action Event_PlayerSay(Handle event, const char[] name, bool dontBroadcas
 	}
 
 	g_msgAuthor = -1;
+	return Plugin_Continue;
 }
 
 //  888b    888        d8888 88888888888 8888888 888     888 8888888888 .d8888b.
@@ -3756,71 +3759,71 @@ public Action Event_PlayerSay(Handle event, const char[] name, bool dontBroadcas
 //  888   Y8888  d8888888888     888       888      Y888P    888       Y88b  d88P
 //  888    Y888 d88P     888     888     8888888     Y8P     8888888888 "Y8888P"
 
-stock bool CheckForward(int author, const char[] message, CCC_ColorType type)
-{
-	new Action result = Plugin_Continue;
+// stock bool CheckForward(int author, const char[] message, CCC_ColorType type)
+// {
+// 	Action result = Plugin_Continue;
 
-	Call_StartForward(applicationForward);
-	Call_PushCell(author);
-	Call_PushString(message);
-	Call_PushCell(type);
-	Call_Finish(result);
+// 	Call_StartForward(applicationForward);
+// 	Call_PushCell(author);
+// 	Call_PushString(message);
+// 	Call_PushCell(type);
+// 	Call_Finish(result);
 
-	if (result >= Plugin_Handled)
-		return false;
+// 	if (result >= Plugin_Handled)
+// 		return false;
 
-	// Compatibility
-	switch(type)
-	{
-		case CCC_TagColor: return TagForward(author);
-		case CCC_NameColor: return NameForward(author);
-		case CCC_ChatColor: return ColorForward(author);
-	}
+// 	// Compatibility
+// 	switch(type)
+// 	{
+// 		case CCC_TagColor: return TagForward(author);
+// 		case CCC_NameColor: return NameForward(author);
+// 		case CCC_ChatColor: return ColorForward(author);
+// 	}
 
-	return true;
-}
+// 	return true;
+// }
 
-stock bool ColorForward(int author)
-{
-	Action result = Plugin_Continue;
+// stock bool ColorForward(int author)
+// {
+// 	Action result = Plugin_Continue;
 
-	Call_StartForward(colorForward);
-	Call_PushCell(author);
-	Call_Finish(result);
+// 	Call_StartForward(colorForward);
+// 	Call_PushCell(author);
+// 	Call_Finish(result);
 
-	if (result >= Plugin_Handled)
-		return false;
+// 	if (result >= Plugin_Handled)
+// 		return false;
 
-	return true;
-}
+// 	return true;
+// }
 
-stock bool NameForward(int author)
-{
-	Action result = Plugin_Continue;
+// stock bool NameForward(int author)
+// {
+// 	Action result = Plugin_Continue;
 
-	Call_StartForward(nameForward);
-	Call_PushCell(author);
-	Call_Finish(result);
+// 	Call_StartForward(nameForward);
+// 	Call_PushCell(author);
+// 	Call_Finish(result);
 
-	if (result >= Plugin_Handled)
-		return false;
+// 	if (result >= Plugin_Handled)
+// 		return false;
 
-	return true;
-}
+// 	return true;
+// }
 
-stock bool TagForward(int author)
-{
-	Action result = Plugin_Continue;
+// stock bool TagForward(int author)
+// {
+// 	Action result = Plugin_Continue;
 
-	Call_StartForward(tagForward);
-	Call_PushCell(author);
-	Call_Finish(result);
+// 	Call_StartForward(tagForward);
+// 	Call_PushCell(author);
+// 	Call_Finish(result);
 
-	if (result >= Plugin_Handled)
-		return false;
+// 	if (result >= Plugin_Handled)
+// 		return false;
 
-	return true;
-}
+// 	return true;
+// }
 
 stock bool ConfigForward(int client)
 {
