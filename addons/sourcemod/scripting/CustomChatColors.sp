@@ -9,7 +9,7 @@
 #include <ccc>
 #tryinclude <sourcecomms>
 
-#define PLUGIN_VERSION					"7.3.4"
+#define PLUGIN_VERSION					"7.3.5"
 
 #define DATABASE_NAME					"ccc"
 
@@ -2010,6 +2010,12 @@ public Action Command_SmTsay(int client, int args)
 
 public Action Command_SmMsay(int client, int args)
 {
+	if(IsVoteInProgress())
+	{
+		CReplyToCommand(client, "{green}[SM] {default}A vote is in progress, please try again after the vote.");
+		return Plugin_Handled;
+	}
+	
 	if (args < 1)
 	{
 		if (client == 0)
