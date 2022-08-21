@@ -9,7 +9,7 @@
 #include <ccc>
 #tryinclude <sourcecomms>
 
-#define PLUGIN_VERSION					"7.3.5"
+#define PLUGIN_VERSION					"7.3.6"
 
 #define DATABASE_NAME					"ccc"
 
@@ -1316,6 +1316,7 @@ bool HasFlag(int client, AdminFlag ADMFLAG)
 bool ChangeSingleTag(int client, int iTarget, char sTag[64], bool bAdmin)
 {
 	ReplaceString(sTag, sizeof(sTag), "\"", "'");
+	ReplaceString(sTag, sizeof(sTag), "%s", "'");
 
 	char SID[64];
 	GetClientAuthId(iTarget, AuthId_Steam2, SID, sizeof(SID));
@@ -1921,18 +1922,17 @@ public Action Command_SmPsay(int client, int args)
 		return Plugin_Handled;	
 	}
 
-	char text[192], arg[64], message[192];
+	char text[192], arg[64];
 	GetCmdArgString(text, sizeof(text));
 
 	int len = BreakString(text, arg, sizeof(arg));
-	BreakString(text[len], message, sizeof(message));
 
 	int target = FindTarget(client, arg, true, false);
 
 	if (target == -1)
 		return Plugin_Handled;
 
-	SendPrivateChat(client, target, message);
+	SendPrivateChat(client, target, text[len]);
 
 	return Plugin_Stop;
 }
