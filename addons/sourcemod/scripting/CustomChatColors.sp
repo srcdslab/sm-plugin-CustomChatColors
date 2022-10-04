@@ -7,9 +7,10 @@
 #include <adminmenu>
 #include <basecomm>
 #include <ccc>
+#tryinclude <SelfMute>
 #tryinclude <sourcecomms>
 
-#define PLUGIN_VERSION					"7.3.6"
+#define PLUGIN_VERSION					"7.3.7"
 
 #define DATABASE_NAME					"ccc"
 
@@ -49,6 +50,7 @@ ConVar g_cvar_SQLMaxRetries;
 ConVar g_cSmCategoryColor;
 ConVar g_cSmNameColor;
 ConVar g_cSmChatColor;
+ConVar g_cvPsayCooldown;
 
 ConVar g_Cvar_Chatmode;
 
@@ -115,6 +117,8 @@ bool g_bSQLite = true;
 bool g_bLate = false;
 
 bool g_bProto;
+
+int g_iClientPsayCooldown[MAXPLAYERS + 1] = { 0, ... };
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -210,6 +214,7 @@ public void OnPluginStart()
 	g_cSmCategoryColor = CreateConVar("sm_ccc_sm_category_color", "{green}", "Color used for SM categories (ADMINS, ALL, Private to)", FCVAR_REPLICATED);
 	g_cSmNameColor = CreateConVar("sm_ccc_sm_name_color", "{fullred}", "Color used for SM player name", FCVAR_REPLICATED);
 	g_cSmChatColor = CreateConVar("sm_ccc_sm_chat_color", "{cyan}", "Color used for SM chat", FCVAR_REPLICATED);
+	g_cvPsayCooldown = CreateConVar("sm_ccc_psay_cooldown", "4", "Cooldown between two usage of sm_psay", FCVAR_REPLICATED);
 
 	//colorForward = CreateGlobalForward("CCC_OnChatColor", ET_Event, Param_Cell);
 	//nameForward = CreateGlobalForward("CCC_OnNameColor", ET_Event, Param_Cell);
@@ -280,6 +285,8 @@ public void OnClientDisconnect(int client)
 		SQLUpdate_TagClient(INVALID_HANDLE, client);
 	else
 		SQLInsert_TagClient(INVALID_HANDLE, client);
+		
+	g_iClientPsayCooldown[client] = 0;
 }
 
 public void OnClientPostAdminCheck(int client)
@@ -1316,7 +1323,7 @@ bool HasFlag(int client, AdminFlag ADMFLAG)
 bool ChangeSingleTag(int client, int iTarget, char sTag[64], bool bAdmin)
 {
 	ReplaceString(sTag, sizeof(sTag), "\"", "'");
-	ReplaceString(sTag, sizeof(sTag), "%s", "'");
+	ReplaceString(sTag, sizeof(sTag), "%s", "s");
 
 	char SID[64];
 	GetClientAuthId(iTarget, AuthId_Steam2, SID, sizeof(SID));
@@ -1912,6 +1919,12 @@ public Action Command_SmPsay(int client, int args)
 		}
 	#endif
 
+	if(g_iClientPsayCooldown[client] > GetTime())
+	{
+		CReplyToCommand(client, "{green}[SM] {default}You are on cooldown, wait {olive}%d {default}seconds to use this command again.", (g_iClientPsayCooldown[client] - GetTime()));
+		return Plugin_Handled;
+	}
+	
 	if (args < 2)
 	{
 		if (client == 0)
@@ -1932,7 +1945,16 @@ public Action Command_SmPsay(int client, int args)
 	if (target == -1)
 		return Plugin_Handled;
 
+	#if defined _SelfMute_included_
+		if(SelfMute_GetSelfMute(target, client))
+		{
+			CReplyToCommand(client, "{green}[SM] {default}You cannot send a private message to someone who has you self-muted.");
+			return Plugin_Handled;
+		}
+	#endif
+
 	SendPrivateChat(client, target, text[len]);
+	g_iClientPsayCooldown[client] = GetTime() + g_cvPsayCooldown.IntValue;
 
 	return Plugin_Stop;
 }
