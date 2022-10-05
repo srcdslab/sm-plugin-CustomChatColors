@@ -1607,8 +1607,16 @@ void SendPrivateChat(int client, int target, const char[] message)
 			g_sSmCategoryColor, g_sSmNameColor, client, g_sSmChatColor, message);
 	}
 
-	CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", g_sSmCategoryColor, g_sSmNameColor, target,
-		g_sSmCategoryColor, g_sSmNameColor, client, g_sSmChatColor, message);
+	#if defined _SelfMute_included_
+		if(!SelfMute_GetSelfMute(target, client))
+			CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", g_sSmCategoryColor, g_sSmNameColor, target,
+				g_sSmCategoryColor, g_sSmNameColor, client, g_sSmChatColor, message);
+	#else
+		CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", g_sSmCategoryColor, g_sSmNameColor, target,
+				g_sSmCategoryColor, g_sSmNameColor, client, g_sSmChatColor, message);
+	#endif
+
+	
 	LogAction(client, target, "\"%L\" triggered sm_psay to \"%L\" (text %s)", client, target, message);
 }
 
@@ -1944,14 +1952,6 @@ public Action Command_SmPsay(int client, int args)
 
 	if (target == -1)
 		return Plugin_Handled;
-
-	#if defined _SelfMute_included_
-		if(SelfMute_GetSelfMute(target, client))
-		{
-			CReplyToCommand(client, "{green}[SM] {default}You cannot send a private message to someone who has you self-muted.");
-			return Plugin_Handled;
-		}
-	#endif
 
 	SendPrivateChat(client, target, text[len]);
 	g_iClientPsayCooldown[client] = GetTime() + g_cvPsayCooldown.IntValue;
