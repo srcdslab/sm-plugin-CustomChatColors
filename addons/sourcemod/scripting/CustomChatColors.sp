@@ -1608,7 +1608,7 @@ void SendPrivateChat(int client, int target, const char[] message)
 	}
 
 	#if defined _SelfMute_included_
-		if(!SelfMute_GetSelfMute(target, client))
+		if(!SelfMute_GetSelfMute(target, client) || CheckCommandAccess(client, "sm_kick", ADMFLAG_KICK, true))
 			CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", g_sSmCategoryColor, g_sSmNameColor, target,
 				g_sSmCategoryColor, g_sSmNameColor, client, g_sSmChatColor, message);
 	#else
