@@ -7,8 +7,11 @@
 #include <adminmenu>
 #include <basecomm>
 #include <ccc>
+
+#undef REQUIRE_PLUGIN
 #tryinclude <SelfMute>
 #tryinclude <sourcecomms>
+#define REQUIRE_PLUGIN
 
 #define PLUGIN_VERSION					"7.3.7"
 
@@ -115,6 +118,9 @@ int g_Colors[13][3] = {{255,255,255},{255,0,0},{0,255,0},{0,0,255},{255,255,0},{
 
 bool g_bSQLite = true;
 bool g_bLate = false;
+
+bool g_bSelfMute = false;
+bool g_bSourceComms = false;
 
 bool g_bProto;
 
@@ -249,6 +255,9 @@ public void OnPluginEnd()
 
 public void OnAllPluginsLoaded()
 {
+	g_bSelfMute = LibraryExists("SelfMute");
+	g_bSourceComms = LibraryExists("sourcecomms++");
+
 	// We dont need basechat as we already implemented our version with color support
 	char sBaseChatPlugin[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, sBaseChatPlugin, sizeof(sBaseChatPlugin), "plugins/basechat.smx");
@@ -261,6 +270,30 @@ public void OnAllPluginsLoaded()
 	BuildPath(Path_SM, sBaseChatPluginDisabled, sizeof(sBaseChatPluginDisabled), "plugins/disabled/basechat.smx");
 
 	RenameFile(sBaseChatPluginDisabled, sBaseChatPlugin);
+}
+
+public void OnLibraryAdded(const char[] name)
+{
+	if (StrEqual(name, "SelfMute"))
+	{
+		g_bSelfMute = true;
+	}
+	if (StrEqual(name, "sourcecomms++"))
+	{
+		g_bSourceComms = true;
+	}
+}
+
+public void OnLibraryRemoved(const char[] name)
+{
+	if (StrEqual(name, "SelfMute"))
+	{
+		g_bSelfMute = false;
+	}
+	if (StrEqual(name, "sourcecomms++"))
+	{
+		g_bSourceComms = false;
+	}
 }
 
 public void OnConfigsExecuted()
@@ -1608,7 +1641,7 @@ void SendPrivateChat(int client, int target, const char[] message)
 	}
 
 	#if defined _SelfMute_included_
-		if(!SelfMute_GetSelfMute(target, client) || CheckCommandAccess(client, "sm_kick", ADMFLAG_KICK, true))
+		if(!g_bSelfMute || !SelfMute_GetSelfMute(target, client) || CheckCommandAccess(client, "sm_kick", ADMFLAG_KICK, true))
 			CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", g_sSmCategoryColor, g_sSmNameColor, target,
 				g_sSmCategoryColor, g_sSmNameColor, client, g_sSmChatColor, message);
 	#else
@@ -1916,7 +1949,7 @@ public Action Command_SmChat(int client, int args)
 public Action Command_SmPsay(int client, int args)
 {
 	#if defined _sourcecomms_included
-		if (client)
+		if (g_bSourceComms && client)
 		{
 			int IsGagged = SourceComms_GetClientGagType(client);
 			if(IsGagged > 0)
