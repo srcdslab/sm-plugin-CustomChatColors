@@ -13,7 +13,7 @@
 #tryinclude <sourcecomms>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.3.7"
+#define PLUGIN_VERSION					"7.3.8"
 
 #define DATABASE_NAME					"ccc"
 
@@ -443,7 +443,7 @@ stock void OnSQLConnected(Handle hParent, Handle hChild, const char[] err, any d
 {
 	if (hChild == null)
 	{
-		LogError("Failed to connect to database \"%s\", retrying in %d seconds. (%s)", DATABASE_NAME, GetConVarFloat(g_cvar_SQLRetryTime), err);
+		LogError("Failed to connect to database \"%s\", retrying in %d seconds. (%s)", DATABASE_NAME, GetConVarInt(g_cvar_SQLRetryTime), err);
 		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLReconnect);
 
 		return;
@@ -828,7 +828,7 @@ stock void OnSqlSetNames(Handle hParent, Handle hChild, const char[] err, any da
 {
 	if (hChild == null)
 	{
-		LogError("Database error while setting names as utf8, retrying in 10 seconds. (%s)", err);
+		LogError("Database error while setting names as utf8, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSetNames);
 
 		return;
@@ -918,7 +918,7 @@ public void OnSQLTableCreated_Tag(Handle hParent, Handle hChild, const char[] er
 {
 	if (hChild == null)
 	{
-		LogError("Database error while creating/checking for \"ccc_tag\" table, retrying in 10 seconds. (%s)", err);
+		LogError("Database error while creating/checking for \"ccc_tag\" table, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLTableCreation_Tag);
 
 		return;
@@ -929,7 +929,7 @@ public void OnSQLTableCreated_Ban(Handle hParent, Handle hChild, const char[] er
 {
 	if (hChild == null)
 	{
-		LogError("Database error while creating/checking for \"ccc_ban\" table, retrying in 10 seconds. (%s)", err);
+		LogError("Database error while creating/checking for \"ccc_ban\" table, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLTableCreation_Ban);
 
 		return;
@@ -940,7 +940,7 @@ public void OnSQLTableCreated_Replace(Handle hParent, Handle hChild, const char[
 {
 	if (hChild == null)
 	{
-		LogError("Database error while creating/checking for \"ccc_replace\" table, retrying in 10 seconds. (%s)", err);
+		LogError("Database error while creating/checking for \"ccc_replace\" table, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLTableCreation_Replace);
 
 		return;
@@ -951,7 +951,7 @@ public void OnSQLSelect_Replace(Handle hParent, Handle hChild, const char[] err,
 {
 	if (hChild == null)
 	{
-		LogError("An error occurred while querying the database for the replace list, retrying in %d seconds. (%s)", GetConVarFloat(g_cvar_SQLRetryTime), err);
+		LogError("An error occurred while querying the database for the replace list, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
 		if (g_bSQLSelectReplaceRetry + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
@@ -978,7 +978,7 @@ public void OnSQLSelect_Ban(Handle hParent, Handle hChild, const char[] err, any
 {
 	if (hChild == null)
 	{
-		LogError("An error occurred while querying the database for the user tag, retrying in %d seconds. (%s)", GetConVarFloat(g_cvar_SQLRetryTime), err);
+		LogError("An error occurred while querying the database for the user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
 		if (g_bSQLSelectBanRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
@@ -1006,7 +1006,7 @@ stock void OnSQLSelect_TagGroup(Handle hParent, Handle hChild, const char[] err,
 
 	if (hChild == null)
 	{
-		LogError("An error occurred while querying the database for the user group tag, retrying in %d seconds. (%s)", GetConVarFloat(g_cvar_SQLRetryTime), err);
+		LogError("An error occurred while querying the database for the user group tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
 		if (g_bSQLSelectTagGroupRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
@@ -1048,7 +1048,7 @@ public void OnSQLSelect_Tag(Handle hParent, Handle hChild, const char[] err, any
 
 	if (hChild == null)
 	{
-		LogError("An error occurred while querying the database for the user tag, retrying in %d seconds. (%s)", GetConVarFloat(g_cvar_SQLRetryTime), err);
+		LogError("An error occurred while querying the database for the user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
 		if (g_bSQLSelectTagRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
@@ -1097,7 +1097,7 @@ public void OnSQLUpdate_Tag(Handle hParent, Handle hChild, const char[] err, any
 
 	if (hChild == null)
 	{
-		LogError("An error occurred while updating an user tag, retrying in %d seconds. (%s)", GetConVarFloat(g_cvar_SQLRetryTime), err);
+		LogError("An error occurred while updating an user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
 		if (g_bSQLUpdateTagRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
@@ -1122,7 +1122,7 @@ public void OnSQLInsert_Replace(Handle hParent, Handle hChild, const char[] err,
 
 	if (hChild == null)
 	{
-		LogError("An error occurred while inserting a chat trigger, retrying in %d seconds. (%s)", GetConVarFloat(g_cvar_SQLRetryTime), err);
+		LogError("An error occurred while inserting a chat trigger, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 		if (g_bSQLInsertReplaceRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLInsertReplaceRetry[client]++;
@@ -1207,7 +1207,7 @@ public void OnSQLInsert_Tag(Handle hParent, Handle hChild, const char[] err, any
 
 	if (hChild == null)
 	{
-		LogError("An error occurred while inserting an user tag, retrying in %d seconds. (%s)", GetConVarFloat(g_cvar_SQLRetryTime), err);
+		LogError("An error occurred while inserting an user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 		if (g_bSQLInsertTagRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLInsertTagRetry[client]++;
