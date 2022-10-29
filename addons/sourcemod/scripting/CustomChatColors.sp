@@ -365,7 +365,7 @@ stock void LateLoad()
 
 stock void LoadColorArray()
 {
-	StringMap smTrie = MC_GetTrie();
+	StringMap smTrie = CGetTrie();
 	StringMapSnapshot smTrieSnapshot = smTrie.Snapshot();
 	if (smTrie != null)
 	{
@@ -1430,7 +1430,7 @@ bool ChangeSingleColor(int client, int iTarget, char Key[64], char sCol[64], boo
 	}
 	else if ((IsSource2009() && !IsValidHex(sCol)) || !IsSource2009())
 	{
-		StringMap smTrie = MC_GetTrie();
+		StringMap smTrie = CGetTrie();
 		char value[32];
 		if (!smTrie.GetString(sCol, value, sizeof(value)))
 		{
@@ -3281,7 +3281,7 @@ public void Menu_TagPrefs(int client)
 public void Menu_AddColors(Menu ColorsMenu)
 {
 	char info[64];
-	StringMap smTrie = MC_GetTrie();
+	StringMap smTrie = CGetTrie();
 
 	if (smTrie!= null && g_sColorsArray != null)
 	{
@@ -3716,7 +3716,7 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		if (strlen(sAuthorTag) > 0)
 			Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s%s", CCC_GetColor(sTagColorKey, sValue, sizeof(sValue)) ? "#" : "", bTagFound ? sTagColorKey : "default", sAuthorTag, g_msgSender);
 
-		StringMap smTrie = MC_GetTrie();
+		StringMap smTrie = CGetTrie();
 		if (g_msgText[0] == '>' && GetConVarInt(g_cvar_GreenText) > 0 && smTrie.GetString("green", sValue, sizeof(sValue)))
 			Format(g_msgText, sizeof(g_msgText), "{green}%s", g_msgText);
 
@@ -3736,7 +3736,7 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 	if (!g_msgAuthor || IsClientEnabled())
 	{
 		CFormatColor(g_msgFinal, sizeof(g_msgFinal), g_msgAuthor);
-		MC_AddWhiteSpace(g_msgFinal, sizeof(g_msgFinal));
+		CAddWhiteSpace(g_msgFinal, sizeof(g_msgFinal));
 	}
 
 	return Plugin_Handled;
@@ -3902,7 +3902,7 @@ stock bool ConfigForward(int client)
 
 stock bool GetColorKey(int client, CCC_ColorType colorType, char[] key, int size)
 {
-	StringMap smTrie = MC_GetTrie();
+	StringMap smTrie = CGetTrie();
 	bool bFound = true;
 	char value[32];
 
@@ -3994,7 +3994,7 @@ stock bool GetColor(char key[32], char[] value, int size)
 		strcopy(value, size, key);
 		return true;
 	}
-	StringMap smTrie = MC_GetTrie();
+	StringMap smTrie = CGetTrie();
 	smTrie.GetString(key, value, size);
 	return false;
 }
