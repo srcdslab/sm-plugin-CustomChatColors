@@ -11,7 +11,6 @@
 #undef REQUIRE_PLUGIN
 #tryinclude <SelfMute>
 #tryinclude <sourcecomms>
-#tryinclude <Shop_Chat>
 #define REQUIRE_PLUGIN
 
 #define PLUGIN_VERSION					"7.3.9"
@@ -122,7 +121,6 @@ bool g_bLate = false;
 
 bool g_bSelfMute = false;
 bool g_bSourceComms = false;
-bool g_bShopChat = false;
 
 bool g_bProto;
 
@@ -284,10 +282,6 @@ public void OnLibraryAdded(const char[] name)
 	{
 		g_bSourceComms = true;
 	}
-	if(StrEqual(name, "Shop_Chat"))
-	{
-		g_bShopChat = true;
-	}
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -299,10 +293,6 @@ public void OnLibraryRemoved(const char[] name)
 	if (StrEqual(name, "sourcecomms++"))
 	{
 		g_bSourceComms = false;
-	}
-	if(StrEqual(name, "Shop_Chat"))
-	{
-		g_bShopChat = false;
 	}
 }
 
@@ -2113,16 +2103,6 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 			return Plugin_Continue;
 	}
 #endif
-
-#if defined _Shop_Chat_included_
-	if(g_bShopChat && client <= 0 || (IsClientInGame(client)))
-	{
-		if(ShopChat_HasClientCustomColors(client))
-			return Plugin_Continue;
-	}
-#endif
-
-
 	int startidx;
 	if (sArgs[startidx] != CHAT_SYMBOL)
 		return Plugin_Continue;
