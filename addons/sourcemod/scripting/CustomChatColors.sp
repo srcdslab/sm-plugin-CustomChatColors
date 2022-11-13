@@ -2099,7 +2099,7 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 	if (g_bSourceComms && client)
 	{
 		int IsGagged = SourceComms_GetClientGagType(client);
-		if(client <= 0 || (IsClientInGame(client) && IsGagged > 0))
+		if(IsClientInGame(client) && IsGagged > 0)
 			return Plugin_Continue;
 	}
 #endif
