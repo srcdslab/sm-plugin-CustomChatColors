@@ -13,7 +13,7 @@
 #tryinclude <sourcecomms>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.3.8"
+#define PLUGIN_VERSION					"7.3.9"
 
 #define DATABASE_NAME					"ccc"
 
@@ -2095,6 +2095,14 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 	if (client <= 0 || (IsClientInGame(client) && BaseComm_IsClientGagged(client)))
 		return Plugin_Continue;
 
+#if defined _sourcecomms_included
+	if (g_bSourceComms && client)
+	{
+		int IsGagged = SourceComms_GetClientGagType(client);
+		if(IsClientInGame(client) && IsGagged > 0)
+			return Plugin_Continue;
+	}
+#endif
 	int startidx;
 	if (sArgs[startidx] != CHAT_SYMBOL)
 		return Plugin_Continue;
