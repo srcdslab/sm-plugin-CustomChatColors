@@ -13,7 +13,7 @@
 #tryinclude <sourcecomms>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.3.9"
+#define PLUGIN_VERSION					"7.3.10"
 
 #define DATABASE_NAME					"ccc"
 
@@ -143,6 +143,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("CCC_ResetTag", Native_ResetTag);
 
 	CreateNative("CCC_UpdateIgnoredArray", Native_UpdateIgnoredArray);
+	CreateNative("CCC_IsClientEnabled", Native_IsClientEnabled);
 
 	RegPluginLibrary("ccc");
 
@@ -4207,4 +4208,10 @@ public int Native_ReloadConfig(Handle plugin, int numParams)
 {
 	LateLoad();
 	return 1;
+}
+
+public int Native_IsClientEnabled(Handle plugin, int numParams)
+{
+	int client = GetNativeCell(1);
+	return (HasFlag(client, Admin_Generic) || HasFlag(client, Admin_Custom1)) && g_iClientEnable[client];
 }

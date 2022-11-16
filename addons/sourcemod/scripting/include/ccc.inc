@@ -135,6 +135,14 @@ native void CCC_UnLoadClient(int client);
 native void CCC_ReloadConfig();
 
 /**
+ * Checks if client has ccc enabled
+ *
+ * @param client        Client Index
+ * @return   true if client has, false otherwise
+ */
+native bool CCC_IsClientEnabled(int client);
+
+/**
  * Called when a cilent's name is about to be colored
  * DO NOT START A NEW USERMESSAGE (i.e. PrintToChat, PrintToChatAll) WITHIN THIS FORWARD
  *
@@ -233,5 +241,6 @@ public __pl_ccc_SetNTVOptional() {
 	MarkNativeAsOptional("CCC_ResetColor");
 	MarkNativeAsOptional("CCC_ResetTag");
 	MarkNativeAsOptional("CCC_UpdateIgnoredArray");
+	MarkNativeAsOptional("CCC_IsClientEnabled");
 }
 #endif
