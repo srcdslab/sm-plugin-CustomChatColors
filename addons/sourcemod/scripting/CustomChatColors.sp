@@ -13,7 +13,7 @@
 #tryinclude <sourcecomms>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.3.10"
+#define PLUGIN_VERSION					"7.3.11"
 
 #define DATABASE_NAME					"ccc"
 
@@ -1949,17 +1949,20 @@ public Action Command_SmChat(int client, int args)
 
 public Action Command_SmPsay(int client, int args)
 {
-	#if defined _sourcecomms_included
-		if (g_bSourceComms && client)
+	if (client <= 0 || (IsClientInGame(client) && BaseComm_IsClientGagged(client)))
+		return Plugin_Continue;
+
+#if defined _sourcecomms_included
+	if (g_bSourceComms && client)
+	{
+		int IsGagged = SourceComms_GetClientGagType(client);
+		if(IsGagged > 0)
 		{
-			int IsGagged = SourceComms_GetClientGagType(client);
-			if(IsGagged > 0)
-			{
-				CReplyToCommand(client, "{green}[SM] {default}You are {red}not allowed {default}to use this command {red}since you are gagged{default}.");
-				return Plugin_Handled;
-			}
+			CReplyToCommand(client, "{green}[SM] {default}You are {red}not allowed {default}to use this command {red}since you are gagged{default}.");
+			return Plugin_Handled;
 		}
-	#endif
+	}
+#endif
 
 	if(g_iClientPsayCooldown[client] > GetTime())
 	{
