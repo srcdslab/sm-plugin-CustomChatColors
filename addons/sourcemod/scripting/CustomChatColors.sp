@@ -13,7 +13,7 @@
 #tryinclude <sourcecomms>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.3.11"
+#define PLUGIN_VERSION					"7.3.12"
 
 #define DATABASE_NAME					"ccc"
 
@@ -518,7 +518,7 @@ stock Action SQLSelect_Replace(Handle timer)
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
-	Format(sQuery, sizeof(sQuery), "SELECT `trigger`, `value` FROM `ccc_replace`;");
+	FormatEx(sQuery, sizeof(sQuery), "SELECT `trigger`, `value` FROM `ccc_replace`;");
 	SQL_TQuery(g_hDatabase, OnSQLSelect_Replace, sQuery, 0, DBPrio_High);
 	return Plugin_Stop;
 }
@@ -532,7 +532,7 @@ stock Action SQLSelect_Ban(Handle timer, any client)
 	char sClientSteamID[32];
 
 	GetClientAuthId(client, AuthId_Steam2, sClientSteamID, sizeof(sClientSteamID));
-	Format(sQuery, sizeof(sQuery), "SELECT `length` FROM `ccc_ban` WHERE `steamid` = '%s';", sClientSteamID);
+	FormatEx(sQuery, sizeof(sQuery), "SELECT `length` FROM `ccc_ban` WHERE `steamid` = '%s';", sClientSteamID);
 	SQL_TQuery(g_hDatabase, OnSQLSelect_Ban, sQuery, client, DBPrio_High);
 	return Plugin_Stop;
 }
@@ -553,7 +553,7 @@ stock Action SQLSelect_TagGroup(Handle timer, any data)
 
 	char sQuery[512];
 
-	Format(sQuery, sizeof(sQuery), "SELECT `steamid`, `enable`, `tag`, `tag_color`, `name_color`, `chat_color`, `flag` FROM `ccc_tag` WHERE `steamid` NOT LIKE 'STEAM_%' and `flag` IS NOT NULL and `flag` != '' and `flag` IN (%s) ORDER BY `flag` DESC;", sFlagList);
+	FormatEx(sQuery, sizeof(sQuery), "SELECT `steamid`, `enable`, `tag`, `tag_color`, `name_color`, `chat_color`, `flag` FROM `ccc_tag` WHERE `steamid` NOT LIKE 'STEAM_%' and `flag` IS NOT NULL and `flag` != '' and `flag` IN (%s) ORDER BY `flag` DESC;", sFlagList);
 	SQL_TQuery(g_hDatabase, OnSQLSelect_TagGroup, sQuery, data, DBPrio_High);
 	return Plugin_Stop;
 }
@@ -625,7 +625,7 @@ stock Action SQLSelect_Tag(Handle timer, any data)
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
-	Format(sQuery, sizeof(sQuery), "SELECT `steamid`, `enable`, `tag`, `tag_color`, `name_color`, `chat_color` FROM `ccc_tag` WHERE `steamid` = '%s';", sClientSteamID);
+	FormatEx(sQuery, sizeof(sQuery), "SELECT `steamid`, `enable`, `tag`, `tag_color`, `name_color`, `chat_color` FROM `ccc_tag` WHERE `steamid` = '%s';", sClientSteamID);
 	SQL_TQuery(g_hDatabase, OnSQLSelect_Tag, sQuery, data, DBPrio_High);
 	return Plugin_Stop;
 }
@@ -648,7 +648,14 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 	SQL_EscapeString(g_hDatabase, sTrigger, sTriggerEscaped, sizeof(sTriggerEscaped));
 	SQL_EscapeString(g_hDatabase, sValue, sValueEscaped, sizeof(sValueEscaped));
 
-	Format(sQuery, sizeof(sQuery), "INSERT INTO `ccc_replace` (`trigger`, `value`) VALUES ('%s', '%s');", sTriggerEscaped, sValueEscaped);
+	FormatEx(
+		sQuery,
+		sizeof(sQuery),
+		"INSERT INTO `ccc_replace` (`trigger`, `value`) VALUES ('%s', '%s') \
+		ON DUPLICATE KEY UPDATE `trigger` = '%s', `value` = '%s';",
+		sTriggerEscaped, sValueEscaped,
+		sTriggerEscaped, sValueEscaped
+	);
 	SQL_TQuery(g_hDatabase, OnSQLInsert_Replace, sQuery, data);
 	return Plugin_Stop;
 }
@@ -664,7 +671,7 @@ stock Action SQLDelete_Replace(Handle timer, any data)
 	pack.ReadCell();
 	pack.ReadString(sTrigger, sizeof(sTrigger));
 
-	Format(sQuery, sizeof(sQuery), "DELETE FROM `ccc_replace` WHERE `trigger` = '%s';", sTrigger);
+	FormatEx(sQuery, sizeof(sQuery), "DELETE FROM `ccc_replace` WHERE `trigger` = '%s';", sTrigger);
 	SQL_TQuery(g_hDatabase, OnSQLDelete_Replace, sQuery, data);
 	return Plugin_Stop;
 }
@@ -721,18 +728,13 @@ stock Action SQLInsert_Tag(Handle timer, any data)
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
-	Format(
+	FormatEx(
 		sQuery,
 		sizeof(sQuery),
-		"INSERT INTO `ccc_tag` (`steamid`, `name`, `enable`, `flag`, `tag`, `tag_color`, `name_color`, `chat_color`) VALUES ('%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s');",
-		sSteamID,
-		sName,
-		iEnable,
-		sFlag,
-		sTagEscaped,
-		sTagColor,
-		sNameColor,
-		sChatColor
+		"INSERT INTO `ccc_tag` (`steamid`, `name`, `enable`, `flag`, `tag`, `tag_color`, `name_color`, `chat_color`) VALUES ('%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s') \
+		ON DUPLICATE KEY UPDATE `steamid` = '%s', `name` = '%s', `enable` = '%d', `flag` = '%s', `tag` = '%s', `tag_color` = '%s', `name_color` = '%s', `chat_color` = '%s';",
+		sSteamID, sName, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor,
+		sSteamID, sName, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor
 	);
 	SQL_TQuery(g_hDatabase, OnSQLInsert_Tag, sQuery, data);
 	return Plugin_Stop;
@@ -790,18 +792,11 @@ stock Action SQLUpdate_Tag(Handle timer, any data)
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
-	Format(
+	FormatEx(
 		sQuery,
 		sizeof(sQuery),
 		"UPDATE `ccc_tag` SET `name` = '%d', `enable` = '%d', `flag` = '%s', `tag` = '%s', `tag_color` = '%s', `name_color` = '%s', `chat_color` = '%s' WHERE `steamid` = '%s';",
-		sName,
-		iEnable,
-		sFlag,
-		sTagEscaped,
-		sTagColor,
-		sNameColor,
-		sChatColor,
-		sSteamID
+		sName, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor, sSteamID
 	);
 	SQL_TQuery(g_hDatabase, OnSQLUpdate_Tag, sQuery, data);
 	return Plugin_Stop;
@@ -819,7 +814,7 @@ stock Action SQLDelete_Tag(Handle timer, any data)
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
-	Format(sQuery, sizeof(sQuery), "DELETE FROM `ccc_tag` WHERE `steamid` = '%s';", sSteamID);
+	FormatEx(sQuery, sizeof(sQuery), "DELETE FROM `ccc_tag` WHERE `steamid` = '%s';", sSteamID);
 	SQL_TQuery(g_hDatabase, OnSQLDelete_Tag, sQuery, data);
 
 	return Plugin_Stop;
@@ -889,7 +884,14 @@ stock Action SQLInsert_Ban(Handle timer, any data)
 	GetClientAuthId(client, AuthId_Steam2, sClientSteamID, sizeof(sClientSteamID));
 	GetClientAuthId(target, AuthId_Steam2, sTargetSteamID, sizeof(sTargetSteamID));
 
-	Format(sQuery, sizeof(sQuery), "INSERT INTO `ccc_ban` (`steamid`, `name`, `issuer_steamid`, `issuer_name`, `length`) VALUES ('%s', '%s', '%s', '%s', '%d');", sTargetSteamID, sTargetName, sClientSteamID, sClientName, time);
+	FormatEx(
+		sQuery,
+		sizeof(sQuery),
+		"INSERT INTO `ccc_ban` (`steamid`, `name`, `issuer_steamid`, `issuer_name`, `length`) VALUES ('%s', '%s', '%s', '%s', '%d') \
+		ON DUPLICATE KEY UPDATE `steamid` = '%s', `name` = '%s', `issuer_steamid` = '%s', `issuer_name` = '%s', `length` = '%d';",
+		sTargetSteamID, sTargetName, sClientSteamID, sClientName, time,
+		sTargetSteamID, sTargetName, sClientSteamID, sClientName, time
+	);
 	SQL_TQuery(g_hDatabase, OnSQLInsert_Ban, sQuery, data);
 
 	return Plugin_Stop;
@@ -909,7 +911,7 @@ stock Action SQLDelete_Ban(Handle timer, any data)
 	char sTargetSteamID[32];
 
 	GetClientAuthId(target, AuthId_Steam2, sTargetSteamID, sizeof(sTargetSteamID));
-	Format(sQuery, sizeof(sQuery), "DELETE FROM `ccc_ban` WHERE `steamid` = '%s';", sTargetSteamID);
+	FormatEx(sQuery, sizeof(sQuery), "DELETE FROM `ccc_ban` WHERE `steamid` = '%s';", sTargetSteamID);
 	SQL_TQuery(g_hDatabase, OnSQLDelete_Ban, sQuery, data);
 
 	return Plugin_Stop;
