@@ -13,7 +13,7 @@
 #tryinclude <sourcecomms>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.3.12"
+#define PLUGIN_VERSION					"7.3.13"
 
 #define DATABASE_NAME					"ccc"
 
@@ -707,6 +707,7 @@ stock Action SQLInsert_Tag(Handle timer, any data)
 
 	char sSteamID[64];
 	char sName[32];
+	char sNameEscaped[32+1];
 	char sFlag[32];
 	char sTag[32];
 	char sTagEscaped[2*32+1];
@@ -724,6 +725,7 @@ stock Action SQLInsert_Tag(Handle timer, any data)
 	pack.ReadString(sNameColor, sizeof(sNameColor));
 	pack.ReadString(sChatColor, sizeof(sChatColor));
 
+	SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
 	SQL_EscapeString(g_hDatabase, sTag, sTagEscaped, sizeof(sTagEscaped));
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
@@ -733,8 +735,8 @@ stock Action SQLInsert_Tag(Handle timer, any data)
 		sizeof(sQuery),
 		"INSERT INTO `ccc_tag` (`steamid`, `name`, `enable`, `flag`, `tag`, `tag_color`, `name_color`, `chat_color`) VALUES ('%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s') \
 		ON DUPLICATE KEY UPDATE `steamid` = '%s', `name` = '%s', `enable` = '%d', `flag` = '%s', `tag` = '%s', `tag_color` = '%s', `name_color` = '%s', `chat_color` = '%s';",
-		sSteamID, sName, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor,
-		sSteamID, sName, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor
+		sSteamID, sNameEscaped, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor,
+		sSteamID, sNameEscaped, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor
 	);
 	SQL_TQuery(g_hDatabase, OnSQLInsert_Tag, sQuery, data);
 	return Plugin_Stop;
@@ -771,6 +773,7 @@ stock Action SQLUpdate_Tag(Handle timer, any data)
 
 	char sSteamID[64];
 	char sName[32];
+	char sNameEscaped[32+1];
 	char sFlag[32];
 	char sTag[32];
 	char sTagEscaped[2*32+1];
@@ -788,6 +791,7 @@ stock Action SQLUpdate_Tag(Handle timer, any data)
 	pack.ReadString(sNameColor, sizeof(sNameColor));
 	pack.ReadString(sChatColor, sizeof(sChatColor));
 
+	SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
 	SQL_EscapeString(g_hDatabase, sTag, sTagEscaped, sizeof(sTagEscaped));
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
@@ -796,7 +800,7 @@ stock Action SQLUpdate_Tag(Handle timer, any data)
 		sQuery,
 		sizeof(sQuery),
 		"UPDATE `ccc_tag` SET `name` = '%d', `enable` = '%d', `flag` = '%s', `tag` = '%s', `tag_color` = '%s', `name_color` = '%s', `chat_color` = '%s' WHERE `steamid` = '%s';",
-		sName, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor, sSteamID
+		sNameEscaped, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor, sSteamID
 	);
 	SQL_TQuery(g_hDatabase, OnSQLUpdate_Tag, sQuery, data);
 	return Plugin_Stop;
