@@ -13,7 +13,7 @@
 #tryinclude <sourcecomms>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.4"
+#define PLUGIN_VERSION					"7.4.1"
 
 #define DATABASE_NAME					"ccc"
 
@@ -1638,27 +1638,31 @@ void SendChatToAdmins(int from, const char[] message)
 
 void SendPrivateChat(int client, int target, const char[] message)
 {
+	char text[192];
+	Format(text, sizeof(text), "%s", message);
+	StripQuotes(text);
+
 	if (!client)
 	{
-		PrintToServer("(Private to %N) %N: %s", target, client, message);
+		PrintToServer("(Private to %N) %N: %s", target, client, text);
 	}
 	else if (target != client)
 	{
 		CPrintToChat(client, "%s(Private to %s%N%s) %s%N {default}: %s%s", g_sSmCategoryColor, g_sSmNameColor, target,
-			g_sSmCategoryColor, g_sSmNameColor, client, g_sSmChatColor, message);
+			g_sSmCategoryColor, g_sSmNameColor, client, g_sSmChatColor, text);
 	}
 
 	#if defined _SelfMute_included_
 		if(!g_bSelfMute || !SelfMute_GetSelfMute(target, client) || CheckCommandAccess(client, "sm_kick", ADMFLAG_KICK, true))
 			CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", g_sSmCategoryColor, g_sSmNameColor, target,
-				g_sSmCategoryColor, g_sSmNameColor, client, g_sSmChatColor, message);
+				g_sSmCategoryColor, g_sSmNameColor, client, g_sSmChatColor, text);
 	#else
 		CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", g_sSmCategoryColor, g_sSmNameColor, target,
-				g_sSmCategoryColor, g_sSmNameColor, client, g_sSmChatColor, message);
+				g_sSmCategoryColor, g_sSmNameColor, client, g_sSmChatColor, text);
 	#endif
 
 	
-	LogAction(client, target, "\"%L\" triggered sm_psay to \"%L\" (text %s)", client, target, message);
+	LogAction(client, target, "\"%L\" triggered sm_psay to \"%L\" (text %s)", client, target, text);
 }
 
 void SendChatToAll(int client, const char[] message)
