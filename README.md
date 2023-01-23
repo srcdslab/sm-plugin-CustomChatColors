@@ -24,3 +24,8 @@ Processes chat and provides colors, custom tags and allchat
 
 ### Replace triggers
 ```sm_cccimportreplacefile custom-chatcolorsreplace.cfg```
+
+### Extra Shortcuts:
+```@ = sm_say```
+```@@ = sm_psay```
+```@@@ = sm_csay```
