@@ -13,7 +13,7 @@
 #tryinclude <sourcecomms>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.4.1"
+#define PLUGIN_VERSION					"7.5"
 
 #define DATABASE_NAME					"ccc"
 
@@ -29,7 +29,7 @@
 public Plugin myinfo =
 {
 	name        = "Custom Chat Colors & Tags & Allchat",
-	author      = "Dr. McKay, edit by id/Obus, BotoX, maxime1907, .Rushaway",
+	author      = "Dr. McKay, edit by id/Obus, BotoX, maxime1907, .Rushaway, +SyntX (added @ = sm_say, @@ = sm_psay and @@@ = sm_csay)",
 	description = "Processes chat and provides colors & custom tags & allchat & chat ignoring",
 	version     = PLUGIN_VERSION,
 	url         = "http://www.doctormckay.com"
@@ -1910,7 +1910,7 @@ public Action Command_SmSay(int client, int args)
 {
 	if (args < 1)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_say <message>");
+		ReplyToCommand(client, "[SM] Usage: sm_say <message>");
 		return Plugin_Handled;	
 	}
 	
@@ -1920,14 +1920,14 @@ public Action Command_SmSay(int client, int args)
 	SendChatToAll(client, text);
 	LogAction(client, -1, "\"%L\" triggered sm_say (text %s)", client, text);
 	
-	return Plugin_Stop;		
+	return Plugin_Handled;		
 }
 
 public Action Command_SmCsay(int client, int args)
 {
 	if (args < 1)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_csay <message>");
+		ReplyToCommand(client, "[SM] Usage: sm_csay <message>");
 		return Plugin_Handled;	
 	}
 	
@@ -1945,9 +1945,9 @@ public Action Command_SmChat(int client, int args)
 {
 	if (args < 1)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_chat <message>");
+		ReplyToCommand(client, "[SM] Usage: sm_chat <message>");
 		return Plugin_Handled;	
-	}
+	}	
 	
 	char text[192];
 	GetCmdArgString(text, sizeof(text));
@@ -1955,7 +1955,7 @@ public Action Command_SmChat(int client, int args)
 	SendChatToAdmins(client, text);
 	LogAction(client, -1, "\"%L\" triggered sm_chat (text %s)", client, text);
 	
-	return Plugin_Stop;
+	return Plugin_Handled;	
 }
 
 public Action Command_SmPsay(int client, int args)
@@ -2136,39 +2136,59 @@ public Action Command_SmMsay(int client, int args)
 
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
 {
-	if (client <= 0 || (IsClientInGame(client) && BaseComm_IsClientGagged(client)))
-		return Plugin_Continue;
-
-#if defined _sourcecomms_included
-	if (g_bSourceComms && client)
-	{
-		int IsGagged = SourceComms_GetClientGagType(client);
-		if(IsClientInGame(client) && IsGagged > 0)
-			return Plugin_Continue;
-	}
-#endif
 	int startidx;
 	if (sArgs[startidx] != CHAT_SYMBOL)
 		return Plugin_Continue;
-
+	
 	startidx++;
-
+	
 	if (strcmp(command, "say", false) == 0)
 	{
-		if (!CheckCommandAccess(client, "sm_psay_chat", ADMFLAG_CHAT))
+		if (sArgs[startidx] != CHAT_SYMBOL) // sm_say alias
 		{
-			return Plugin_Continue;
+			if (!CheckCommandAccess(client, "sm_say", ADMFLAG_CHAT))
+			{
+				return Plugin_Continue;
+			}
+			
+			SendChatToAll(client, sArgs[startidx]);
+			LogAction(client, -1, "\"%L\" triggered sm_say (text %s)", client, sArgs[startidx]);
+			
+			return Plugin_Stop;
 		}
 		
-		char arg[64];
+		startidx++;
+
+		if (sArgs[startidx] != CHAT_SYMBOL) // sm_psay alias
+		{
+			if (!CheckCommandAccess(client, "sm_psay", ADMFLAG_CHAT))
+			{
+				return Plugin_Continue;
+			}
+			
+			char arg[64];
 		
 		int len = BreakString(sArgs[startidx], arg, sizeof(arg));
 		int target = FindTarget(client, arg, true, false);
 		
 		if (target == -1 || len == -1)
+				return Plugin_Stop;
+			
+			SendPrivateChat(client, target, sArgs[startidx+len]);
+			
 			return Plugin_Stop;
+		}
 		
-		SendPrivateChat(client, target, sArgs[startidx+len]);
+		startidx++;
+		
+		// sm_csay alias
+		if (!CheckCommandAccess(client, "sm_csay", ADMFLAG_CHAT))
+		{
+			return Plugin_Continue;
+		}
+		
+		DisplayCenterTextToAll(client, sArgs[startidx]);
+		LogAction(client, -1, "\"%L\" triggered sm_csay (text %s)", client, sArgs[startidx]);
 		
 		return Plugin_Stop;
 	}
