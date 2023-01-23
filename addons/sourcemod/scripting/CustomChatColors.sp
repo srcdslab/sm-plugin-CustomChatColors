@@ -2136,6 +2136,17 @@ public Action Command_SmMsay(int client, int args)
 
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
 {
+	if (client <= 0 || (IsClientInGame(client) && BaseComm_IsClientGagged(client)))
+		return Plugin_Continue;
+
+#if defined _sourcecomms_included
+	if (g_bSourceComms && client)
+	{
+		int IsGagged = SourceComms_GetClientGagType(client);
+		if(IsClientInGame(client) && IsGagged > 0)
+			return Plugin_Continue;
+	}
+#endif
 	int startidx;
 	if (sArgs[startidx] != CHAT_SYMBOL)
 		return Plugin_Continue;
