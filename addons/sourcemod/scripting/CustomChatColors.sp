@@ -1720,11 +1720,11 @@ void SendPrivateChat(int client, int target, const char[] message)
 			for (int i = 0; i < adminsCount; i++)
 			{
 				CPrintToChat(admins[i], "%s(Private from %s%N%s to %s%N%s) %s%N {default}: %s%s", 
-				g_sSmCategoryColor, 
-				g_sSmNameColor, client, g_sSmCategoryColor,
-				g_sSmNameColor, target, g_sSmCategoryColor, 
-				g_sSmNameColor, client, 
-				g_sSmChatColor, text);
+					g_sSmCategoryColor, 
+					g_sSmNameColor, client, g_sSmCategoryColor,
+					g_sSmNameColor, target, g_sSmCategoryColor, 
+					g_sSmNameColor, client, 
+					g_sSmChatColor, text);
 			}
 		}
 	#endif
