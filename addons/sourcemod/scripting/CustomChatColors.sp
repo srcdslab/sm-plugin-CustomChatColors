@@ -13,7 +13,7 @@
 #tryinclude <sourcecomms>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.4.1"
+#define PLUGIN_VERSION					"7.4.2"
 
 #define DATABASE_NAME					"ccc"
 
@@ -54,6 +54,7 @@ ConVar g_cSmCategoryColor;
 ConVar g_cSmNameColor;
 ConVar g_cSmChatColor;
 ConVar g_cvPsayCooldown;
+ConVar g_cvPsayPrivacy;
 
 ConVar g_Cvar_Chatmode;
 
@@ -223,6 +224,7 @@ public void OnPluginStart()
 	g_cSmNameColor = CreateConVar("sm_ccc_sm_name_color", "{fullred}", "Color used for SM player name", FCVAR_REPLICATED);
 	g_cSmChatColor = CreateConVar("sm_ccc_sm_chat_color", "{cyan}", "Color used for SM chat", FCVAR_REPLICATED);
 	g_cvPsayCooldown = CreateConVar("sm_ccc_psay_cooldown", "4", "Cooldown between two usage of sm_psay", FCVAR_REPLICATED);
+	g_cvPsayPrivacy = CreateConVar("sm_ccc_psay_privacy", "0", "Hide to admins all usage of sm_psay", FCVAR_REPLICATED);
 
 	//colorForward = CreateGlobalForward("CCC_OnChatColor", ET_Event, Param_Cell);
 	//nameForward = CreateGlobalForward("CCC_OnNameColor", ET_Event, Param_Cell);
@@ -1641,6 +1643,21 @@ void SendPrivateChat(int client, int target, const char[] message)
 	char text[192];
 	Format(text, sizeof(text), "%s", message);
 	StripQuotes(text);
+	
+	int admins[MAXPLAYERS + 1];
+	int adminsCount = 0;
+
+	if (g_cvPsayPrivacy.IntValue != 1)
+	{
+		for (int i = 1; i <= MaxClients; i++)
+		{
+			if (IsClientInGame(i) && !IsFakeClient(i) && CheckCommandAccess(i, "sm_ban", ADMFLAG_BAN, true))
+			{
+				admins[adminsCount] = i;
+				adminsCount++;
+			}
+		}
+	}
 
 	if (!client)
 	{
@@ -1648,17 +1665,68 @@ void SendPrivateChat(int client, int target, const char[] message)
 	}
 	else if (target != client)
 	{
-		CPrintToChat(client, "%s(Private to %s%N%s) %s%N {default}: %s%s", g_sSmCategoryColor, g_sSmNameColor, target,
-			g_sSmCategoryColor, g_sSmNameColor, client, g_sSmChatColor, text);
+		CPrintToChat(client, "%s(Private to %s%N%s) %s%N {default}: %s%s", 
+			g_sSmCategoryColor, 
+			g_sSmNameColor, target, g_sSmCategoryColor, 
+			g_sSmNameColor, client, 
+			g_sSmChatColor, text);
+
+		if (g_cvPsayPrivacy.IntValue != 1)
+		{
+			for (int i = 0; i < adminsCount; i++)
+			{
+				CPrintToChat(admins[i], "%s(Private from %s%N%s to %s%N%s) %s%N {default}: %s%s", 
+					g_sSmCategoryColor, 
+					g_sSmNameColor, client, g_sSmCategoryColor, 
+					g_sSmNameColor, target, g_sSmCategoryColor, 
+					g_sSmNameColor, client,
+					g_sSmChatColor, text);
+			}
+		}
 	}
 
 	#if defined _SelfMute_included_
 		if(!g_bSelfMute || !SelfMute_GetSelfMute(target, client) || CheckCommandAccess(client, "sm_kick", ADMFLAG_KICK, true))
-			CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", g_sSmCategoryColor, g_sSmNameColor, target,
-				g_sSmCategoryColor, g_sSmNameColor, client, g_sSmChatColor, text);
+		{
+			CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", 
+				g_sSmCategoryColor, 
+				g_sSmNameColor, target, g_sSmCategoryColor, 
+				g_sSmNameColor, client, 
+				g_sSmChatColor, text);
+
+			if (g_cvPsayPrivacy.IntValue != 1)
+			{
+				for (int i = 0; i < adminsCount; i++)
+				{
+					CPrintToChat(admins[i], "%s(Private from %s%N%s to %s%N%s) %s%N {default}: %s%s", 
+						g_sSmCategoryColor, 
+						g_sSmNameColor, client, g_sSmCategoryColor, 
+						g_sSmNameColor, target, g_sSmCategoryColor, 
+						g_sSmNameColor, client, 
+						g_sSmChatColor, text);
+				}
+			}
+		}
+
 	#else
-		CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", g_sSmCategoryColor, g_sSmNameColor, target,
-				g_sSmCategoryColor, g_sSmNameColor, client, g_sSmChatColor, text);
+		CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", 
+			g_sSmCategoryColor, 
+			g_sSmNameColor, target, g_sSmCategoryColor, 
+			g_sSmNameColor, client, 
+			g_sSmChatColor, text);
+
+		if (g_cvPsayPrivacy.IntValue != 1)
+		{
+			for (int i = 0; i < adminsCount; i++)
+			{
+				CPrintToChat(admins[i], "%s(Private from %s%N%s to %s%N%s) %s%N {default}: %s%s", 
+				g_sSmCategoryColor, 
+				g_sSmNameColor, client, g_sSmCategoryColor,
+				g_sSmNameColor, target, g_sSmCategoryColor, 
+				g_sSmNameColor, client, 
+				g_sSmChatColor, text);
+			}
+		}
 	#endif
 
 	
@@ -1960,7 +2028,7 @@ public Action Command_SmChat(int client, int args)
 
 public Action Command_SmPsay(int client, int args)
 {
-	if (client <= 0 || (IsClientInGame(client) && BaseComm_IsClientGagged(client)))
+	if (client && (IsClientInGame(client) && BaseComm_IsClientGagged(client)))
 		return Plugin_Continue;
 
 #if defined _sourcecomms_included
