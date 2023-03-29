@@ -224,7 +224,7 @@ public void OnPluginStart()
 	g_cSmNameColor = CreateConVar("sm_ccc_sm_name_color", "{fullred}", "Color used for SM player name", FCVAR_REPLICATED);
 	g_cSmChatColor = CreateConVar("sm_ccc_sm_chat_color", "{cyan}", "Color used for SM chat", FCVAR_REPLICATED);
 	g_cvPsayCooldown = CreateConVar("sm_ccc_psay_cooldown", "4", "Cooldown between two usage of sm_psay", FCVAR_REPLICATED);
-	g_cvPsayPrivacy = CreateConVar("sm_ccc_psay_privacy", "0", "Hide to admins all usage of sm_psay", FCVAR_REPLICATED);
+	g_cvPsayPrivacy = CreateConVar("sm_ccc_psay_privacy", "1", "Hide to admins all usage of sm_psay", FCVAR_REPLICATED);
 
 	//colorForward = CreateGlobalForward("CCC_OnChatColor", ET_Event, Param_Cell);
 	//nameForward = CreateGlobalForward("CCC_OnNameColor", ET_Event, Param_Cell);
@@ -1651,7 +1651,13 @@ void SendPrivateChat(int client, int target, const char[] message)
 	{
 		for (int i = 1; i <= MaxClients; i++)
 		{
-			if (IsClientInGame(i) && !IsFakeClient(i) && CheckCommandAccess(i, "sm_ban", ADMFLAG_BAN, true))
+			if (!IsClientInGame(i) || IsFakeClient(i))
+				continue;
+
+			if (i == client || i == target)
+				continue;
+
+			if (CheckCommandAccess(i, "sm_ban", ADMFLAG_BAN, true))
 			{
 				admins[adminsCount] = i;
 				adminsCount++;
@@ -1687,49 +1693,19 @@ void SendPrivateChat(int client, int target, const char[] message)
 
 	#if defined _SelfMute_included_
 		if(!g_bSelfMute || !SelfMute_GetSelfMute(target, client) || CheckCommandAccess(client, "sm_kick", ADMFLAG_KICK, true))
-		{
 			CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", 
 				g_sSmCategoryColor, 
 				g_sSmNameColor, target, g_sSmCategoryColor, 
 				g_sSmNameColor, client, 
 				g_sSmChatColor, text);
-
-			if (g_cvPsayPrivacy.IntValue != 1)
-			{
-				for (int i = 0; i < adminsCount; i++)
-				{
-					CPrintToChat(admins[i], "%s(Private from %s%N%s to %s%N%s) %s%N {default}: %s%s", 
-						g_sSmCategoryColor, 
-						g_sSmNameColor, client, g_sSmCategoryColor, 
-						g_sSmNameColor, target, g_sSmCategoryColor, 
-						g_sSmNameColor, client, 
-						g_sSmChatColor, text);
-				}
-			}
-		}
-
 	#else
 		CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", 
 			g_sSmCategoryColor, 
 			g_sSmNameColor, target, g_sSmCategoryColor, 
 			g_sSmNameColor, client, 
 			g_sSmChatColor, text);
-
-		if (g_cvPsayPrivacy.IntValue != 1)
-		{
-			for (int i = 0; i < adminsCount; i++)
-			{
-				CPrintToChat(admins[i], "%s(Private from %s%N%s to %s%N%s) %s%N {default}: %s%s", 
-					g_sSmCategoryColor, 
-					g_sSmNameColor, client, g_sSmCategoryColor,
-					g_sSmNameColor, target, g_sSmCategoryColor, 
-					g_sSmNameColor, client, 
-					g_sSmChatColor, text);
-			}
-		}
 	#endif
 
-	
 	LogAction(client, target, "\"%L\" triggered sm_psay to \"%L\" (text %s)", client, target, text);
 }
 
