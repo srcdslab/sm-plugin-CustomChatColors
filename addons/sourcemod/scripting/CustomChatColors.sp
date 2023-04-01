@@ -13,7 +13,7 @@
 #tryinclude <sourcecomms>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.4.2"
+#define PLUGIN_VERSION					"7.4.3"
 
 #define DATABASE_NAME					"ccc"
 
@@ -57,6 +57,7 @@ ConVar g_cvPsayCooldown;
 ConVar g_cvPsayPrivacy;
 
 ConVar g_Cvar_Chatmode;
+ConVar g_Cvar_EnableSay;
 
 char g_sSmCategoryColor[32];
 char g_sSmNameColor[32];
@@ -226,6 +227,8 @@ public void OnPluginStart()
 	g_cvPsayCooldown = CreateConVar("sm_ccc_psay_cooldown", "4", "Cooldown between two usage of sm_psay", FCVAR_REPLICATED);
 	g_cvPsayPrivacy = CreateConVar("sm_ccc_psay_privacy", "1", "Hide to admins all usage of sm_psay", FCVAR_REPLICATED);
 
+	g_Cvar_EnableSay = CreateConVar("sm_ccc_enable_say", "1", "Enable/Disable sm_say Command (1 = Enabled, 0 = Disabled)", FCVAR_REPLICATED);
+	
 	//colorForward = CreateGlobalForward("CCC_OnChatColor", ET_Event, Param_Cell);
 	//nameForward = CreateGlobalForward("CCC_OnNameColor", ET_Event, Param_Cell);
 	//tagForward = CreateGlobalForward("CCC_OnTagApplied", ET_Event, Param_Cell);
@@ -1952,6 +1955,9 @@ public Action Command_TagMenu(int client, int args)
 
 public Action Command_SmSay(int client, int args)
 {
+	if (!g_Cvar_EnableSay.BoolValue)
+		return Plugin_Handled;
+		
 	if (args < 1)
 	{
 		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_say <message>");
