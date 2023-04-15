@@ -2186,9 +2186,12 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 #if defined _sourcecomms_included
 	if (g_bSourceComms && client)
 	{
-		int IsGagged = SourceComms_GetClientGagType(client);
-		if(IsClientInGame(client) && IsGagged > 0)
-			return Plugin_Continue;
+		if (IsClientInGame(client))
+		{
+			int IsGagged = SourceComms_GetClientGagType(client);
+			if (IsGagged > 0)
+				return Plugin_Continue;
+		}
 	}
 #endif
 	int startidx;
