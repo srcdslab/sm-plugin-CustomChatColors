@@ -13,7 +13,7 @@
 #tryinclude <sourcecomms>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.4.2"
+#define PLUGIN_VERSION					"7.4.3"
 
 #define DATABASE_NAME					"ccc"
 
@@ -224,7 +224,7 @@ public void OnPluginStart()
 	g_cSmNameColor = CreateConVar("sm_ccc_sm_name_color", "{fullred}", "Color used for SM player name", FCVAR_REPLICATED);
 	g_cSmChatColor = CreateConVar("sm_ccc_sm_chat_color", "{cyan}", "Color used for SM chat", FCVAR_REPLICATED);
 	g_cvPsayCooldown = CreateConVar("sm_ccc_psay_cooldown", "4", "Cooldown between two usage of sm_psay", FCVAR_REPLICATED);
-	g_cvPsayPrivacy = CreateConVar("sm_ccc_psay_privacy", "1", "Hide to admins all usage of sm_psay", FCVAR_REPLICATED);
+	g_cvPsayPrivacy = CreateConVar("sm_ccc_psay_privacy", "1", "Hide to admins all usage of sm_psay", FCVAR_PROTECTED);
 
 	//colorForward = CreateGlobalForward("CCC_OnChatColor", ET_Event, Param_Cell);
 	//nameForward = CreateGlobalForward("CCC_OnNameColor", ET_Event, Param_Cell);
