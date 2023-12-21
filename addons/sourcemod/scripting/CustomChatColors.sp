@@ -221,8 +221,8 @@ public void OnPluginStart()
 	RegAdminCmd("sm_tsay", Command_SmTsay, ADMFLAG_CHAT, "sm_tsay [color] <message> - sends top-left message to all players");
 	RegAdminCmd("sm_chat", Command_SmChat, ADMFLAG_CHAT, "sm_chat <message> - sends message to admins");
 	RegAdminCmd("sm_psay", Command_SmPsay, ADMFLAG_CHAT, "sm_psay <name or #userid> <message> - sends private message");
-	RegAdminCmd("sm_pstatus", Command_PsayStatus, ADMFLAG_CHAT, "sm_pstatus <name or #userid> - Check private message status");
-	RegAdminCmd("sm_r", Command_SmPsayReply, ADMFLAG_CHAT, "sm_psay <message> - reply to a private message");
+	RegAdminCmd("sm_pstatus", Command_PsayStatus, ADMFLAG_CHAT, "sm_pstatus <name or #userid> - check private message status");
+	RegAdminCmd("sm_r", Command_SmPsayReply, ADMFLAG_CHAT, "sm_psay <message> - reply to your latest private message");
 	RegAdminCmd("sm_msay", Command_SmMsay, ADMFLAG_CHAT, "sm_msay <message> - sends message as a menu panel");
 
 	g_cvar_GreenText = CreateConVar("sm_ccc_green_text", "1", "Enables greentexting (First chat character must be \">\")", FCVAR_REPLICATED);
@@ -368,10 +368,7 @@ public void OnClientCookiesCached(int client)
 {
 	char sBuffer[16];
 	GetClientCookie(client, g_hCookie_DisablePsay, sBuffer, sizeof(sBuffer));
-	if(sBuffer[0])
-		g_bDisablePsay[client] = true;
-	else
-		g_bDisablePsay[client] = false;
+	g_bDisablePsay[client] = StringToInt(sBuffer) != 0;
 }
 
 stock void LateLoad()
@@ -3976,7 +3973,7 @@ public void ToggleCCCSettings(int client)
 public Action Command_PsayStatus(int client, int args)
 {
 	if (args > 1)
-		CPrintToChat(client, "{green}[CCC]{default} Usage sm_checklag <client>");
+		CPrintToChat(client, "{green}[CCC]{default} Usage sm_pstatus <name or #userid>");
 
 	if (args == 0)
 		CPrintToChat(client, "{green}[CCC]{default} Your private messages are %s{default}.", g_bDisablePsay[client] ? "{red}disabled" : "{green}enabled");
