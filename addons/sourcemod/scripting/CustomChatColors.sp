@@ -6,6 +6,7 @@
 #include <multicolors>
 #include <adminmenu>
 #include <basecomm>
+#include <clientprefs>
 #include <ccc>
 
 #undef REQUIRE_PLUGIN
@@ -13,7 +14,7 @@
 #tryinclude <sourcecomms>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.4.3"
+#define PLUGIN_VERSION					"7.4.4"
 
 #define DATABASE_NAME					"ccc"
 
@@ -125,7 +126,10 @@ bool g_bSourceComms = false;
 
 bool g_bProto;
 
+Handle g_hCookie_DisablePsay;
 int g_iClientPsayCooldown[MAXPLAYERS + 1] = { 0, ... };
+int g_iClientFastReply[MAXPLAYERS + 1] = { 0, ... };
+bool g_bDisablePsay[MAXPLAYERS + 1];
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -198,6 +202,11 @@ public void OnPluginStart()
 	AddCommandListener(Command_Say, "say");
 	AddCommandListener(Command_Say, "say_team");
 
+	g_hCookie_DisablePsay = RegClientCookie("disable_psay", "", CookieAccess_Private);
+	RegConsoleCmd("sm_enablepsay", OnToggleCCCSettings);
+	RegConsoleCmd("sm_disablepsay", OnToggleCCCSettings);
+	SetCookieMenuItem(MenuHandler_CookieMenu, 0, "CustomChatColors");
+
 	// Override base chat
 	g_Cvar_Chatmode = CreateConVar("sm_chat_mode", "1", "Allows player's to send messages to admin chat.", 0, true, 0.0, true, 1.0);
 
@@ -212,6 +221,8 @@ public void OnPluginStart()
 	RegAdminCmd("sm_tsay", Command_SmTsay, ADMFLAG_CHAT, "sm_tsay [color] <message> - sends top-left message to all players");
 	RegAdminCmd("sm_chat", Command_SmChat, ADMFLAG_CHAT, "sm_chat <message> - sends message to admins");
 	RegAdminCmd("sm_psay", Command_SmPsay, ADMFLAG_CHAT, "sm_psay <name or #userid> <message> - sends private message");
+	RegAdminCmd("sm_pstatus", Command_PsayStatus, ADMFLAG_CHAT, "sm_pstatus <name or #userid> - check private message status");
+	RegAdminCmd("sm_r", Command_SmPsayReply, ADMFLAG_CHAT, "sm_psay <message> - reply to your latest private message");
 	RegAdminCmd("sm_msay", Command_SmMsay, ADMFLAG_CHAT, "sm_msay <message> - sends message as a menu panel");
 
 	g_cvar_GreenText = CreateConVar("sm_ccc_green_text", "1", "Enables greentexting (First chat character must be \">\")", FCVAR_REPLICATED);
@@ -324,6 +335,7 @@ public void OnClientDisconnect(int client)
 		SQLInsert_TagClient(INVALID_HANDLE, client);
 		
 	g_iClientPsayCooldown[client] = 0;
+	g_iClientFastReply[client] = -1;
 }
 
 public void OnClientPostAdminCheck(int client)
@@ -352,6 +364,13 @@ public void OnClientPostAdminCheck(int client)
 	}
 }
 
+public void OnClientCookiesCached(int client)
+{
+	char sBuffer[16];
+	GetClientCookie(client, g_hCookie_DisablePsay, sBuffer, sizeof(sBuffer));
+	g_bDisablePsay[client] = StringToInt(sBuffer) != 0;
+}
+
 stock void LateLoad()
 {
 	ResetReplace();
@@ -362,7 +381,9 @@ stock void LateLoad()
 		if (!IsClientInGame(i) || IsFakeClient(i))
 			continue;
 
-		ResetClient(i);
+		if(AreClientCookiesCached(i))
+			OnClientCookiesCached(i);
+
 		OnClientPostAdminCheck(i);
 	}
 }
@@ -1640,6 +1661,17 @@ void SendChatToAdmins(int from, const char[] message)
 
 void SendPrivateChat(int client, int target, const char[] message)
 {
+	if (g_bDisablePsay[client])
+	{
+		CPrintToChat(client, "{green}[SM]{default} Enabling private messaging is necessary to send private messages.");
+		ShowSettingsMenu(client);
+		return;
+	}
+	if (g_bDisablePsay[target])
+	{
+		CPrintToChat(client, "{green}[SM]{olive} %N{default} has{red} disabled{default} private messages.", target);
+		return;
+	}
 	char text[192];
 	Format(text, sizeof(text), "%s", message);
 	StripQuotes(text);
@@ -1681,31 +1713,32 @@ void SendPrivateChat(int client, int target, const char[] message)
 		{
 			for (int i = 0; i < adminsCount; i++)
 			{
-				CPrintToChat(admins[i], "%s(Private from %s%N%s to %s%N%s) %s%N {default}: %s%s", 
+				CPrintToChat(admins[i], "%s(Private from %s%N%s to %s%N%s){default}: %s%s", 
 					g_sSmCategoryColor, 
 					g_sSmNameColor, client, g_sSmCategoryColor, 
 					g_sSmNameColor, target, g_sSmCategoryColor, 
-					g_sSmNameColor, client,
 					g_sSmChatColor, text);
 			}
 		}
 	}
 
-	#if defined _SelfMute_included_
-		if(!g_bSelfMute || !SelfMute_GetSelfMute(target, client) || CheckCommandAccess(client, "sm_kick", ADMFLAG_KICK, true))
-			CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", 
-				g_sSmCategoryColor, 
-				g_sSmNameColor, target, g_sSmCategoryColor, 
-				g_sSmNameColor, client, 
-				g_sSmChatColor, text);
-	#else
+#if defined _SelfMute_included_
+	if(!g_bSelfMute || !SelfMute_GetSelfMute(target, client) || CheckCommandAccess(client, "sm_kick", ADMFLAG_KICK, true))
 		CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", 
 			g_sSmCategoryColor, 
 			g_sSmNameColor, target, g_sSmCategoryColor, 
 			g_sSmNameColor, client, 
 			g_sSmChatColor, text);
-	#endif
+#else
+	CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", 
+		g_sSmCategoryColor, 
+		g_sSmNameColor, target, g_sSmCategoryColor, 
+		g_sSmNameColor, client, 
+		g_sSmChatColor, text);
+#endif
 
+	g_iClientPsayCooldown[client] = GetTime() + g_cvPsayCooldown.IntValue;
+	CPrintToChat(target, "{green}[SM] {default}Use /r <message> to reply.");
 	LogAction(client, target, "\"%L\" triggered sm_psay to \"%L\" (text %s)", client, target, text);
 }
 
@@ -1931,7 +1964,7 @@ public Action Command_ReloadConfig(int client, int args)
 {
 	LateLoad();
 
-	LogAction(client, -1, "Reloaded Custom Chat Colors");
+	LogAction(client, -1, "\"%L\" Reloaded Custom Chat Colors config file", client);
 	CReplyToCommand(client, "{green}[CCC] {default}Reloaded ccc.");
 	Call_StartForward(configReloadedForward);
 	Call_Finish();
@@ -2027,11 +2060,7 @@ public Action Command_SmPsay(int client, int args)
 	
 	if (args < 2)
 	{
-		if (client == 0)
-			ReplyToCommand(client, "[SM] Usage: sm_psay <name or #userid> <message>");
-		else
-			CReplyToCommand(client, "{green}[SM] {default}Usage: sm_psay <name or #userid> <message>");
-		
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_psay <name or #userid> <message>");
 		return Plugin_Handled;	
 	}
 
@@ -2046,19 +2075,53 @@ public Action Command_SmPsay(int client, int args)
 		return Plugin_Handled;
 
 	SendPrivateChat(client, target, text[len]);
-	g_iClientPsayCooldown[client] = GetTime() + g_cvPsayCooldown.IntValue;
+	g_iClientFastReply[target] = client;
+	g_iClientFastReply[client] = target;
 
 	return Plugin_Stop;
+}
+
+// Original code https://forums.alliedmods.net/showthread.php?p=2355247
+public Action Command_SmPsayReply(int client, int args)
+{
+	if (args < 1)
+	{
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_r <message>");
+		return Plugin_Handled;
+	}
+	
+	if (g_iClientFastReply[client] == 0)
+	{
+		CReplyToCommand(client, "{green}[SM] {default}You cannot reply to anything since you haven't sent or received a private message.");
+		return Plugin_Handled;
+	}
+	
+	if (g_iClientFastReply[client] == -1)
+	{
+		CReplyToCommand(client, "{green}[SM] {default}You cannot send a private message to a disconnected player.");
+		return Plugin_Handled;
+	}
+
+	char message[224], arg[32];
+	for (int i = 1; i <= args; i++)
+	{
+		GetCmdArg(i, arg, sizeof(arg));
+		Format(message, sizeof(message), "%s %s", message, arg);
+	}
+	
+	int target = g_iClientFastReply[client];
+	if (target == -1)
+		return Plugin_Handled;
+	
+	SendPrivateChat(client, target, message);
+	return Plugin_Handled;
 }
 
 public Action Command_SmHsay(int client, int args)
 {
 	if (args < 1)
 	{
-		if (client == 0)
-			ReplyToCommand(client, "[SM] Usage: sm_hsay <message>");
-		else
-			CReplyToCommand(client, "{green}[SM] {default}Usage: sm_hsay <message>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_hsay <message>");
 		return Plugin_Handled;  
 	}
 	
@@ -2115,10 +2178,7 @@ public Action Command_SmTsay(int client, int args)
 {
 	if (args < 1)
 	{
-		if (client == 0)
-			ReplyToCommand(client, "[SM] Usage: sm_tsay <message>");
-		else
-			CReplyToCommand(client, "{green}[SM] {default}Usage: sm_tsay <message>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_tsay <message>");
 		return Plugin_Handled;  
 	}
 	
@@ -2161,10 +2221,7 @@ public Action Command_SmMsay(int client, int args)
 	
 	if (args < 1)
 	{
-		if (client == 0)
-			ReplyToCommand(client, "[SM]  Usage: sm_msay <message>");
-		else
-			CReplyToCommand(client, "{green}[SM] {default} Usage: sm_msay <message>");
+		CReplyToCommand(client, "{green}[SM] {default} Usage: sm_msay <message>");
 		return Plugin_Handled;	
 	}
 	
@@ -2371,10 +2428,7 @@ public Action Command_ForceTag(int client, int args)
 {
 	if (args < 2)
 	{
-		if (client == 0)
-			ReplyToCommand(client, "[SM] Usage: sm_forcetag <name|#userid|@filter> <tag text>");
-		else
-			CReplyToCommand(client, "{green}[SM] {default}Usage: sm_forcetag <name|#userid|@filter> <tag text>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_forcetag <name|#userid|@filter> <tag text>");
 		return Plugin_Handled;
 	}
 
@@ -2391,10 +2445,7 @@ public Action Command_ForceTagColor(int client, int args)
 {
 	if (args < 2)
 	{
-		if (client == 0)
-			ReplyToCommand(client, "[SM] Usage: sm_forcetagcolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
-		else
-			CReplyToCommand(client, "{green}[SM] {default}Usage: sm_forcetagcolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_forcetagcolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		return Plugin_Handled;
 	}
 
@@ -2411,10 +2462,7 @@ public Action Command_ForceNameColor(int client, int args)
 {
 	if (args < 2)
 	{
-		if (client == 0)
-			ReplyToCommand(client, "[SM] Usage: sm_forcenamecolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
-		else
-			CReplyToCommand(client, "{green}[SM] {default}Usage: sm_forcenamecolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_forcenamecolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		return Plugin_Handled;
 	}
 
@@ -2431,10 +2479,7 @@ public Action Command_ForceTextColor(int client, int args)
 {
 	if (args < 2)
 	{
-		if (client == 0)
-			ReplyToCommand(client, "[SM] Usage: sm_forcetextcolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
-		else
-			CReplyToCommand(client, "{green}[SM] {default}Usage: sm_forcetextcolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_forcetextcolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		return Plugin_Handled;
 	}
 
@@ -2451,10 +2496,7 @@ public Action Command_CCCReset(int client, int args)
 {
 	if (args < 1)
 	{
-		if (client == 0)
-			ReplyToCommand(client, "[SM] Usage: sm_cccreset <name|#userid|@filter>");
-		else
-			CReplyToCommand(client, "{green}[SM] {default}Usage: sm_cccreset <name|#userid|@filter>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_cccreset <name|#userid|@filter>");
 		return Plugin_Handled;
 	}
 
@@ -2484,10 +2526,7 @@ public Action Command_CCCBan(int client, int args)
 {
 	if (args < 1)
 	{
-		if (client == 0)
-			ReplyToCommand(client, "[SM] Usage: sm_cccban <name|#userid|@filter> <optional:time>");
-		else
-			CReplyToCommand(client, "{green}[SM] {default}Usage: sm_cccban <name|#userid|@filter> <optional:time>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_cccban <name|#userid|@filter> <optional:time>");
 		return Plugin_Handled;
 	}
 
@@ -2522,10 +2561,7 @@ public Action Command_CCCUnban(int client, int args)
 {
 	if (args < 1)
 	{
-		if (client == 0)
-			ReplyToCommand(client, "[SM] Usage: sm_cccunban <name|#userid|@filter>");
-		else
-			CReplyToCommand(client, "{green}[SM] {default}Usage: sm_cccunban <name|#userid|@filter>");
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_cccunban <name|#userid|@filter>");
 		return Plugin_Handled;
 	}
 
@@ -3715,6 +3751,7 @@ stock void ResetClient(int client)
 	Format(g_sInputType[client], sizeof(g_sInputType[]), "");
 	Format(g_sATargetSID[client], sizeof(g_sATargetSID[]), "");
 	g_bWaitingForChatInput[client] = false;
+	g_iClientFastReply[client] = 0;
 	g_iATarget[client] = 0;
 	g_sClientSID[client] = "";
 	ClearValues(client);
@@ -3908,6 +3945,113 @@ public Action Event_PlayerSay(Handle event, const char[] name, bool dontBroadcas
 
 	g_msgAuthor = -1;
 	return Plugin_Continue;
+}
+
+public Action OnToggleCCCSettings(int client, int args)
+{
+	ToggleCCCSettings(client);
+	return Plugin_Handled;
+}
+
+public void ToggleCCCSettings(int client)
+{
+	if(!client)
+		return;
+
+	if (!AreClientCookiesCached(client))
+	{
+		CPrintToChat(client, "{green}[CCC]{default} Please wait, your settings are retrieved...");
+		return;
+	}
+
+	g_bDisablePsay[client] = !g_bDisablePsay[client];
+	SetClientCookie(client, g_hCookie_DisablePsay, g_bDisablePsay[client] ? "1" : "");
+
+	CPrintToChat(client, "{green}[CCC]{default} Private messages has been %s.", g_bDisablePsay[client] ? "{red}disabled" : "{green}enabled");
+}
+
+public Action Command_PsayStatus(int client, int args)
+{
+	if (args > 1)
+		CPrintToChat(client, "{green}[CCC]{default} Usage sm_pstatus <name or #userid>");
+
+	if (args == 0)
+		CPrintToChat(client, "{green}[CCC]{default} Your private messages are %s{default}.", g_bDisablePsay[client] ? "{red}disabled" : "{green}enabled");
+
+	if (args == 1)
+	{
+		char arg1[32];
+		GetCmdArg(1, arg1, sizeof(arg1));
+		int target = FindTarget(client, arg1, false, false);
+		if (target == -1)
+			return Plugin_Handled;
+
+		CPrintToChat(client, "{green}[CCC]{default} Private messages are %s{default} for {olive}%N{default}.", g_bDisablePsay[target] ? "{red}disabled" : "{green}enabled", target);
+	}
+	
+	return Plugin_Handled;
+}
+
+public void ShowSettingsMenu(int client)
+{
+	Menu menu = new Menu(MenuHandler_MainMenu, MENU_ACTIONS_ALL);
+	menu.SetTitle("CustomChatColors Settings", client);
+
+	char sPsay[128], sTag[128];
+	Format(sPsay, sizeof(sPsay), "Private messages: %s", g_bDisablePsay[client] ? "Disabled" : "Enabled");
+	Format(sTag, sizeof(sTag), "Tag Settings");
+
+	menu.AddItem("0", sPsay);
+	menu.AddItem("1", sTag);
+
+	menu.ExitBackButton = true;
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int MenuHandler_MainMenu(Menu menu, MenuAction action, int client, int selection)
+{
+	switch(action)
+	{
+		case(MenuAction_Select):
+		{
+			switch(selection)
+			{
+				case(0):
+				{
+					ToggleCCCSettings(client);
+					ShowSettingsMenu(client);
+				}
+				case(1):
+				{
+					Menu_Main(client);
+				}
+			}
+		}
+		case(MenuAction_Cancel):
+		{
+			ShowCookieMenu(client);
+		}
+		case(MenuAction_End):
+		{
+			delete menu;
+		}
+	}
+	return 0;
+}
+
+public void MenuHandler_CookieMenu(int client, CookieMenuAction action, any info, char[] buffer, int maxlen)
+{
+	switch(action)
+	{
+		case(CookieMenuAction_DisplayOption):
+		{
+			Format(buffer, maxlen, "CustomChatColors Settings", client);
+		}
+		case(CookieMenuAction_SelectOption):
+		{
+			ShowSettingsMenu(client);
+		}
+	}
 }
 
 //  888b    888        d8888 88888888888 8888888 888     888 8888888888 .d8888b.
