@@ -14,7 +14,7 @@
 #tryinclude <sourcecomms>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.4.5"
+#define PLUGIN_VERSION					"7.4.6"
 
 #define DATABASE_NAME					"ccc"
 
@@ -90,6 +90,7 @@ char g_sATargetSID[MAXPLAYERS + 1][64];
 int g_iATarget[MAXPLAYERS + 1];
 
 Handle g_hDatabase = null;
+StringMap smTrie = null;
 
 int g_msgAuthor;
 bool g_msgIsChat;
@@ -311,6 +312,15 @@ public void OnLibraryRemoved(const char[] name)
 	}
 }
 
+public void OnMapEnd()
+{
+	if (smTrie != null)
+	{
+		smTrie.Clear();
+		delete smTrie;
+	}
+}
+
 public void OnConfigsExecuted()
 {
 	g_cSmCategoryColor.GetString(g_sSmCategoryColor, sizeof(g_sSmCategoryColor));
@@ -390,7 +400,7 @@ stock void LateLoad()
 
 stock void LoadColorArray()
 {
-	StringMap smTrie = CGetTrie();
+	smTrie = CGetTrie();
 	StringMapSnapshot smTrieSnapshot = smTrie.Snapshot();
 	if (smTrie != null)
 	{
@@ -411,7 +421,6 @@ stock void LoadColorArray()
 	SortColors();
 
 	delete smTrieSnapshot;
-	delete smTrie;
 }
 
 stock void SortColors()
@@ -1464,15 +1473,13 @@ bool ChangeSingleColor(int client, int iTarget, char Key[64], char sCol[64], boo
 	}
 	else if ((IsSource2009() && !IsValidHex(sCol)) || !IsSource2009())
 	{
-		StringMap smTrie = CGetTrie();
+		smTrie = CGetTrie();
 		char value[32];
 		if (!smTrie.GetString(sCol, value, sizeof(value)))
 		{
 			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid color name given.");
-			delete smTrie;
 			return false;
 		}
-		delete smTrie;
 
 		SetColor(SID, Key, sCol, iTarget, bAdmin);
 
@@ -3421,7 +3428,7 @@ public void Menu_TagPrefs(int client)
 public void Menu_AddColors(Menu ColorsMenu)
 {
 	char info[64];
-	StringMap smTrie = CGetTrie();
+	smTrie = CGetTrie();
 
 	if (smTrie!= null && g_sColorsArray != null)
 	{
@@ -3438,8 +3445,6 @@ public void Menu_AddColors(Menu ColorsMenu)
 			ColorsMenu.AddItem(key, info);
 		}
 	}
-
-	delete smTrie;	
 }
 
 public int MenuHandler_TagPrefs(Menu MenuTPrefs, MenuAction action, int param1, int param2)
@@ -3859,11 +3864,9 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		if (strlen(sAuthorTag) > 0)
 			Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s%s", CCC_GetColor(sTagColorKey, sValue, sizeof(sValue)) ? "#" : "", bTagFound ? sTagColorKey : "default", sAuthorTag, g_msgSender);
 
-		StringMap smTrie = CGetTrie();
+		smTrie = CGetTrie();
 		if (g_msgText[0] == '>' && GetConVarInt(g_cvar_GreenText) > 0 && smTrie.GetString("green", sValue, sizeof(sValue)))
 			Format(g_msgText, sizeof(g_msgText), "{green}%s", g_msgText);
-
-		delete smTrie;
 
 		if (bChatFound)
 			Format(g_msgText, sizeof(g_msgText), "{%s%s}%s", CCC_GetColor(sChatColorKey, sValue, sizeof(sValue)) ? "#" : "", sChatColorKey, g_msgText);
@@ -4154,7 +4157,7 @@ stock bool ConfigForward(int client)
 
 stock bool GetColorKey(int client, CCC_ColorType colorType, char[] key, int size)
 {
-	StringMap smTrie = CGetTrie();
+	smTrie = CGetTrie();
 	bool bFound = true;
 	char value[32];
 
@@ -4215,7 +4218,6 @@ stock bool GetColorKey(int client, CCC_ColorType colorType, char[] key, int size
 		}
 	}
 
-	delete smTrie;
 	return bFound;
 }
 
@@ -4248,9 +4250,10 @@ stock bool GetColor(char key[32], char[] value, int size)
 		strcopy(value, size, key);
 		return true;
 	}
-	StringMap smTrie = CGetTrie();
+
+	smTrie = CGetTrie();
 	smTrie.GetString(key, value, size);
-	delete smTrie;
+
 	return false;
 }
 
