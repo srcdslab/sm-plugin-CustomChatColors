@@ -14,7 +14,7 @@
 #tryinclude <sourcecomms>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.4.5"
+#define PLUGIN_VERSION					"7.4.4"
 
 #define DATABASE_NAME					"ccc"
 
@@ -222,7 +222,7 @@ public void OnPluginStart()
 	RegAdminCmd("sm_chat", Command_SmChat, ADMFLAG_CHAT, "sm_chat <message> - sends message to admins");
 	RegAdminCmd("sm_psay", Command_SmPsay, ADMFLAG_CHAT, "sm_psay <name or #userid> <message> - sends private message");
 	RegAdminCmd("sm_pstatus", Command_PsayStatus, ADMFLAG_CHAT, "sm_pstatus <name or #userid> - check private message status");
-	RegAdminCmd("sm_r", Command_SmPsayReply, ADMFLAG_CHAT, "sm_r <message> - reply to your latest private message");
+	RegAdminCmd("sm_r", Command_SmPsayReply, ADMFLAG_CHAT, "sm_psay <message> - reply to your latest private message");
 	RegAdminCmd("sm_msay", Command_SmMsay, ADMFLAG_CHAT, "sm_msay <message> - sends message as a menu panel");
 
 	g_cvar_GreenText = CreateConVar("sm_ccc_green_text", "1", "Enables greentexting (First chat character must be \">\")", FCVAR_REPLICATED);
@@ -409,9 +409,6 @@ stock void LoadColorArray()
 		}
 	}
 	SortColors();
-
-	delete smTrieSnapshot;
-	delete smTrie;
 }
 
 stock void SortColors()
@@ -1469,10 +1466,8 @@ bool ChangeSingleColor(int client, int iTarget, char Key[64], char sCol[64], boo
 		if (!smTrie.GetString(sCol, value, sizeof(value)))
 		{
 			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid color name given.");
-			delete smTrie;
 			return false;
 		}
-		delete smTrie;
 
 		SetColor(SID, Key, sCol, iTarget, bAdmin);
 
@@ -3437,9 +3432,7 @@ public void Menu_AddColors(Menu ColorsMenu)
 				Format(info, sizeof(info), "%s", key);
 			ColorsMenu.AddItem(key, info);
 		}
-	}
-
-	delete smTrie;	
+	}	
 }
 
 public int MenuHandler_TagPrefs(Menu MenuTPrefs, MenuAction action, int param1, int param2)
@@ -3863,8 +3856,6 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		if (g_msgText[0] == '>' && GetConVarInt(g_cvar_GreenText) > 0 && smTrie.GetString("green", sValue, sizeof(sValue)))
 			Format(g_msgText, sizeof(g_msgText), "{green}%s", g_msgText);
 
-		delete smTrie;
-
 		if (bChatFound)
 			Format(g_msgText, sizeof(g_msgText), "{%s%s}%s", CCC_GetColor(sChatColorKey, sValue, sizeof(sValue)) ? "#" : "", sChatColorKey, g_msgText);
 	}
@@ -4214,8 +4205,6 @@ stock bool GetColorKey(int client, CCC_ColorType colorType, char[] key, int size
 			bFound = false;
 		}
 	}
-
-	delete smTrie;
 	return bFound;
 }
 
@@ -4250,7 +4239,6 @@ stock bool GetColor(char key[32], char[] value, int size)
 	}
 	StringMap smTrie = CGetTrie();
 	smTrie.GetString(key, value, size);
-	delete smTrie;
 	return false;
 }
 
