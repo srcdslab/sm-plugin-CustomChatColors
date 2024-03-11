@@ -1,6 +1,16 @@
 name: CI
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - '*'
+  pull_request:
+    branches:
+      - main
+      - master
 
 jobs:
   build:
@@ -29,7 +39,7 @@ jobs:
       - name: Upload build archive for test runners
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ runner.os }}
+          name: package
           path: /tmp/package
 
   tag:
@@ -74,8 +84,8 @@ jobs:
       - name: Package
         run: |
           ls -Rall
-          if [ -d "./Linux/" ]; then
-            cd ./Linux/
+          if [ -d "./package/" ]; then
+            cd ./package/
             tar -czf ../${{ github.event.repository.name }}-${{ env.RELEASE_VERSION }}.tar.gz -T <(\ls -1)
             cd -
           fi

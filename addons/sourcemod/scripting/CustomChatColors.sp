@@ -12,9 +12,10 @@
 #undef REQUIRE_PLUGIN
 #tryinclude <SelfMute>
 #tryinclude <sourcecomms>
+#tryinclude <DynamicChannels>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.4.4"
+#define PLUGIN_VERSION					"7.4.5"
 
 #define DATABASE_NAME					"ccc"
 
@@ -2159,6 +2160,12 @@ public Action Command_SmDsay(int client, int args)
 	char nameBuf[MAX_NAME_LENGTH];
 	SetHudTextParams(-1.0, 0.25, 3.0, 0, 255, 127, 255, 1);
 
+	int iHUDChannel = -1;
+#if defined _DynamicChannels_included_
+	if (CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "GetDynamicChannel") == FeatureStatus_Available)
+		iHUDChannel = GetDynamicChannel(0);
+#endif
+
 	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (!IsClientInGame(i) || IsFakeClient(i))
@@ -2166,12 +2173,12 @@ public Action Command_SmDsay(int client, int args)
 			continue;
 		}
 		FormatActivitySource(client, i, nameBuf, sizeof(nameBuf));
-		ShowHudText(i, -1, "%s: %s", nameBuf, text);
+		ShowHudText(i, iHUDChannel, "%s: %s", nameBuf, text);
 	}
 
 	LogAction(client, -1, "\"%L\" triggered sm_dsay (text %s)", client, text);
 
-	return Plugin_Handled;	
+	return Plugin_Handled;
 }
 
 public Action Command_SmTsay(int client, int args)
