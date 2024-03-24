@@ -15,7 +15,7 @@
 #tryinclude <DynamicChannels>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.4.5"
+#define PLUGIN_VERSION					"7.4.6"
 
 #define DATABASE_NAME					"ccc"
 
@@ -57,6 +57,7 @@ ConVar g_cSmNameColor;
 ConVar g_cSmChatColor;
 ConVar g_cvPsayCooldown;
 ConVar g_cvPsayPrivacy;
+ConVar g_cvHUDChannel;
 
 ConVar g_Cvar_Chatmode;
 
@@ -237,6 +238,7 @@ public void OnPluginStart()
 	g_cSmChatColor = CreateConVar("sm_ccc_sm_chat_color", "{cyan}", "Color used for SM chat", FCVAR_REPLICATED);
 	g_cvPsayCooldown = CreateConVar("sm_ccc_psay_cooldown", "4", "Cooldown between two usage of sm_psay", FCVAR_REPLICATED);
 	g_cvPsayPrivacy = CreateConVar("sm_ccc_psay_privacy", "1", "Hide to admins all usage of sm_psay", FCVAR_PROTECTED);
+	g_cvHUDChannel = CreateConVar("sm_ccc_hud_channel", "0", "The channel for the hud if using DynamicChannels", _, true, 0.0, true, 6.0);
 
 	//colorForward = CreateGlobalForward("CCC_OnChatColor", ET_Event, Param_Cell);
 	//nameForward = CreateGlobalForward("CCC_OnNameColor", ET_Event, Param_Cell);
@@ -2161,9 +2163,13 @@ public Action Command_SmDsay(int client, int args)
 	SetHudTextParams(-1.0, 0.25, 3.0, 0, 255, 127, 255, 1);
 
 	int iHUDChannel = -1;
+	int iChannel = g_cvHUDChannel.IntValue;
+	if (iChannel < 0 || iChannel > 6)
+		iChannel = 0;
+
 #if defined _DynamicChannels_included_
 	if (CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "GetDynamicChannel") == FeatureStatus_Available)
-		iHUDChannel = GetDynamicChannel(0);
+		iHUDChannel = GetDynamicChannel(iChannel);
 #endif
 
 	for (int i = 1; i <= MaxClients; i++)
