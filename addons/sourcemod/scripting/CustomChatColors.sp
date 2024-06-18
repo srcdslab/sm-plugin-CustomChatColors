@@ -15,7 +15,7 @@
 #tryinclude <DynamicChannels>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.4.6"
+#define PLUGIN_VERSION					"7.4.7"
 
 #define DATABASE_NAME					"ccc"
 
@@ -69,6 +69,7 @@ char g_sReplaceList[REPLACE_LIST_MAX_LENGTH][2][MAX_CHAT_LENGTH];
 int g_iReplaceListSize = 0;
 
 char g_sClientSID[MAXPLAYERS + 1][32];
+char g_sSteamIDs[MAXPLAYERS + 1][MAX_AUTHID_LENGTH];
 
 int g_iClientEnable[MAXPLAYERS + 1] = { 1, ...};
 char g_sClientTag[MAXPLAYERS + 1][64];
@@ -122,9 +123,12 @@ int g_Colors[13][3] = {{255,255,255},{255,0,0},{0,255,0},{0,0,255},{255,255,0},{
 
 bool g_bSQLite = true;
 bool g_bLate = false;
-
-bool g_bSelfMute = false;
-bool g_bSourceComms = false;
+bool g_bPlugin_DynamicChannels = false;
+bool g_bDynamicNative = false;
+bool g_bPlugin_SelfMute = false;
+bool g_bSelfMuteNative = false;
+bool g_bPlugin_SourceComms = false;
+bool g_bSourceCommsNative = false;
 
 bool g_bProto;
 
@@ -273,8 +277,10 @@ public void OnPluginEnd()
 
 public void OnAllPluginsLoaded()
 {
-	g_bSelfMute = LibraryExists("SelfMute");
-	g_bSourceComms = LibraryExists("sourcecomms++");
+	g_bPlugin_SelfMute = LibraryExists("SelfMute");
+	g_bPlugin_SourceComms = LibraryExists("sourcecomms++");
+	g_bPlugin_DynamicChannels = LibraryExists("DynamicChannels");
+	VerifyNatives();
 
 	// We dont need basechat as we already implemented our version with color support
 	char sBaseChatPlugin[PLATFORM_MAX_PATH];
@@ -292,26 +298,62 @@ public void OnAllPluginsLoaded()
 
 public void OnLibraryAdded(const char[] name)
 {
-	if (StrEqual(name, "SelfMute"))
+	if (strcmp(name, "SelfMute", false) == 0)
 	{
-		g_bSelfMute = true;
+		g_bPlugin_SelfMute = true;
+		VerifyNative_SelfMute();
 	}
-	if (StrEqual(name, "sourcecomms++"))
+	if (strcmp(name, "sourcecomms++", false) == 0)
 	{
-		g_bSourceComms = true;
+		g_bPlugin_SourceComms = true;
+		VerifyNative_SourceCommsPP();
+	}
+	if (strcmp(name, "DynamicChannels", false) == 0)
+	{
+		g_bPlugin_DynamicChannels = true;
+		VerifyNative_DynamicChannel();
 	}
 }
 
 public void OnLibraryRemoved(const char[] name)
 {
-	if (StrEqual(name, "SelfMute"))
+	if (strcmp(name, "SelfMute", false) == 0)
 	{
-		g_bSelfMute = false;
+		g_bPlugin_SelfMute = false;
+		VerifyNative_SelfMute();
 	}
-	if (StrEqual(name, "sourcecomms++"))
+	if (strcmp(name, "sourcecomms++", false) == 0)
 	{
-		g_bSourceComms = false;
+		g_bPlugin_SourceComms = false;
+		VerifyNative_SourceCommsPP();
 	}
+	if (strcmp(name, "DynamicChannels", false) == 0)
+	{
+		g_bPlugin_DynamicChannels = false;
+		VerifyNative_DynamicChannel();
+	}
+}
+
+stock void VerifyNatives()
+{
+	VerifyNative_SelfMute();
+	VerifyNative_SourceCommsPP();
+	VerifyNative_DynamicChannel();
+}
+
+stock void VerifyNative_SelfMute()
+{
+	g_bSelfMuteNative = g_bPlugin_SelfMute && CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "SelfMute_GetSelfMute") == FeatureStatus_Available;
+}
+
+stock void VerifyNative_SourceCommsPP()
+{
+	g_bSourceCommsNative = g_bPlugin_SourceComms && CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "SourceComms_GetClientGagType") == FeatureStatus_Available;
+}
+
+stock void VerifyNative_DynamicChannel()
+{
+	g_bDynamicNative = g_bPlugin_DynamicChannels && CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "GetDynamicChannel") == FeatureStatus_Available;
 }
 
 public void OnConfigsExecuted()
@@ -325,10 +367,10 @@ public void OnClientDisconnect(int client)
 {
 	// Check if the client has changed anything in its ccc config
 	if (g_iDefaultClientEnable[client] == g_iClientEnable[client] &&
-		StrEqual(g_sDefaultClientTag[client], g_sClientTag[client]) &&
-		StrEqual(g_sDefaultClientTagColor[client], g_sClientTagColor[client]) &&
-		StrEqual(g_sDefaultClientNameColor[client], g_sClientNameColor[client]) &&
-		StrEqual(g_sDefaultClientChatColor[client], g_sClientChatColor[client]))
+		strcmp(g_sDefaultClientTag[client], g_sClientTag[client], false) == 0 &&
+		strcmp(g_sDefaultClientTagColor[client], g_sClientTagColor[client], false) == 0 &&
+		strcmp(g_sDefaultClientNameColor[client], g_sClientNameColor[client], false) == 0 &&
+		strcmp(g_sDefaultClientChatColor[client], g_sClientChatColor[client], false) == 0)
 		return;
 
 	// If we successfully selected the client previously
@@ -336,14 +378,21 @@ public void OnClientDisconnect(int client)
 		SQLUpdate_TagClient(INVALID_HANDLE, client);
 	else
 		SQLInsert_TagClient(INVALID_HANDLE, client);
-		
+
 	g_iClientPsayCooldown[client] = 0;
 	g_iClientFastReply[client] = -1;
+	g_sSteamIDs[client][0] = '\0';
 }
 
 public void OnClientPostAdminCheck(int client)
 {
 	ResetClient(client);
+
+	char auth[MAX_AUTHID_LENGTH];
+	GetClientAuthId(client, AuthId_Steam2, auth, sizeof(auth));
+	FormatEx(g_sSteamIDs[client], sizeof(g_sSteamIDs[]), "%s", auth);
+	if (strncmp(auth[6], "ID_", 3) == 0)
+		GetClientAuthId(client, AuthId_Steam2, g_sSteamIDs[client], sizeof(g_sSteamIDs[]), false);
 
 	if (HasFlag(client, Admin_Custom1))
 	{
@@ -352,15 +401,12 @@ public void OnClientPostAdminCheck(int client)
 	}
 	else if (HasFlag(client, Admin_Generic))
 	{
-		char sClientSteamID[64];
-		GetClientAuthId(client, AuthId_Steam2, sClientSteamID, sizeof(sClientSteamID));
-
 		char sClientFlagString[64];
 		GetClientFlagString(client, sClientFlagString, sizeof(sClientFlagString));
 
 		DataPack pack = new DataPack();
 		pack.WriteCell(client);
-		pack.WriteString(sClientSteamID);
+		pack.WriteString(g_sSteamIDs[client]);
 		pack.WriteString(sClientFlagString);
 
 		SQLSelect_TagGroup(INVALID_HANDLE, pack);
@@ -369,6 +415,9 @@ public void OnClientPostAdminCheck(int client)
 
 public void OnClientCookiesCached(int client)
 {
+	if (IsFakeClient(client))
+		return;
+
 	char sBuffer[16];
 	GetClientCookie(client, g_hCookie_DisablePsay, sBuffer, sizeof(sBuffer));
 	g_bDisablePsay[client] = StringToInt(sBuffer) != 0;
@@ -556,10 +605,7 @@ stock Action SQLSelect_Ban(Handle timer, any client)
 		return Plugin_Stop;
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
-	char sClientSteamID[32];
-
-	GetClientAuthId(client, AuthId_Steam2, sClientSteamID, sizeof(sClientSteamID));
-	FormatEx(sQuery, sizeof(sQuery), "SELECT `length` FROM `ccc_ban` WHERE `steamid` = '%s';", sClientSteamID);
+	FormatEx(sQuery, sizeof(sQuery), "SELECT `length` FROM `ccc_ban` WHERE `steamid` = '%s';", g_sSteamIDs[client]);
 	SQL_TQuery(g_hDatabase, OnSQLSelect_Ban, sQuery, client, DBPrio_High);
 	return Plugin_Stop;
 }
@@ -620,16 +666,12 @@ stock void GetClientFlagString(int client, char[] sClientFlagString, int maxSize
 
 stock Action SQLSelect_TagClient(Handle timer, any client)
 {
-	char sClientSteamID[32];
-
-	GetClientAuthId(client, AuthId_Steam2, sClientSteamID, sizeof(sClientSteamID));
-
 	char sClientFlagString[64];
 	GetClientFlagString(client, sClientFlagString, sizeof(sClientFlagString));
 
 	DataPack pack = new DataPack();
 	pack.WriteCell(client);
-	pack.WriteString(sClientSteamID);
+	pack.WriteString(g_sSteamIDs[client]);
 	pack.WriteString(sClientFlagString);
 
 	SQLSelect_Tag(INVALID_HANDLE, pack);
@@ -705,15 +747,12 @@ stock Action SQLDelete_Replace(Handle timer, any data)
 
 stock Action SQLInsert_TagClient(Handle timer, any client)
 {
-	char sClientSteamID[32];
 	char sClientName[32];
-
-	GetClientAuthId(client, AuthId_Steam2, sClientSteamID, sizeof(sClientSteamID));
 	GetClientName(client, sClientName, sizeof(sClientName));
 
 	DataPack pack = new DataPack();
 	pack.WriteCell(client);
-	pack.WriteString(sClientSteamID);
+	pack.WriteString(g_sSteamIDs[client]);
 	pack.WriteCell(g_iClientEnable[client]);
 	pack.WriteString(sClientName);
 	pack.WriteString("");
@@ -771,15 +810,12 @@ stock Action SQLInsert_Tag(Handle timer, any data)
 
 stock Action SQLUpdate_TagClient(Handle timer, any client)
 {
-	char sClientSteamID[32];
 	char sClientName[32];
-
-	GetClientAuthId(client, AuthId_Steam2, sClientSteamID, sizeof(sClientSteamID));
 	GetClientName(client, sClientName, sizeof(sClientName));
 
 	DataPack pack = new DataPack();
 	pack.WriteCell(client);
-	pack.WriteString(sClientSteamID);
+	pack.WriteString(g_sSteamIDs[client]);
 	pack.WriteCell(g_iClientEnable[client]);
 	pack.WriteString(sClientName);
 	pack.WriteString("");
@@ -907,21 +943,17 @@ stock Action SQLInsert_Ban(Handle timer, any data)
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 	char sClientName[32];
 	char sTargetName[32];
-	char sClientSteamID[32];
-	char sTargetSteamID[32];
 
 	GetClientName(client, sClientName, sizeof(sClientName));
 	GetClientName(target, sTargetName, sizeof(sTargetName));
-	GetClientAuthId(client, AuthId_Steam2, sClientSteamID, sizeof(sClientSteamID));
-	GetClientAuthId(target, AuthId_Steam2, sTargetSteamID, sizeof(sTargetSteamID));
 
 	FormatEx(
 		sQuery,
 		sizeof(sQuery),
 		"INSERT INTO `ccc_ban` (`steamid`, `name`, `issuer_steamid`, `issuer_name`, `length`) VALUES ('%s', '%s', '%s', '%s', '%d') \
 		ON DUPLICATE KEY UPDATE `steamid` = '%s', `name` = '%s', `issuer_steamid` = '%s', `issuer_name` = '%s', `length` = '%d';",
-		sTargetSteamID, sTargetName, sClientSteamID, sClientName, time,
-		sTargetSteamID, sTargetName, sClientSteamID, sClientName, time
+		g_sSteamIDs[target], sTargetName, g_sSteamIDs[client], sClientName, time,
+		g_sSteamIDs[target], sTargetName, g_sSteamIDs[client], sClientName, time
 	);
 	SQL_TQuery(g_hDatabase, OnSQLInsert_Ban, sQuery, data);
 
@@ -939,10 +971,8 @@ stock Action SQLDelete_Ban(Handle timer, any data)
 	int target = pack.ReadCell();
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
-	char sTargetSteamID[32];
 
-	GetClientAuthId(target, AuthId_Steam2, sTargetSteamID, sizeof(sTargetSteamID));
-	FormatEx(sQuery, sizeof(sQuery), "DELETE FROM `ccc_ban` WHERE `steamid` = '%s';", sTargetSteamID);
+	FormatEx(sQuery, sizeof(sQuery), "DELETE FROM `ccc_ban` WHERE `steamid` = '%s';", g_sSteamIDs[target]);
 	SQL_TQuery(g_hDatabase, OnSQLDelete_Ban, sQuery, data);
 
 	return Plugin_Stop;
@@ -1205,7 +1235,7 @@ public void OnSQLDelete_Replace(Handle hParent, Handle hChild, const char[] err,
 
 		for (int i = 0; i < g_iReplaceListSize; i++)
 		{
-			if (StrEqual(sTrigger, g_sReplaceList[i][0]))
+			if (strcmp(sTrigger, g_sReplaceList[i][0], false) == 0)
 			{
 				for (int y = i; y < g_iReplaceListSize; y++)
 				{
@@ -1392,10 +1422,7 @@ bool ChangeSingleTag(int client, int iTarget, char sTag[64], bool bAdmin)
 	ReplaceString(sTag, sizeof(sTag), "\"", "'");
 	ReplaceString(sTag, sizeof(sTag), "%s", "s");
 
-	char SID[64];
-	GetClientAuthId(iTarget, AuthId_Steam2, SID, sizeof(SID));
-
-	if (SetTag(SID, sTag, client, bAdmin))
+	if (SetTag(g_sSteamIDs[iTarget], sTag, client, bAdmin))
 	{
 		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} tag to: {green}%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sTag);
 		return true;
@@ -1445,15 +1472,12 @@ bool ChangeSingleColor(int client, int iTarget, char Key[64], char sCol[64], boo
 		Format(sCol, 64, "#%06X", hex);
 	}
 
-	char SID[64];
-	GetClientAuthId(iTarget, AuthId_Steam2, SID, sizeof(SID));
-
 	if (IsSource2009() && IsValidHex(sCol))
 	{
 		if (sCol[0] != '#')
 			Format(sCol, sizeof(sCol), "#%s", sCol);
 
-		SetColor(SID, Key, sCol, iTarget, bAdmin);
+		SetColor(g_sSteamIDs[iTarget], Key, sCol, iTarget, bAdmin);
 
 		if (!strcmp(Key, "namecolor"))
 			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} name color to: \x07%s%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sCol[0], sCol[0]);
@@ -1472,7 +1496,7 @@ bool ChangeSingleColor(int client, int iTarget, char Key[64], char sCol[64], boo
 			return false;
 		}
 
-		SetColor(SID, Key, sCol, iTarget, bAdmin);
+		SetColor(g_sSteamIDs[iTarget], Key, sCol, iTarget, bAdmin);
 
 		if (!strcmp(Key, "namecolor"))
 			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} name color to: {%s}%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sCol[0], sCol[0]);
@@ -1583,19 +1607,19 @@ stock bool SetColor(char SID[64], char Key[64], char HEX[64], int client, bool I
 			return false;
 	}
 
-	if (StrEqual(Key, "tagcolor"))
+	if (strcmp(Key, "tagcolor", false) == 0)
 	{
 		if (HEX[0] == '#')
 			ReplaceString(HEX, sizeof(HEX), "#", "");
 		strcopy(g_sClientTagColor[client], sizeof(g_sClientTagColor[]), HEX);
 	}
-	else if (StrEqual(Key, "namecolor"))
+	else if (strcmp(Key, "namecolor", false) == 0)
 	{
 		if (HEX[0] == '#')
 			ReplaceString(HEX, sizeof(HEX), "#", "");
 		strcopy(g_sClientNameColor[client], sizeof(g_sClientNameColor[]), HEX);
 	}
-	else if (StrEqual(Key, "textcolor"))
+	else if (strcmp(Key, "textcolor", false) == 0)
 	{
 		if (HEX[0] == '#')
 			ReplaceString(HEX, sizeof(HEX), "#", "");
@@ -1651,6 +1675,12 @@ stock void ToggleCCC(char SID[64], int client)
 
 void SendChatToAdmins(int from, const char[] message)
 {
+	// Message is empty, ignore it
+	if (strlen(message) == 0)
+		return;
+ 
+	LogAction(from, -1, "\"%L\" triggered sm_chat (text %s)", from, message);
+
 	int fromAdmin = CheckCommandAccess(from, "sm_chat", ADMFLAG_CHAT);
 	for (int i = 1; i <= MaxClients; i++)
 	{
@@ -1726,7 +1756,7 @@ void SendPrivateChat(int client, int target, const char[] message)
 	}
 
 #if defined _SelfMute_included_
-	if(!g_bSelfMute || !SelfMute_GetSelfMute(target, client) || CheckCommandAccess(client, "sm_kick", ADMFLAG_KICK, true))
+	if(!g_bSelfMuteNative || !SelfMute_GetSelfMute(target, client) || CheckCommandAccess(client, "sm_kick", ADMFLAG_KICK, true))
 		CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", 
 			g_sSmCategoryColor, 
 			g_sSmNameColor, target, g_sSmCategoryColor, 
@@ -2033,7 +2063,6 @@ public Action Command_SmChat(int client, int args)
 	GetCmdArgString(text, sizeof(text));
 
 	SendChatToAdmins(client, text);
-	LogAction(client, -1, "\"%L\" triggered sm_chat (text %s)", client, text);
 	
 	return Plugin_Stop;
 }
@@ -2044,7 +2073,7 @@ public Action Command_SmPsay(int client, int args)
 		return Plugin_Continue;
 
 #if defined _sourcecomms_included
-	if (g_bSourceComms && client)
+	if (g_bSourceCommsNative && client)
 	{
 		int IsGagged = SourceComms_GetClientGagType(client);
 		if(IsGagged > 0)
@@ -2168,7 +2197,7 @@ public Action Command_SmDsay(int client, int args)
 		iChannel = 0;
 
 #if defined _DynamicChannels_included_
-	if (CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "GetDynamicChannel") == FeatureStatus_Available)
+	if (g_bDynamicNative)
 		iHUDChannel = GetDynamicChannel(iChannel);
 #endif
 
@@ -2254,7 +2283,7 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 		return Plugin_Continue;
 
 #if defined _sourcecomms_included
-	if (g_bSourceComms && client)
+	if (g_bSourceCommsNative && client)
 	{
 		if (IsClientInGame(client))
 		{
@@ -2297,7 +2326,6 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 		}
 		
 		SendChatToAdmins(client, sArgs[startidx]);
-		LogAction(client, -1, "\"%L\" triggered sm_chat (text %s)", client, sArgs[startidx]);
 		
 		return Plugin_Stop;
 	}
@@ -2402,28 +2430,28 @@ public Action Command_Say(int client, const char[] command, int argc)
 
 			strcopy(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), text[1]);
 
-			if (StrEqual(g_sInputType[client], "ChangeTag"))
+			if (strcmp(g_sInputType[client], "ChangeTag", false) == 0)
 				ChangeSingleTag(client, client, g_sReceivedChatInput[client], false);
-			else if (StrEqual(g_sInputType[client], "ColorTag"))
+			else if (strcmp(g_sInputType[client], "ColorTag", false) == 0)
 				ChangeSingleColor(client, client, "tagcolor", g_sReceivedChatInput[client], false);
-			else if (StrEqual(g_sInputType[client], "ColorName"))
+			else if (strcmp(g_sInputType[client], "ColorName", false) == 0)
 				ChangeSingleColor(client, client, "namecolor", g_sReceivedChatInput[client], false);
-			else if (StrEqual(g_sInputType[client], "ColorText"))
+			else if (strcmp(g_sInputType[client], "ColorText", false) == 0)
 				ChangeSingleColor(client, client, "textcolor", g_sReceivedChatInput[client], false);
-			else if (StrEqual(g_sInputType[client], "MenuForceTag"))
+			else if (strcmp(g_sInputType[client], "MenuForceTag", false) == 0)
 				ChangeSingleTag(client, g_iATarget[client], g_sReceivedChatInput[client], true);
-			else if (StrEqual(g_sInputType[client], "MenuForceTagColor"))
+			else if (strcmp(g_sInputType[client], "MenuForceTagColor", false) == 0)
 				ChangeSingleColor(client, g_iATarget[client], "tagcolor", g_sReceivedChatInput[client], true);
-			else if (StrEqual(g_sInputType[client], "MenuForceNameColor"))
+			else if (strcmp(g_sInputType[client], "MenuForceNameColor", false) == 0)
 				ChangeSingleColor(client, g_iATarget[client], "namecolor", g_sReceivedChatInput[client], true);
-			else if (StrEqual(g_sInputType[client], "MenuForceTextColor"))
+			else if (strcmp(g_sInputType[client], "MenuForceTextColor", false) == 0)
 				ChangeSingleColor(client, g_iATarget[client], "textcolor", g_sReceivedChatInput[client], true);
 
 			return Plugin_Handled;
 		}
 		else
 		{
-			if (StrEqual(command, "say_team", false))
+			if (strcmp(command, "say_team", false) == 0)
 				g_msgIsTeammate = true;
 			else
 				g_msgIsTeammate = false;
@@ -2522,11 +2550,8 @@ public Action Command_CCCReset(int client, int args)
 		return Plugin_Handled;
 	}
 
-	char SID[64];
-	GetClientAuthId(iTarget, AuthId_Steam2, SID, sizeof(SID));
-
 	CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Cleared {green}%N's tag {default}&{green} colors{default}.", iTarget);
-	RemoveCCC(SID, iTarget);
+	RemoveCCC(g_sSteamIDs[iTarget], iTarget);
 
 	return Plugin_Handled;
 }
@@ -2558,10 +2583,7 @@ public Action Command_CCCBan(int client, int args)
 		return Plugin_Handled;
 	}
 
-	char SID[64];
-	GetClientAuthId(iTarget, AuthId_Steam2, SID, sizeof(SID));
-
-	BanCCC(SID, client, iTarget, sTime);
+	BanCCC(g_sSteamIDs[iTarget], client, iTarget, sTime);
 
 	return Plugin_Handled;
 }
@@ -2587,10 +2609,7 @@ public Action Command_CCCUnban(int client, int args)
 		return Plugin_Handled;
 	}
 
-	char SID[64];
-	GetClientAuthId(iTarget, AuthId_Steam2, SID, sizeof(SID));
-
-	UnBanCCC(SID, client, iTarget);
+	UnBanCCC(g_sSteamIDs[iTarget], client, iTarget);
 
 	return Plugin_Handled;
 }
@@ -2631,10 +2650,7 @@ public Action Command_ClearTag(int client, int args)
 		return Plugin_Handled;
 	}
 
-	char SID[64];
-	GetClientAuthId(client, AuthId_Steam2, SID, sizeof(SID));
-
-	SetTag(SID, "", client);
+	SetTag(g_sSteamIDs[client], "", client);
 
 	return Plugin_Handled;
 }
@@ -2675,10 +2691,7 @@ public Action Command_ClearTagColor(int client, int args)
 		return Plugin_Handled;
 	}
 
-	char SID[64];
-	GetClientAuthId(client, AuthId_Steam2, SID, sizeof(SID));
-
-	SetColor(SID, "tagcolor", "", client);
+	SetColor(g_sSteamIDs[client], "tagcolor", "", client);
 
 	return Plugin_Handled;
 }
@@ -2719,10 +2732,7 @@ public Action Command_ClearNameColor(int client, int args)
 		return Plugin_Handled;
 	}
 
-	char SID[64];
-	GetClientAuthId(client, AuthId_Steam2, SID, sizeof(SID));
-
-	SetColor(SID, "namecolor", "", client);
+	SetColor(g_sSteamIDs[client], "namecolor", "", client);
 
 	return Plugin_Handled;
 }
@@ -2763,10 +2773,7 @@ public Action Command_ClearTextColor(int client, int args)
 		return Plugin_Handled;
 	}
 
-	char SID[64];
-	GetClientAuthId(client, AuthId_Steam2, SID, sizeof(SID));
-
-	SetColor(SID, "textcolor", "", client);
+	SetColor(g_sSteamIDs[client], "textcolor", "", client);
 
 	return Plugin_Handled;
 }
@@ -2779,10 +2786,7 @@ public Action Command_ToggleTag(int client, int args)
 		return Plugin_Handled;
 	}
 
-	char SID[64];
-	GetClientAuthId(client, AuthId_Steam2, SID, sizeof(SID));
-
-	ToggleCCC(SID, client);
+	ToggleCCC(g_sSteamIDs[client], client);
 	CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} {green}Tag and color{default} displaying %s", g_iClientEnable[client] ? "{red}enabled{default}." : "{green}disabled{default}.");
 
 	return Plugin_Handled;
@@ -2858,7 +2862,6 @@ public int MenuHandler_AdminUnBan(Menu MenuAUnBan, MenuAction action, int param1
 	if (action == MenuAction_Select)
 	{
 		char Selected[32];
-		char SID[64];
 		MenuAUnBan.GetItem(param2, Selected, sizeof(Selected));
 		int target;
 		int userid = StringToInt(Selected);
@@ -2872,9 +2875,7 @@ public int MenuHandler_AdminUnBan(Menu MenuAUnBan, MenuAction action, int param1
 		}
 		else
 		{
-			GetClientAuthId(target, AuthId_Steam2, SID, sizeof(SID));
-
-			UnBanCCC(SID, param1, target);
+			UnBanCCC(g_sSteamIDs[target], param1, target);
 		}
 
 		Menu_Admin(param1);
@@ -2928,39 +2929,36 @@ public int MenuHandler_Main(Menu MenuMain, MenuAction action, int param1, int pa
 		char Selected[32];
 		GetMenuItem(MenuMain, param2, Selected, sizeof(Selected));
 
-		if (StrEqual(Selected, "Tag"))
+		if (strcmp(Selected, "Tag", false) == 0)
 		{
 			Menu_TagPrefs(param1);
 		}
-		else if (StrEqual(Selected, "Name"))
+		else if (strcmp(Selected, "Name", false) == 0)
 		{
 			Menu_NameColor(param1);
 		}
-		else if (StrEqual(Selected, "Chat"))
+		else if (strcmp(Selected, "Chat", false) == 0)
 		{
 			Menu_ChatColor(param1);
 		}
-		else if (StrEqual(Selected, "CCC"))
+		else if (strcmp(Selected, "CCC", false) == 0)
 		{
-			char sClientSteamID[64];
-			GetClientAuthId(param1, AuthId_Steam2, sClientSteamID, sizeof(sClientSteamID));
-
-			ToggleCCC(sClientSteamID, param1);
+			ToggleCCC(g_sSteamIDs[param1], param1);
 			CloseHandle(MenuMain);
 			Menu_Main(param1);
 		}
-		else if (StrEqual(Selected, "Admin"))
+		else if (strcmp(Selected, "Admin", false) == 0)
 		{
 			Menu_Admin(param1);
 		}
-		else if (StrEqual(Selected, "CancelCInput"))
+		else if (strcmp(Selected, "CancelCInput", false) == 0)
 		{
 			g_bWaitingForChatInput[param1] = false;
 			g_sInputType[param1] = "";
 			Menu_Main(param1);
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Cancelled chat input.");
 		}
-		else if (StrEqual(Selected, "Current"))
+		else if (strcmp(Selected, "Current", false) == 0)
 		{
 			char sTagF[64];
 			char sTagColorF[64];
@@ -3052,7 +3050,7 @@ public int MenuHandler_Admin(Menu MenuAdmin, MenuAction action, int param1, int 
 		char Selected[32];
 		MenuAdmin.GetItem(param2, Selected, sizeof(Selected));
 
-		if (StrEqual(Selected, "Reset"))
+		if (strcmp(Selected, "Reset", false) == 0)
 		{
 			Menu MenuAReset = new Menu(MenuHandler_AdminReset);
 			MenuAReset.SetTitle("Select a Target (Reset Tag/Colors)");
@@ -3063,7 +3061,7 @@ public int MenuHandler_Admin(Menu MenuAdmin, MenuAction action, int param1, int 
 			MenuAReset.Display(param1, MENU_TIME_FOREVER);
 			return 0;
 		}
-		else if (StrEqual(Selected, "Ban"))
+		else if (strcmp(Selected, "Ban", false) == 0)
 		{
 			Menu MenuABan = new Menu(MenuHandler_AdminBan);
 			MenuABan.SetTitle("Select a Target (Ban from Tag/Colors)");
@@ -3074,12 +3072,12 @@ public int MenuHandler_Admin(Menu MenuAdmin, MenuAction action, int param1, int 
 			MenuABan.Display(param1, MENU_TIME_FOREVER);
 			return 0;
 		}
-		else if (StrEqual(Selected, "Unban"))
+		else if (strcmp(Selected, "Unban", false) == 0)
 		{
 			AdminMenu_UnBanList(param1);
 			return 0;
 		}
-		else if (StrEqual(Selected, "ForceTag"))
+		else if (strcmp(Selected, "ForceTag", false) == 0)
 		{
 			Menu MenuAFTag = new Menu(MenuHandler_AdminForceTag);
 			MenuAFTag.SetTitle("Select a Target (Force Tag)");
@@ -3090,7 +3088,7 @@ public int MenuHandler_Admin(Menu MenuAdmin, MenuAction action, int param1, int 
 			MenuAFTag.Display(param1, MENU_TIME_FOREVER);
 			return 0;
 		}
-		else if (StrEqual(Selected, "ForceTagColor"))
+		else if (strcmp(Selected, "ForceTagColor", false) == 0)
 		{
 			Menu MenuAFTColor = new Menu(MenuHandler_AdminForceTagColor);
 			MenuAFTColor.SetTitle("Select a Target (Force Tag Color)");
@@ -3101,7 +3099,7 @@ public int MenuHandler_Admin(Menu MenuAdmin, MenuAction action, int param1, int 
 			MenuAFTColor.Display(param1, MENU_TIME_FOREVER);
 			return 0;
 		}
-		else if (StrEqual(Selected, "ForceNameColor"))
+		else if (strcmp(Selected, "ForceNameColor", false) == 0)
 		{
 			Menu MenuAFNColor = new Menu(MenuHandler_AdminForceNameColor);
 			MenuAFNColor.SetTitle("Select a Target (Force Name Color)");
@@ -3112,7 +3110,7 @@ public int MenuHandler_Admin(Menu MenuAdmin, MenuAction action, int param1, int 
 			MenuAFNColor.Display(param1, MENU_TIME_FOREVER);
 			return 0;
 		}
-		else if (StrEqual(Selected, "ForceTextColor"))
+		else if (strcmp(Selected, "ForceTextColor", false) == 0)
 		{
 			Menu MenuAFTeColor = new Menu(MenuHandler_AdminForceTextColor);
 			MenuAFTeColor.SetTitle("Select a Target (Force Text Color)");
@@ -3123,7 +3121,7 @@ public int MenuHandler_Admin(Menu MenuAdmin, MenuAction action, int param1, int 
 			MenuAFTeColor.Display(param1, MENU_TIME_FOREVER);
 			return 0;
 		}
-		else if (StrEqual(Selected, "CancelCInput"))
+		else if (strcmp(Selected, "CancelCInput", false) == 0)
 		{
 			g_bWaitingForChatInput[param1] = false;
 			g_sInputType[param1] = "";
@@ -3158,7 +3156,6 @@ public int MenuHandler_AdminReset(Menu MenuAReset, MenuAction action, int param1
 	if (action == MenuAction_Select)
 	{
 		char Selected[32];
-		char SID[64];
 		MenuAReset.GetItem(param2, Selected, sizeof(Selected));
 		int target;
 		int userid = StringToInt(Selected);
@@ -3172,10 +3169,8 @@ public int MenuHandler_AdminReset(Menu MenuAReset, MenuAction action, int param1
 		}
 		else
 		{
-			GetClientAuthId(target, AuthId_Steam2, SID, sizeof(SID));
-
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Cleared {green}%N's tag {default}&{green} colors{default}.", target);
-			RemoveCCC(SID, target);
+			RemoveCCC(g_sSteamIDs[target], target);
 		}
 
 		Menu_Admin(param1);
@@ -3201,7 +3196,6 @@ public int MenuHandler_AdminBan(Menu MenuABan, MenuAction action, int param1, in
 	if (action == MenuAction_Select)
 	{
 		char Selected[32];
-		char SID[64];
 		MenuABan.GetItem(param2, Selected, sizeof(Selected));
 		int target;
 		int userid = StringToInt(Selected);
@@ -3215,9 +3209,8 @@ public int MenuHandler_AdminBan(Menu MenuABan, MenuAction action, int param1, in
 		}
 		else
 		{
-			GetClientAuthId(target, AuthId_Steam2, SID, sizeof(SID));
 			g_iATarget[param1] = target;
-			g_sATargetSID[param1] = SID;
+			g_sATargetSID[param1] = g_sSteamIDs[target];
 
 			Menu MenuABTime = new Menu(MenuHandler_AdminBanTime);
 			MenuABTime.SetTitle("Select Ban Length");
@@ -3295,19 +3288,17 @@ public void Menu_Input(Menu MenuAF, int param1, int param2, char Key[32])
 	}
 	else
 	{
-		char SID[64];
-		GetClientAuthId(target, AuthId_Steam2, SID, sizeof(SID));
 		g_iATarget[param1] = target;
-		g_sATargetSID[param1] = SID;
+		g_sATargetSID[param1] = g_sSteamIDs[target];
 		g_bWaitingForChatInput[param1] = true;
 		g_sInputType[param1] = Key;
-		if (StrEqual("MenuForceTag", Key))
+		if (strcmp("MenuForceTag", Key, false) == 0)
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Please enter what you want {green}%N's{default} tag to be.", target);
-		else if (StrEqual("MenuForceTagColor", Key))
+		else if (strcmp("MenuForceTagColor", Key, false) == 0)
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Please enter what you want {green}%N's{default} tag color to be (#{red}RR{green}GG{blue}BB{default} HEX only!).", target);
-		else if (StrEqual("MenuForceNameColor", Key))
+		else if (strcmp("MenuForceNameColor", Key, false) == 0)
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Please enter what you want {green}%N's{default} name color to be (#{red}RR{green}GG{blue}BB{default} HEX only!).", target);
-		else if (StrEqual("MenuForceTextColor", Key))
+		else if (strcmp("MenuForceTextColor", Key, false) == 0)
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Please enter what you want {green}%N's{default} text color to be (#{red}RR{green}GG{blue}BB{default} HEX only!).", target);
 	}
 }
@@ -3467,30 +3458,23 @@ public int MenuHandler_TagPrefs(Menu MenuTPrefs, MenuAction action, int param1, 
 		char Selected[32];
 		MenuTPrefs.GetItem(param2, Selected, sizeof(Selected));
 
-		if (StrEqual(Selected, "Reset"))
+		if (strcmp(Selected, "Reset", false) == 0)
 		{
-			char SID[64];
-			GetClientAuthId(param1, AuthId_Steam2, SID, sizeof(SID));
-
-			SetTag(SID, "", param1);
-
+			SetTag(g_sSteamIDs[param1], "", param1);
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Cleared your custom {green}tag{default}.");
 		}
-		else if (StrEqual(Selected, "ResetColor"))
+		else if (strcmp(Selected, "ResetColor", false) == 0)
 		{
-			char SID[64];
-			GetClientAuthId(param1, AuthId_Steam2, SID, sizeof(SID));
-
-			if (SetColor(SID, "tagcolor", "", param1))
+			if (SetColor(g_sSteamIDs[param1], "tagcolor", "", param1))
 				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Cleared your custom {green}tag color{default}.");
 		}
-		else if (StrEqual(Selected, "ChangeTag"))
+		else if (strcmp(Selected, "ChangeTag", false) == 0)
 		{
 			g_bWaitingForChatInput[param1] = true;
 			g_sInputType[param1] = "ChangeTag";
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Please enter what you want your {green}tag{default} to be.");
 		}
-		else if (StrEqual(Selected, "ColorTag"))
+		else if (strcmp(Selected, "ColorTag", false) == 0)
 		{
 			g_bWaitingForChatInput[param1] = true;
 			g_sInputType[param1] = "ColorTag";
@@ -3549,15 +3533,12 @@ public int MenuHandler_NameColor(Menu MenuNColor, MenuAction action, int param1,
 		char Selected[32];
 		MenuNColor.GetItem(param2, Selected, sizeof(Selected));
 
-		if (StrEqual(Selected, "ResetColor"))
+		if (strcmp(Selected, "ResetColor", false) == 0)
 		{
-			char SID[64];
-			GetClientAuthId(param1, AuthId_Steam2, SID, sizeof(SID));
-
-			if (SetColor(SID, "namecolor", "", param1))
+			if (SetColor(g_sSteamIDs[param1], "namecolor", "", param1))
 				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Cleared your custom {green}name color{default}.");
 		}
-		else if (StrEqual(Selected, "ColorName"))
+		else if (strcmp(Selected, "ColorName", false) == 0)
 		{
 			g_bWaitingForChatInput[param1] = true;
 			g_sInputType[param1] = "ColorName";
@@ -3621,15 +3602,12 @@ public int MenuHandler_ChatColor(Menu MenuCColor, MenuAction action, int param1,
 		char Selected[32];
 		MenuCColor.GetItem(param2, Selected, sizeof(Selected));
 
-		if (StrEqual(Selected, "ResetColor"))
+		if (strcmp(Selected, "ResetColor", false) == 0)
 		{
-			char SID[64];
-			GetClientAuthId(param1, AuthId_Steam2, SID, sizeof(SID));
-
-			if (SetColor(SID, "textcolor", "", param1))
+			if (SetColor(g_sSteamIDs[param1], "textcolor", "", param1))
 				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Cleared your custom {green}text color{default}.");
 		}
-		else if (StrEqual(Selected, "ColorText"))
+		else if (strcmp(Selected, "ColorText", false) == 0)
 		{
 			g_bWaitingForChatInput[param1] = true;
 			g_sInputType[param1] = "ColorText";
@@ -3767,6 +3745,7 @@ stock void ResetClient(int client)
 	g_iClientFastReply[client] = 0;
 	g_iATarget[client] = 0;
 	g_sClientSID[client] = "";
+	g_sSteamIDs[client] = "";
 	ClearValues(client);
 }
 
@@ -3839,7 +3818,7 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 			sBuff = "";
 			for (int i = 0; i < g_iReplaceListSize; i++)
 			{
-				if (StrEqual(g_sReplaceList[i][0], sPart))
+				if (strcmp(g_sReplaceList[i][0], sPart, false) == 0)
 				{
 					Format(sBuff, sizeof(sBuff), "%s", g_sReplaceList[i][1]);
 					break;
@@ -3968,7 +3947,7 @@ public Action OnToggleCCCSettings(int client, int args)
 
 public void ToggleCCCSettings(int client)
 {
-	if(!client)
+	if(!client || IsFakeClient(client))
 		return;
 
 	if (!AreClientCookiesCached(client))
@@ -4168,11 +4147,11 @@ stock bool GetColorKey(int client, CCC_ColorType colorType, char[] key, int size
 	{
 		case CCC_TagColor:
 		{
-			if (StrEqual(g_sClientTagColor[client], "T", false))
+			if (strcmp(g_sClientTagColor[client], "T", false) == 0)
 				strcopy(key, size, "teamcolor");
-			else if (StrEqual(g_sClientTagColor[client], "G", false))
+			else if (strcmp(g_sClientTagColor[client], "G", false) == 0)
 				strcopy(key, size, "green");
-			else if (StrEqual(g_sClientTagColor[client], "O", false))
+			else if (strcmp(g_sClientTagColor[client], "O", false) == 0)
 				strcopy(key, size, "olive");
 			else if (IsSource2009() && IsValidHex(g_sClientTagColor[client]))
 				strcopy(key, size, g_sClientTagColor[client]);
@@ -4184,11 +4163,11 @@ stock bool GetColorKey(int client, CCC_ColorType colorType, char[] key, int size
 
 		case CCC_NameColor:
 		{
-			if (StrEqual(g_sClientNameColor[client], "G", false))
+			if (strcmp(g_sClientNameColor[client], "G", false) == 0)
 				strcopy(key, size, "green");
-			else if (StrEqual(g_sClientNameColor[client], "X", false))
+			else if (strcmp(g_sClientNameColor[client], "X", false) == 0)
 				strcopy(key, size, "");
-			else if (StrEqual(g_sClientNameColor[client], "O", false))
+			else if (strcmp(g_sClientNameColor[client], "O", false) == 0)
 				strcopy(key, size, "olive");
 			else if (IsSource2009() && IsValidHex(g_sClientNameColor[client]))
 				strcopy(key, size, g_sClientNameColor[client]);
@@ -4200,11 +4179,11 @@ stock bool GetColorKey(int client, CCC_ColorType colorType, char[] key, int size
 
 		case CCC_ChatColor:
 		{
-			if (StrEqual(g_sClientChatColor[client], "T", false))
+			if (strcmp(g_sClientChatColor[client], "T", false) == 0)
 				strcopy(key, size, "teamcolor");
-			else if (StrEqual(g_sClientChatColor[client], "G", false))
+			else if (strcmp(g_sClientChatColor[client], "G", false) == 0)
 				strcopy(key, size, "green");
-			else if (StrEqual(g_sClientChatColor[client], "O", false))
+			else if (strcmp(g_sClientChatColor[client], "O", false) == 0)
 				strcopy(key, size, "olive");
 			else if (IsSource2009() && IsValidHex(g_sClientChatColor[client]))
 				strcopy(key, size, g_sClientChatColor[client]);
