@@ -391,8 +391,8 @@ public void OnClientPostAdminCheck(int client)
 	char auth[MAX_AUTHID_LENGTH];
 	GetClientAuthId(client, AuthId_Steam2, auth, sizeof(auth));
 	FormatEx(g_sSteamIDs[client], sizeof(g_sSteamIDs[]), "%s", auth);
-	if (strncmp(auth[6], "ID_", 3) == 0)
-		GetClientAuthId(client, AuthId_Steam2, g_sSteamIDs[client], sizeof(g_sSteamIDs[]), false);
+	// if (strncmp(auth[6], "ID_", 3) == 0)
+	// 	GetClientAuthId(client, AuthId_Steam2, g_sSteamIDs[client], sizeof(g_sSteamIDs[]), false);
 
 	if (HasFlag(client, Admin_Custom1))
 	{
