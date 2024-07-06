@@ -15,7 +15,7 @@
 #tryinclude <DynamicChannels>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.4.7"
+#define PLUGIN_VERSION					"7.4.8"
 
 #define DATABASE_NAME					"ccc"
 
@@ -1698,6 +1698,11 @@ void SendPrivateChat(int client, int target, const char[] message)
 	{
 		CPrintToChat(client, "{green}[SM]{default} Enabling private messaging is necessary to send private messages.");
 		ShowSettingsMenu(client);
+		return;
+	}
+	if (!target || !IsClientInGame(target))
+	{
+		CPrintToChat(client, "{green}[SM]{default} The receiver is not in the game.");
 		return;
 	}
 	if (g_bDisablePsay[target])
