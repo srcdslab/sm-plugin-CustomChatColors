@@ -15,7 +15,7 @@
 #tryinclude <DynamicChannels>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.4.8"
+#define PLUGIN_VERSION					"7.4.9"
 
 #define DATABASE_NAME					"ccc"
 
@@ -1422,7 +1422,7 @@ bool ChangeSingleTag(int client, int iTarget, char sTag[64], bool bAdmin)
 	ReplaceString(sTag, sizeof(sTag), "\"", "'");
 	ReplaceString(sTag, sizeof(sTag), "%s", "s");
 
-	if (SetTag(g_sSteamIDs[iTarget], sTag, client, bAdmin))
+	if (SetTag(g_sSteamIDs[iTarget], sTag, iTarget, bAdmin))
 	{
 		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} tag to: {green}%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sTag);
 		return true;
@@ -3283,8 +3283,6 @@ public void Menu_Input(Menu MenuAF, int param1, int param2, char Key[32])
 
 	int userid = StringToInt(Selected);
 	int target = GetClientOfUserId(userid);
-
-	CPrintToChatAll("Client: %d, Target %d, Target %d, Target %d", param1, param2, target, userid);
 
 	if (!target)
 	{
