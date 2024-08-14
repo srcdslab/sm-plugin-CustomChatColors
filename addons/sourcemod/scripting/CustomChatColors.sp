@@ -92,7 +92,19 @@ char g_sInputType[MAXPLAYERS + 1][32];
 char g_sATargetSID[MAXPLAYERS + 1][64];
 int g_iATarget[MAXPLAYERS + 1];
 
-Handle g_hDatabase = null;
+/* Database connection state */
+enum DatabaseState {
+	DatabaseState_Disconnected = 0,
+	DatabaseState_Wait,
+	DatabaseState_Connecting,
+	DatabaseState_Connected,
+}
+DatabaseState g_DatabaseState;
+
+Handle g_hReconnectTimer = null;
+Database g_hDatabase;
+int g_iConnectLock = 0;
+int g_iSequence = 0;
 
 int g_msgAuthor;
 bool g_msgIsChat;
@@ -257,10 +269,8 @@ public void OnPluginStart()
 
 	AutoExecConfig(true);
 
+	DB_Connect();
 	ResetReplace();
-
-	SQLInitialize();
-
 	LoadColorArray();
 
 	if (g_bLate)
@@ -269,8 +279,12 @@ public void OnPluginStart()
 
 public void OnPluginEnd()
 {
+	// Clean up on map end just so we can start a fresh connection when we need it later.
 	if (g_hDatabase != null)
+	{
 		delete g_hDatabase;
+		g_hDatabase = null;
+	}
 	if (g_sColorsArray != null)
 		delete g_sColorsArray;
 }
@@ -505,30 +519,55 @@ stock void ResetReplace()
 /// SQL ///
 ///////////
 
-stock void SQLInitialize()
+stock bool DB_Connect()
 {
-	if (g_hDatabase != null)
-		delete g_hDatabase;
+	//PrintToServer("DB_Connect(handle %d, state %d, lock %d)", g_hDatabase, g_DatabaseState, g_iConnectLock);
 
-	if (SQL_CheckConfig(DATABASE_NAME))
-		SQL_TConnect(OnSQLConnected, DATABASE_NAME);
-	else
-		SetFailState("Could not find \"%s\" entry in databases.cfg.", DATABASE_NAME);
+	if (g_hDatabase != null && g_DatabaseState == DatabaseState_Connected)
+		return true;
+
+	// 100500 connections in a minute is bad idea..
+	if (g_DatabaseState == DatabaseState_Wait)
+		return false;
+
+	if (g_DatabaseState != DatabaseState_Connecting)
+	{
+		if (!SQL_CheckConfig(DATABASE_NAME))
+			SetFailState("Could not find \"%s\" entry in databases.cfg.", DATABASE_NAME);
+
+		g_DatabaseState = DatabaseState_Connecting;
+		g_iConnectLock = ++g_iSequence;
+		Database.Connect(OnSQLConnected, DATABASE_NAME, g_iConnectLock);
+	}
+
+	return false;
 }
 
-stock void OnSQLConnected(Handle hParent, Handle hChild, const char[] err, any data)
+stock void OnSQLConnected(Database db, const char[] err, any data)
 {
-	if (hChild == null)
+	// See if the connection is valid.
+	if (db == null)
 	{
-		LogError("Failed to connect to database \"%s\", retrying in %d seconds. (%s)", DATABASE_NAME, GetConVarInt(g_cvar_SQLRetryTime), err);
-		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLReconnect);
-
+		LogError("Connecting to database \"%s\" failed: %s", DATABASE_NAME, err);
 		return;
 	}
 
+	LogMessage("Connected to database.");
+
+	// If this happens to be an old connection request, ignore it.
+	if (data != g_iConnectLock || (g_hDatabase != null && g_DatabaseState == DatabaseState_Connected))
+	{
+		if (db)
+			delete db;
+		return;
+	}
+
+	g_iConnectLock = 0;
+	g_DatabaseState = DatabaseState_Connected;
+	g_hDatabase = db;
+
 	char sDriver[16];
-	g_hDatabase = CloneHandle(hChild);
-	SQL_GetDriverIdent(hParent, sDriver, sizeof(sDriver));
+	SQL_GetDriverIdent(g_hDatabase.Driver, sDriver, sizeof(sDriver));
 
 	SQL_LockDatabase(g_hDatabase);
 
@@ -546,15 +585,45 @@ stock void OnSQLConnected(Handle hParent, Handle hChild, const char[] err, any d
 	SQL_UnlockDatabase(g_hDatabase);
 }
 
+stock bool SQL_Conn_Lost(DBResultSet db)
+{
+	if (db == null)
+	{
+		if (g_hDatabase != null)
+		{
+			LogError("Lost connection to DB. Reconnect after delay.");
+			delete g_hDatabase;
+			g_hDatabase = null;
+		}
+
+		if (g_DatabaseState != DatabaseState_Wait && g_hReconnectTimer == null)
+		{
+			g_DatabaseState = DatabaseState_Wait;
+			g_hReconnectTimer = CreateTimer(9.0, SQLReconnect, _, TIMER_FLAG_NO_MAPCHANGE);
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 stock Action SQLReconnect(Handle hTimer)
 {
-	SQLInitialize();
-
-	return Plugin_Stop;
+	g_hReconnectTimer = null;
+	if (g_DatabaseState == DatabaseState_Disconnected || g_DatabaseState == DatabaseState_Wait)
+	{
+		g_DatabaseState = DatabaseState_Disconnected;
+		DB_Connect();
+	}
+	return Plugin_Continue;
 }
 
 stock Action SQLSetNames(Handle timer)
 {
+	if (!DB_Connect())
+		return Plugin_Stop;
+
 	if (!g_bSQLite)
 		SQL_TQuery(g_hDatabase, OnSqlSetNames, "SET NAMES \"UTF8MB4\"");
 	return Plugin_Continue;
@@ -562,6 +631,9 @@ stock Action SQLSetNames(Handle timer)
 
 stock Action SQLTableCreation_Tag(Handle timer)
 {
+	if (!DB_Connect())
+		return Plugin_Stop;
+
 	if (g_bSQLite)
 		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Tag, "CREATE TABLE IF NOT EXISTS `ccc_tag` (`steamid` TEXT NOT NULL, `enable` INTEGER NOT NULL DEFAULT 1, `name` TEXT NOT NULL, `flag` VARCHAR(32), `tag` TEXT, `tag_color` TEXT, `name_color` TEXT, `chat_color` TEXT, PRIMARY KEY(`steamid`));");
 	else
@@ -571,6 +643,9 @@ stock Action SQLTableCreation_Tag(Handle timer)
 
 stock Action SQLTableCreation_Ban(Handle timer)
 {
+	if (!DB_Connect())
+		return Plugin_Stop;
+
 	if (g_bSQLite)
 		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Ban, "CREATE TABLE IF NOT EXISTS `ccc_ban` (`steamid` TEXT NOT NULL, `name` TEXT NOT NULL, `issuer_steamid` TEXT NOT NULL, `issuer_name` TEXT NOT NULL, `length` INTEGER NOT NULL, PRIMARY KEY(`steamid`));");
 	else
@@ -580,6 +655,9 @@ stock Action SQLTableCreation_Ban(Handle timer)
 
 stock Action SQLTableCreation_Replace(Handle timer)
 {
+	if (!DB_Connect())
+		return Plugin_Stop;
+
 	if (g_bSQLite)
 		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Replace, "CREATE TABLE IF NOT EXISTS `ccc_replace` (`trigger` TEXT NOT NULL, `value` TEXT NOT NULL, PRIMARY KEY(`trigger`));");
 	else
@@ -589,7 +667,7 @@ stock Action SQLTableCreation_Replace(Handle timer)
 
 stock Action SQLSelect_Replace(Handle timer)
 {
-	if (g_hDatabase == null)
+	if (!DB_Connect())
 		return Plugin_Stop;
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
@@ -601,7 +679,7 @@ stock Action SQLSelect_Replace(Handle timer)
 
 stock Action SQLSelect_Ban(Handle timer, any client)
 {
-	if (g_hDatabase == null)
+	if (!DB_Connect())
 		return Plugin_Stop;
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
@@ -612,11 +690,14 @@ stock Action SQLSelect_Ban(Handle timer, any client)
 
 stock Action SQLSelect_TagGroup(Handle timer, any data)
 {
-	if (g_hDatabase == null)
-		return Plugin_Stop;
-
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
+
+	if (!DB_Connect())
+	{
+		delete pack;
+		return Plugin_Stop;
+	}
 
 	char sFlagList[64];
 
@@ -681,11 +762,14 @@ stock Action SQLSelect_TagClient(Handle timer, any client)
 
 stock Action SQLSelect_Tag(Handle timer, any data)
 {
-	if (g_hDatabase == null)
-		return Plugin_Stop;
-
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
+
+	if (!DB_Connect())
+	{
+		delete pack;
+		return Plugin_Stop;
+	}
 
 	char sClientSteamID[32];
 
@@ -703,6 +787,12 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
+
+	if (!DB_Connect())
+	{
+		delete pack;
+		return Plugin_Stop;
+	}
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 	char sTrigger[MAX_CHAT_TRIGGER_LENGTH];
@@ -733,6 +823,12 @@ stock Action SQLDelete_Replace(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
+
+	if (!DB_Connect())
+	{
+		delete pack;
+		return Plugin_Stop;
+	}
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 	char sTrigger[MAX_CHAT_TRIGGER_LENGTH];
@@ -770,6 +866,12 @@ stock Action SQLInsert_Tag(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
+
+	if (!DB_Connect())
+	{	
+		delete pack;
+		return Plugin_Stop;
+	}
 
 	char sSteamID[64];
 	char sName[32];
@@ -834,6 +936,12 @@ stock Action SQLUpdate_Tag(Handle timer, any data)
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
+	if (!DB_Connect())
+	{	
+		delete pack;
+		return Plugin_Stop;
+	}
+
 	char sSteamID[64];
 	char sName[32];
 	char sNameEscaped[32+1];
@@ -874,6 +982,12 @@ stock Action SQLDelete_Tag(Handle timer, any data)
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
+	if (!DB_Connect())
+	{	
+		delete pack;
+		return Plugin_Stop;
+	}
+
 	char sSteamID[64];
 
 	pack.ReadCell();
@@ -887,9 +1001,9 @@ stock Action SQLDelete_Tag(Handle timer, any data)
 	return Plugin_Stop;
 }
 
-stock void OnSqlSetNames(Handle hParent, Handle hChild, const char[] err, any data)
+stock void OnSqlSetNames(Database db, DBResultSet results, const char[] err, DataPack data)
 {
-	if (hChild == null)
+	if (SQL_Conn_Lost(results))
 	{
 		LogError("Database error while setting names as utf8, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSetNames);
@@ -899,14 +1013,14 @@ stock void OnSqlSetNames(Handle hParent, Handle hChild, const char[] err, any da
 	SQLSelect_Replace(INVALID_HANDLE);
 }
 
-public void OnSQLDelete_Tag(Handle hParent, Handle hChild, const char[] err, any data)
+public void OnSQLDelete_Tag(Database db, DBResultSet results, const char[] err, DataPack data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
 	int client = pack.ReadCell();
 
-	if (hChild == null)
+	if (SQL_Conn_Lost(results))
 	{
 		if (g_bSQLDeleteTagRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
@@ -925,6 +1039,12 @@ stock Action SQLInsert_Ban(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
+
+	if (!DB_Connect())
+	{	
+		delete pack;
+		return Plugin_Stop;
+	}
 
 	int client = pack.ReadCell();
 	int target = pack.ReadCell();
@@ -965,6 +1085,12 @@ stock Action SQLDelete_Ban(Handle timer, any data)
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
+	if (!DB_Connect())
+	{	
+		delete pack;
+		return Plugin_Stop;
+	}
+
 	// client
 	pack.ReadCell();
 	// target
@@ -978,9 +1104,9 @@ stock Action SQLDelete_Ban(Handle timer, any data)
 	return Plugin_Stop;
 }
 
-public void OnSQLTableCreated_Tag(Handle hParent, Handle hChild, const char[] err, any data)
+public void OnSQLTableCreated_Tag(Database db, DBResultSet results, const char[] err, DataPack data)
 {
-	if (hChild == null)
+	if (SQL_Conn_Lost(results))
 	{
 		LogError("Database error while creating/checking for \"ccc_tag\" table, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLTableCreation_Tag);
@@ -989,9 +1115,9 @@ public void OnSQLTableCreated_Tag(Handle hParent, Handle hChild, const char[] er
 	}
 }
 
-public void OnSQLTableCreated_Ban(Handle hParent, Handle hChild, const char[] err, any data)
+public void OnSQLTableCreated_Ban(Database db, DBResultSet results, const char[] err, DataPack data)
 {
-	if (hChild == null)
+	if (SQL_Conn_Lost(results))
 	{
 		LogError("Database error while creating/checking for \"ccc_ban\" table, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLTableCreation_Ban);
@@ -1000,9 +1126,9 @@ public void OnSQLTableCreated_Ban(Handle hParent, Handle hChild, const char[] er
 	}
 }
 
-public void OnSQLTableCreated_Replace(Handle hParent, Handle hChild, const char[] err, any data)
+public void OnSQLTableCreated_Replace(Database db, DBResultSet results, const char[] err, DataPack data)
 {
-	if (hChild == null)
+	if (SQL_Conn_Lost(results))
 	{
 		LogError("Database error while creating/checking for \"ccc_replace\" table, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLTableCreation_Replace);
@@ -1011,9 +1137,9 @@ public void OnSQLTableCreated_Replace(Handle hParent, Handle hChild, const char[
 	}
 }
 
-public void OnSQLSelect_Replace(Handle hParent, Handle hChild, const char[] err, any client)
+public void OnSQLSelect_Replace(Database db, DBResultSet results, const char[] err, any client)
 {
-	if (hChild == null)
+	if (SQL_Conn_Lost(results))
 	{
 		LogError("An error occurred while querying the database for the replace list, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
@@ -1026,10 +1152,10 @@ public void OnSQLSelect_Replace(Handle hParent, Handle hChild, const char[] err,
 	}
 	else
 	{
-		while (SQL_FetchRow(hChild))
+		while (SQL_FetchRow(results))
 		{
-			SQL_FetchString(hChild, 0, g_sReplaceList[g_iReplaceListSize][0], sizeof(g_sReplaceList[][]));
-			SQL_FetchString(hChild, 1, g_sReplaceList[g_iReplaceListSize][1], sizeof(g_sReplaceList[][]));
+			SQL_FetchString(results, 0, g_sReplaceList[g_iReplaceListSize][0], sizeof(g_sReplaceList[][]));
+			SQL_FetchString(results, 1, g_sReplaceList[g_iReplaceListSize][1], sizeof(g_sReplaceList[][]));
 			ReplaceString(g_sReplaceList[g_iReplaceListSize][1], sizeof(g_sReplaceList[][]), "\r\n", "\n");
 			g_iReplaceListSize++;
 		}
@@ -1038,9 +1164,9 @@ public void OnSQLSelect_Replace(Handle hParent, Handle hChild, const char[] err,
 	g_bSQLSelectReplaceRetry = 0;
 }
 
-public void OnSQLSelect_Ban(Handle hParent, Handle hChild, const char[] err, any client)
+public void OnSQLSelect_Ban(Database db, DBResultSet results, const char[] err, any client)
 {
-	if (hChild == null)
+	if (SQL_Conn_Lost(results))
 	{
 		LogError("An error occurred while querying the database for the user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
@@ -1051,15 +1177,15 @@ public void OnSQLSelect_Ban(Handle hParent, Handle hChild, const char[] err, any
 			return;
 		}
 	}
-	else if (SQL_FetchRow(hChild))
+	else if (SQL_FetchRow(results))
 	{
-		g_iClientBanned[client] = SQL_FetchInt(hChild, 0);
+		g_iClientBanned[client] = SQL_FetchInt(results, 0);
 	}
 
 	g_bSQLSelectBanRetry[client] = 0;
 }
 
-stock void OnSQLSelect_TagGroup(Handle hParent, Handle hChild, const char[] err, any data)
+stock void OnSQLSelect_TagGroup(Database db, DBResultSet results, const char[] err, DataPack data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
@@ -1068,7 +1194,7 @@ stock void OnSQLSelect_TagGroup(Handle hParent, Handle hChild, const char[] err,
 
 	g_sClientSID[client] = "";
 
-	if (hChild == null)
+	if (SQL_Conn_Lost(results))
 	{
 		LogError("An error occurred while querying the database for the user group tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
@@ -1079,15 +1205,15 @@ stock void OnSQLSelect_TagGroup(Handle hParent, Handle hChild, const char[] err,
 			return;
 		}
 	}
-	else if (SQL_FetchRow(hChild))
+	else if (SQL_FetchRow(results))
 	{
 		// pack.ReadString(g_sClientSID[client], sizeof(g_sClientSID[]));
 
-		g_iClientEnable[client] = SQL_FetchInt(hChild, 1);
-		SQL_FetchString(hChild, 2, g_sClientTag[client], sizeof(g_sClientTag[]));
-		SQL_FetchString(hChild, 3, g_sClientTagColor[client], sizeof(g_sClientTagColor[]));
-		SQL_FetchString(hChild, 4, g_sClientNameColor[client], sizeof(g_sClientNameColor[]));
-		SQL_FetchString(hChild, 5, g_sClientChatColor[client], sizeof(g_sClientChatColor[]));
+		g_iClientEnable[client] = SQL_FetchInt(results, 1);
+		SQL_FetchString(results, 2, g_sClientTag[client], sizeof(g_sClientTag[]));
+		SQL_FetchString(results, 3, g_sClientTagColor[client], sizeof(g_sClientTagColor[]));
+		SQL_FetchString(results, 4, g_sClientNameColor[client], sizeof(g_sClientNameColor[]));
+		SQL_FetchString(results, 5, g_sClientChatColor[client], sizeof(g_sClientChatColor[]));
 
 		g_iDefaultClientEnable[client] = g_iClientEnable[client];
 		strcopy(g_sDefaultClientTag[client], sizeof(g_sDefaultClientTag[]), g_sClientTag[client]);
@@ -1101,7 +1227,7 @@ stock void OnSQLSelect_TagGroup(Handle hParent, Handle hChild, const char[] err,
 	delete pack;
 }
 
-public void OnSQLSelect_Tag(Handle hParent, Handle hChild, const char[] err, any data)
+public void OnSQLSelect_Tag(Database db, DBResultSet results, const char[] err, DataPack data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
@@ -1110,7 +1236,7 @@ public void OnSQLSelect_Tag(Handle hParent, Handle hChild, const char[] err, any
 
 	g_sClientSID[client] = "";
 
-	if (hChild == null)
+	if (SQL_Conn_Lost(results))
 	{
 		LogError("An error occurred while querying the database for the user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
@@ -1121,14 +1247,14 @@ public void OnSQLSelect_Tag(Handle hParent, Handle hChild, const char[] err, any
 			return;
 		}
 	}
-	else if (SQL_FetchRow(hChild))
+	else if (SQL_FetchRow(results))
 	{
-		SQL_FetchString(hChild, 0, g_sClientSID[client], sizeof(g_sClientSID[]));
-		g_iClientEnable[client] = SQL_FetchInt(hChild, 1);
-		SQL_FetchString(hChild, 2, g_sClientTag[client], sizeof(g_sClientTag[]));
-		SQL_FetchString(hChild, 3, g_sClientTagColor[client], sizeof(g_sClientTagColor[]));
-		SQL_FetchString(hChild, 4, g_sClientNameColor[client], sizeof(g_sClientNameColor[]));
-		SQL_FetchString(hChild, 5, g_sClientChatColor[client], sizeof(g_sClientChatColor[]));
+		SQL_FetchString(results, 0, g_sClientSID[client], sizeof(g_sClientSID[]));
+		g_iClientEnable[client] = SQL_FetchInt(results, 1);
+		SQL_FetchString(results, 2, g_sClientTag[client], sizeof(g_sClientTag[]));
+		SQL_FetchString(results, 3, g_sClientTagColor[client], sizeof(g_sClientTagColor[]));
+		SQL_FetchString(results, 4, g_sClientNameColor[client], sizeof(g_sClientNameColor[]));
+		SQL_FetchString(results, 5, g_sClientChatColor[client], sizeof(g_sClientChatColor[]));
 
 		g_iDefaultClientEnable[client] = g_iClientEnable[client];
 		strcopy(g_sDefaultClientTag[client], sizeof(g_sDefaultClientTag[]), g_sClientTag[client]);
@@ -1152,14 +1278,14 @@ public void OnSQLSelect_Tag(Handle hParent, Handle hChild, const char[] err, any
 	delete pack;
 }
 
-public void OnSQLUpdate_Tag(Handle hParent, Handle hChild, const char[] err, any data)
+public void OnSQLUpdate_Tag(Database db, DBResultSet results, const char[] err, DataPack data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
 	int client = pack.ReadCell();
 
-	if (hChild == null)
+	if (SQL_Conn_Lost(results))
 	{
 		LogError("An error occurred while updating an user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
@@ -1177,14 +1303,14 @@ public void OnSQLUpdate_Tag(Handle hParent, Handle hChild, const char[] err, any
 	delete pack;
 }
 
-public void OnSQLInsert_Replace(Handle hParent, Handle hChild, const char[] err, any data)
+public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] err, DataPack data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
 	int client = pack.ReadCell();
 
-	if (hChild == null)
+	if (SQL_Conn_Lost(results))
 	{
 		LogError("An error occurred while inserting a chat trigger, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 		if (g_bSQLInsertReplaceRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
@@ -1212,14 +1338,14 @@ public void OnSQLInsert_Replace(Handle hParent, Handle hChild, const char[] err,
 	delete pack;
 }
 
-public void OnSQLDelete_Replace(Handle hParent, Handle hChild, const char[] err, any data)
+public void OnSQLDelete_Replace(Database db, DBResultSet results, const char[] err, DataPack data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
 	int client = pack.ReadCell();
 
-	if (hChild == null)
+	if (SQL_Conn_Lost(results))
 	{
 		if (g_bSQLDeleteReplaceRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
@@ -1262,14 +1388,14 @@ public void OnSQLDelete_Replace(Handle hParent, Handle hChild, const char[] err,
 	delete pack;
 }
 
-public void OnSQLInsert_Tag(Handle hParent, Handle hChild, const char[] err, any data)
+public void OnSQLInsert_Tag(Database db, DBResultSet results, const char[] err, DataPack data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
 	int client = pack.ReadCell();
 
-	if (hChild == null)
+	if (SQL_Conn_Lost(results))
 	{
 		LogError("An error occurred while inserting an user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 		if (g_bSQLInsertTagRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
@@ -1285,7 +1411,7 @@ public void OnSQLInsert_Tag(Handle hParent, Handle hChild, const char[] err, any
 	delete pack;
 }
 
-public void OnSQLInsert_Ban(Handle hParent, Handle hChild, const char[] err, any data)
+public void OnSQLInsert_Ban(Database db, DBResultSet results, const char[] err, DataPack data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
@@ -1293,7 +1419,7 @@ public void OnSQLInsert_Ban(Handle hParent, Handle hChild, const char[] err, any
 	pack.ReadCell();
 	int target = pack.ReadCell();
 
-	if (hChild == null)
+	if (SQL_Conn_Lost(results))
 	{
 		if (g_bSQLInsertBanRetry[target] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
@@ -1323,7 +1449,7 @@ public void OnSQLInsert_Ban(Handle hParent, Handle hChild, const char[] err, any
 	delete pack;
 }
 
-public void OnSQLDelete_Ban(Handle hParent, Handle hChild, const char[] err, any data)
+public void OnSQLDelete_Ban(Database db, DBResultSet results, const char[] err, DataPack data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
@@ -1331,7 +1457,7 @@ public void OnSQLDelete_Ban(Handle hParent, Handle hChild, const char[] err, any
 	pack.ReadCell();
 	int target = pack.ReadCell();
 
-	if (hChild == null)
+	if (SQL_Conn_Lost(results))
 	{
 		if (g_bSQLDeleteBanRetry[target] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
