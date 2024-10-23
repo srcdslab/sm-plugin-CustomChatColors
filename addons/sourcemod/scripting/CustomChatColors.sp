@@ -15,7 +15,7 @@
 #tryinclude <DynamicChannels>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.4.9"
+#define PLUGIN_VERSION					"7.4.10"
 
 #define DATABASE_NAME					"ccc"
 
@@ -3988,14 +3988,22 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		CFormatColor(g_msgSender, sizeof(g_msgSender), g_msgAuthor);
 	}
 
-	Format(g_msgFinal, sizeof(g_msgFinal), "%t", g_msgName, g_msgSender, g_msgText);
-
-	if (!g_msgAuthor || IsClientEnabled())
+	if (g_msgAuthor > 0 && g_msgAuthor <= MaxClients)
 	{
-		CFormatColor(g_msgFinal, sizeof(g_msgFinal), g_msgAuthor);
-		CAddWhiteSpace(g_msgFinal, sizeof(g_msgFinal));
+		Format(g_msgFinal, sizeof(g_msgFinal), "%t", g_msgName, g_msgSender, g_msgText);
+	
+		if (!g_msgAuthor || IsClientEnabled())
+		{
+			CFormatColor(g_msgFinal, sizeof(g_msgFinal), g_msgAuthor);
+			CAddWhiteSpace(g_msgFinal, sizeof(g_msgFinal));
+		}
 	}
-
+	else
+	{
+		// Handle invalid client index case
+		Format(g_msgFinal, sizeof(g_msgFinal), "%s: %s", g_msgSender, g_msgText);
+	}
+	
 	return Plugin_Handled;
 }
 
