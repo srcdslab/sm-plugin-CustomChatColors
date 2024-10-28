@@ -3998,7 +3998,7 @@ public Action Hook_UserMessage(UserMsg msg_id, BfRead bf, const int[] players, i
 		CFormatColor(g_msgFinal, sizeof(g_msgFinal), g_msgAuthor);
 		CAddWhiteSpace(g_msgFinal, sizeof(g_msgFinal));
 	}
-	
+
 	return Plugin_Handled;
 }
 
