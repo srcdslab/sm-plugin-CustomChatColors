@@ -3883,7 +3883,7 @@ public bool IsClientEnabled()
 	return (HasFlag(g_msgAuthor, Admin_Generic) || HasFlag(g_msgAuthor, Admin_Custom1)) && g_iClientEnable[g_msgAuthor];
 }
 
-public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, int playersNum, bool reliable, bool init)
+public Action Hook_UserMessage(UserMsg msg_id, BfRead bf, const int[] players, int playersNum, bool reliable, bool init)
 {
 	char sAuthorTag[64];
 
@@ -3904,10 +3904,13 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		BfReadString(bf, g_msgText, sizeof(g_msgText), false);
 	}
 
+	if (g_msgAuthor < 1 || g_msgAuthor > MaxClients)
+		return Plugin_Continue;
+
 	if (strlen(g_msgName) == 0 || strlen(g_msgSender) == 0)
 		return Plugin_Continue;
 
-	if (!strcmp(g_msgName, "#Cstrike_Name_Change"))
+	if (!strcmp(g_msgName, "#Cstrike_Name_Change") || strncmp(g_msgName, "#Cstrike", 8, false) != 1)
 		return Plugin_Continue;
 
 	TrimString(g_msgText);
@@ -3988,20 +3991,12 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		CFormatColor(g_msgSender, sizeof(g_msgSender), g_msgAuthor);
 	}
 
-	if (g_msgAuthor > 0 && g_msgAuthor <= MaxClients)
+	Format(g_msgFinal, sizeof(g_msgFinal), "%t", g_msgName, g_msgSender, g_msgText);
+
+	if (!g_msgAuthor || IsClientEnabled())
 	{
-		Format(g_msgFinal, sizeof(g_msgFinal), "%t", g_msgName, g_msgSender, g_msgText);
-	
-		if (!g_msgAuthor || IsClientEnabled())
-		{
-			CFormatColor(g_msgFinal, sizeof(g_msgFinal), g_msgAuthor);
-			CAddWhiteSpace(g_msgFinal, sizeof(g_msgFinal));
-		}
-	}
-	else
-	{
-		// Handle invalid client index case
-		Format(g_msgFinal, sizeof(g_msgFinal), "%s: %s", g_msgSender, g_msgText);
+		CFormatColor(g_msgFinal, sizeof(g_msgFinal), g_msgAuthor);
+		CAddWhiteSpace(g_msgFinal, sizeof(g_msgFinal));
 	}
 	
 	return Plugin_Handled;
