@@ -15,7 +15,7 @@
 #tryinclude <DynamicChannels>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.4.9"
+#define PLUGIN_VERSION					"7.4.10"
 
 #define DATABASE_NAME					"ccc"
 
@@ -3883,7 +3883,7 @@ public bool IsClientEnabled()
 	return (HasFlag(g_msgAuthor, Admin_Generic) || HasFlag(g_msgAuthor, Admin_Custom1)) && g_iClientEnable[g_msgAuthor];
 }
 
-public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, int playersNum, bool reliable, bool init)
+public Action Hook_UserMessage(UserMsg msg_id, BfRead bf, const int[] players, int playersNum, bool reliable, bool init)
 {
 	char sAuthorTag[64];
 
@@ -3904,10 +3904,13 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		BfReadString(bf, g_msgText, sizeof(g_msgText), false);
 	}
 
+	if (g_msgAuthor < 1 || g_msgAuthor > MaxClients)
+		return Plugin_Continue;
+
 	if (strlen(g_msgName) == 0 || strlen(g_msgSender) == 0)
 		return Plugin_Continue;
 
-	if (!strcmp(g_msgName, "#Cstrike_Name_Change"))
+	if (!strcmp(g_msgName, "#Cstrike_Name_Change") || strncmp(g_msgName, "#Cstrike", 8, false) != 1)
 		return Plugin_Continue;
 
 	TrimString(g_msgText);
@@ -3971,7 +3974,7 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 			Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s", CCC_GetColor(sNameColorKey, sValue, sizeof(sValue)) ? "#" : "", sNameColorKey, g_msgSender);
 
 		if (strlen(sAuthorTag) > 0)
-			Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s%s", CCC_GetColor(sTagColorKey, sValue, sizeof(sValue)) ? "#" : "", bTagFound ? sTagColorKey : "default", sAuthorTag, g_msgSender);
+			Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s%s%s", CCC_GetColor(sTagColorKey, sValue, sizeof(sValue)) ? "#" : "", bTagFound ? sTagColorKey : "default", sAuthorTag, bNameFound ? "" : "{teamcolor}", g_msgSender);
 
 		StringMap smTrie = CGetTrie();
 		if (g_msgText[0] == '>' && GetConVarInt(g_cvar_GreenText) > 0 && smTrie.GetString("green", sValue, sizeof(sValue)))
@@ -3988,7 +3991,8 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		CFormatColor(g_msgSender, sizeof(g_msgSender), g_msgAuthor);
 	}
 
-	Format(g_msgFinal, sizeof(g_msgFinal), "%t", g_msgName, g_msgSender, g_msgText);
+	SetGlobalTransTarget(LANG_SERVER);
+	Format(g_msgFinal, sizeof(g_msgFinal), "%T", g_msgName, LANG_SERVER, g_msgSender, g_msgText);
 
 	if (!g_msgAuthor || IsClientEnabled())
 	{
@@ -4002,9 +4006,7 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 public Action Event_PlayerSay(Handle event, const char[] name, bool dontBroadcast)
 {
 	if (g_msgAuthor == -1 || GetClientOfUserId(GetEventInt(event, "userid")) != g_msgAuthor)
-	{
 		return Plugin_Continue;
-	}
 
 	if (strlen(g_msgText) == 0)
 		return Plugin_Continue;
@@ -4054,17 +4056,17 @@ public Action Event_PlayerSay(Handle event, const char[] name, bool dontBroadcas
 		PbAddString(SayText2, "params", "");
 		PbAddString(SayText2, "params", "");
 		PbAddString(SayText2, "params", "");
-		EndMessage();
 	}
 	else
 	{
 		BfWriteByte(SayText2, g_msgAuthor);
 		BfWriteByte(SayText2, g_msgIsChat);
 		BfWriteString(SayText2, g_msgFinal);
-		EndMessage();
 	}
 
+	EndMessage();
 	g_msgAuthor = -1;
+
 	return Plugin_Continue;
 }
 
