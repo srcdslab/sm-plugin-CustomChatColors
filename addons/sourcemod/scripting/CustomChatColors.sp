@@ -3993,7 +3993,7 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		CFormatColor(g_msgSender, sizeof(g_msgSender), g_msgAuthor);
 	}
 
-	SetGlobalTransTarget(LANG_SERVER);
+	SetGlobalTransTarget(g_msgAuthor);
 	Format(g_msgFinal, sizeof(g_msgFinal), "%t", g_msgName, g_msgSender, g_msgText);
 
 	if (!g_msgAuthor || IsClientEnabled())
