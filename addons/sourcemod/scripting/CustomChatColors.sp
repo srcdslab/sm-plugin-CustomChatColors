@@ -15,7 +15,7 @@
 #tryinclude <DynamicChannels>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.4.10"
+#define PLUGIN_VERSION					"7.4.11"
 
 #define DATABASE_NAME					"ccc"
 
@@ -3924,10 +3924,10 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 	char sChatColorKey[32];
 	char sTagColorKey[32];
 
-	CCC_GetTag(g_msgAuthor, sAuthorTag, sizeof(sAuthorTag));
-	bool bNameFound = CCC_GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_NameColor), sNameColorKey, sizeof(sNameColorKey));
-	bool bChatFound = CCC_GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_ChatColor), sChatColorKey, sizeof(sChatColorKey));
-	bool bTagFound = CCC_GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_TagColor), sTagColorKey, sizeof(sTagColorKey));
+	Format(sAuthorTag, sizeof(sAuthorTag), "%s", g_sClientTag[g_msgAuthor]);
+	bool bNameFound = GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_NameColor), sNameColorKey, sizeof(sNameColorKey));
+	bool bChatFound = GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_ChatColor), sChatColorKey, sizeof(sChatColorKey));
+	bool bTagFound = GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_TagColor), sTagColorKey, sizeof(sTagColorKey));
 
 	if (!strncmp(g_msgText, "/me", 3, false))
 	{
@@ -3973,23 +3973,23 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		if (!bNameFound)
 			sNameColorKey = "teamcolor";
 
-		Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s", CCC_GetColor(sNameColorKey, sValue, sizeof(sValue)) ? "#" : "", sNameColorKey, g_msgSender);
+		Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s", GetColor(sNameColorKey, sValue, sizeof(sValue)) ? "#" : "", sNameColorKey, g_msgSender);
 
 		if (strlen(sAuthorTag) > 0)
-			Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s%s", CCC_GetColor(sTagColorKey, sValue, sizeof(sValue)) ? "#" : "", bTagFound ? sTagColorKey : "default", sAuthorTag, g_msgSender);
+			Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s%s", GetColor(sTagColorKey, sValue, sizeof(sValue)) ? "#" : "", bTagFound ? sTagColorKey : "default", sAuthorTag, g_msgSender);
 
 		StringMap smTrie = CGetTrie();
 		if (g_msgText[0] == '>' && GetConVarInt(g_cvar_GreenText) > 0 && smTrie.GetString("green", sValue, sizeof(sValue)))
 			Format(g_msgText, sizeof(g_msgText), "{green}%s", g_msgText);
 
 		if (bChatFound)
-			Format(g_msgText, sizeof(g_msgText), "{%s%s}%s", CCC_GetColor(sChatColorKey, sValue, sizeof(sValue)) ? "#" : "", sChatColorKey, g_msgText);
+			Format(g_msgText, sizeof(g_msgText), "{%s%s}%s", GetColor(sChatColorKey, sValue, sizeof(sValue)) ? "#" : "", sChatColorKey, g_msgText);
 	}
 
 	if (!bIsAction && IsSource2009() && (!IsClientEnabled() || (IsClientEnabled() && g_msgAuthor && g_sClientTag[g_msgAuthor][0] == '\0')))
 	{
 		sNameColorKey = "teamcolor";
-		Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s", CCC_GetColor(sNameColorKey, sValue, sizeof(sValue)) ? "#" : "", sNameColorKey, g_msgSender);
+		Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s", GetColor(sNameColorKey, sValue, sizeof(sValue)) ? "#" : "", sNameColorKey, g_msgSender);
 		CFormatColor(g_msgSender, sizeof(g_msgSender), g_msgAuthor);
 	}
 
@@ -4268,8 +4268,11 @@ stock bool ConfigForward(int client)
 	return true;
 }
 
-stock bool GetColorKey(int client, CCC_ColorType colorType, char[] key, int size)
+stock bool GetColorKey(int client, CCC_ColorType colorType, char[] key, int size, bool skipChecks = false)
 {
+	if (!skipChecks && (!client || client > MaxClients || !IsClientInGame(client)))
+        return false;
+
 	StringMap smTrie = CGetTrie();
 	bool bFound = true;
 	char value[32];
@@ -4348,7 +4351,7 @@ public int Native_GetColorKey(Handle plugin, int numParams)
 
 	char[] key = new char[size];
 
-	bool bFound = GetColorKey(client, colorType, key, size);
+	bool bFound = GetColorKey(client, colorType, key, size, true);
 
 	SetNativeString(3, key, size);
 
