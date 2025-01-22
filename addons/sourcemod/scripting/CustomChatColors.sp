@@ -15,8 +15,6 @@
 #tryinclude <DynamicChannels>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.4.11"
-
 #define DATABASE_NAME					"ccc"
 
 #define MAX_CHAT_TRIGGER_LENGTH			32
@@ -33,9 +31,12 @@ public Plugin myinfo =
 	name        = "Custom Chat Colors & Tags & Allchat",
 	author      = "Dr. McKay, edit by id/Obus, BotoX, maxime1907, .Rushaway",
 	description = "Processes chat and provides colors & custom tags & allchat & chat ignoring",
-	version     = PLUGIN_VERSION,
+	version     = CCC_VERSION,
 	url         = "http://www.doctormckay.com"
 };
+
+GlobalForward g_hForward_StatusOK;
+GlobalForward g_hForward_StatusNotOK;
 
 //Handle colorForward;
 //Handle nameForward;
@@ -256,6 +257,9 @@ public void OnPluginStart()
 	g_cvPsayPrivacy = CreateConVar("sm_ccc_psay_privacy", "1", "Hide to admins all usage of sm_psay", FCVAR_PROTECTED);
 	g_cvHUDChannel = CreateConVar("sm_ccc_hud_channel", "0", "The channel for the hud if using DynamicChannels", _, true, 0.0, true, 6.0);
 
+	g_hForward_StatusOK = CreateGlobalForward("CCC_OnPluginOK", ET_Ignore);
+	g_hForward_StatusNotOK = CreateGlobalForward("CCC_OnPluginNotOK", ET_Ignore);
+
 	//colorForward = CreateGlobalForward("CCC_OnChatColor", ET_Event, Param_Cell);
 	//nameForward = CreateGlobalForward("CCC_OnNameColor", ET_Event, Param_Cell);
 	//tagForward = CreateGlobalForward("CCC_OnTagApplied", ET_Event, Param_Cell);
@@ -279,6 +283,8 @@ public void OnPluginStart()
 
 public void OnPluginEnd()
 {
+	SendForward_NotAvailable();
+
 	// Clean up on map end just so we can start a fresh connection when we need it later.
 	if (g_hDatabase != null)
 	{
@@ -291,6 +297,8 @@ public void OnPluginEnd()
 
 public void OnAllPluginsLoaded()
 {
+	SendForward_Available();
+
 	g_bPlugin_SelfMute = LibraryExists("SelfMute");
 	g_bPlugin_SourceComms = LibraryExists("sourcecomms++");
 	g_bPlugin_DynamicChannels = LibraryExists("DynamicChannels");
@@ -309,6 +317,15 @@ public void OnAllPluginsLoaded()
 
 	RenameFile(sBaseChatPluginDisabled, sBaseChatPlugin);
 }
+
+public void OnPluginPauseChange(bool pause)
+{
+	if (pause)
+		SendForward_NotAvailable();
+	else
+		SendForward_Available();
+}
+
 
 public void OnLibraryAdded(const char[] name)
 {
@@ -4576,4 +4593,16 @@ public int Native_IsClientEnabled(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 	return (HasFlag(client, Admin_Generic) || HasFlag(client, Admin_Custom1)) && g_iClientEnable[client];
+}
+
+stock void SendForward_Available()
+{
+	Call_StartForward(g_hForward_StatusOK);
+	Call_Finish();
+}
+
+stock void SendForward_NotAvailable()
+{
+	Call_StartForward(g_hForward_StatusNotOK);
+	Call_Finish();
 }

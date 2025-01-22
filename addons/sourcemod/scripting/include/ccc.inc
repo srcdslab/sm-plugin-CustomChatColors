@@ -9,6 +9,12 @@
 #endif
 #define _ccc_included
 
+#define CCC_V_MAJOR   7
+#define CCC_V_MINOR   5
+#define CCC_V_PATCH   0
+
+#define CCC_VERSION   "7.5.0"
+
 enum CCC_ColorType {
 	CCC_TagColor,
 	CCC_NameColor,
@@ -141,6 +147,21 @@ native void CCC_ReloadConfig();
  * @return   true if client has, false otherwise
  */
 native bool CCC_IsClientEnabled(int client);
+
+/**
+ * Called when the plugin becomes available.
+ * 
+ * @noreturn
+ */
+forward void CCC_OnPluginOK();
+
+/**
+ * Called when the plugin becomes unavailable.
+ * This can happen when the plugin is reloaded or unloaded.
+ * 
+ * @noreturn
+ */
+forward void CCC_OnPluginNotOK();
 
 /**
  * Called when a cilent's name is about to be colored
