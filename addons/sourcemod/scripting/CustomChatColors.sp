@@ -15,8 +15,6 @@
 #tryinclude <DynamicChannels>
 #define REQUIRE_PLUGIN
 
-#define PLUGIN_VERSION					"7.4.11"
-
 #define DATABASE_NAME					"ccc"
 
 #define MAX_CHAT_TRIGGER_LENGTH			32
@@ -33,7 +31,7 @@ public Plugin myinfo =
 	name        = "Custom Chat Colors & Tags & Allchat",
 	author      = "Dr. McKay, edit by id/Obus, BotoX, maxime1907, .Rushaway",
 	description = "Processes chat and provides colors & custom tags & allchat & chat ignoring",
-	version     = PLUGIN_VERSION,
+	version     = CCC_VERSION,
 	url         = "http://www.doctormckay.com"
 };
 
@@ -317,12 +315,12 @@ public void OnLibraryAdded(const char[] name)
 		g_bPlugin_SelfMute = true;
 		VerifyNative_SelfMute();
 	}
-	if (strcmp(name, "sourcecomms++", false) == 0)
+	else if (strcmp(name, "sourcecomms++", false) == 0)
 	{
 		g_bPlugin_SourceComms = true;
 		VerifyNative_SourceCommsPP();
 	}
-	if (strcmp(name, "DynamicChannels", false) == 0)
+	else if (strcmp(name, "DynamicChannels", false) == 0)
 	{
 		g_bPlugin_DynamicChannels = true;
 		VerifyNative_DynamicChannel();
@@ -336,12 +334,12 @@ public void OnLibraryRemoved(const char[] name)
 		g_bPlugin_SelfMute = false;
 		VerifyNative_SelfMute();
 	}
-	if (strcmp(name, "sourcecomms++", false) == 0)
+	else if (strcmp(name, "sourcecomms++", false) == 0)
 	{
 		g_bPlugin_SourceComms = false;
 		VerifyNative_SourceCommsPP();
 	}
-	if (strcmp(name, "DynamicChannels", false) == 0)
+	else if (strcmp(name, "DynamicChannels", false) == 0)
 	{
 		g_bPlugin_DynamicChannels = false;
 		VerifyNative_DynamicChannel();
