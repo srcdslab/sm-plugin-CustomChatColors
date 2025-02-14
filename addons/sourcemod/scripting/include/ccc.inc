@@ -9,6 +9,12 @@
 #endif
 #define _ccc_included
 
+#define CCC_V_MAJOR   "7"
+#define CCC_V_MINOR   "4"
+#define CCC_V_PATCH   "12"
+
+#define CCC_VERSION            CCC_V_MAJOR..."."...CCC_V_MINOR..."."...CCC_V_PATCH
+
 enum CCC_ColorType {
 	CCC_TagColor,
 	CCC_NameColor,
