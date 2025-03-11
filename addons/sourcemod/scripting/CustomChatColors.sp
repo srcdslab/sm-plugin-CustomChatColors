@@ -387,9 +387,9 @@ public void OnClientDisconnect(int client)
 
 	// If we successfully selected the client previously
 	if (g_sClientSID[client][0] != '\0')
-		SQLUpdate_TagClient(INVALID_HANDLE, client);
+		SQLUpdate_TagClient(client);
 	else
-		SQLInsert_TagClient(INVALID_HANDLE, client);
+		SQLInsert_TagClient(client);
 
 	g_iClientPsayCooldown[client] = 0;
 	g_iClientFastReply[client] = -1;
@@ -408,7 +408,7 @@ public void OnClientPostAdminCheck(int client)
 
 	if (HasFlag(client, Admin_Custom1))
 	{
-		SQLSelect_TagClient(INVALID_HANDLE, client);
+		SQLSelect_TagClient(client);
 		SQLSelect_Ban(INVALID_HANDLE, client);
 	}
 	else if (HasFlag(client, Admin_Generic))
@@ -743,7 +743,7 @@ stock void GetClientFlagString(int client, char[] sClientFlagString, int maxSize
 	}
 }
 
-stock Action SQLSelect_TagClient(Handle timer, any client)
+stock Action SQLSelect_TagClient(any client)
 {
 	char sClientFlagString[64];
 	GetClientFlagString(client, sClientFlagString, sizeof(sClientFlagString));
@@ -839,7 +839,7 @@ stock Action SQLDelete_Replace(Handle timer, any data)
 	return Plugin_Stop;
 }
 
-stock Action SQLInsert_TagClient(Handle timer, any client)
+stock Action SQLInsert_TagClient(any client)
 {
 	char sClientName[32];
 	GetClientName(client, sClientName, sizeof(sClientName));
@@ -908,7 +908,7 @@ stock Action SQLInsert_Tag(Handle timer, any data)
 	return Plugin_Stop;
 }
 
-stock Action SQLUpdate_TagClient(Handle timer, any client)
+stock Action SQLUpdate_TagClient(any client)
 {
 	char sClientName[32];
 	GetClientName(client, sClientName, sizeof(sClientName));
@@ -1546,7 +1546,7 @@ bool ChangeSingleTag(int client, int iTarget, char sTag[64], bool bAdmin)
 	ReplaceString(sTag, sizeof(sTag), "\"", "'");
 	ReplaceString(sTag, sizeof(sTag), "%s", "s");
 
-	if (SetTag(g_sSteamIDs[iTarget], sTag, iTarget, bAdmin))
+	if (SetTag(sTag, iTarget, bAdmin))
 	{
 		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} tag to: {green}%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sTag);
 		return true;
@@ -1601,7 +1601,7 @@ bool ChangeSingleColor(int client, int iTarget, char Key[64], char sCol[64], boo
 		if (sCol[0] != '#')
 			Format(sCol, sizeof(sCol), "#%s", sCol);
 
-		SetColor(g_sSteamIDs[iTarget], Key, sCol, iTarget, bAdmin);
+		SetColor(Key, sCol, iTarget, bAdmin);
 
 		if (!strcmp(Key, "namecolor"))
 			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} name color to: \x07%s%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sCol[0], sCol[0]);
@@ -1620,7 +1620,7 @@ bool ChangeSingleColor(int client, int iTarget, char Key[64], char sCol[64], boo
 			return false;
 		}
 
-		SetColor(g_sSteamIDs[iTarget], Key, sCol, iTarget, bAdmin);
+		SetColor(Key, sCol, iTarget, bAdmin);
 
 		if (!strcmp(Key, "namecolor"))
 			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} name color to: {%s}%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sCol[0], sCol[0]);
@@ -1682,7 +1682,7 @@ bool IsValidHex(char[] arg)
 	return true;
 }
 
-stock bool IsClientBanned(int client, bool bNotify = false, const char Key[64] = "")
+stock bool IsClientBanned(int client, const char Key[64] = "")
 {
 	if (g_iClientBanned[client] == 0)
 	{
@@ -1723,11 +1723,11 @@ stock bool IsClientBanned(int client, bool bNotify = false, const char Key[64] =
 	return false;
 }
 
-stock bool SetColor(char SID[64], char Key[64], char HEX[64], int client, bool IgnoreBan=false)
+stock bool SetColor(char Key[64], char HEX[64], int client, bool IgnoreBan=false)
 {
 	if (!IgnoreBan)
 	{
-		if (IsClientBanned(client, true, Key))
+		if (IsClientBanned(client, Key))
 			return false;
 	}
 
@@ -1753,11 +1753,11 @@ stock bool SetColor(char SID[64], char Key[64], char HEX[64], int client, bool I
 	return true;
 }
 
-stock bool SetTag(char SID[64], char text[64], int client, bool IgnoreBan=false)
+stock bool SetTag(char text[64], int client, bool IgnoreBan=false)
 {
 	if (!IgnoreBan)
 	{
-		if (IsClientBanned(client, true, "Tag"))
+		if (IsClientBanned(client, "Tag"))
 			return false;
 	}
 
@@ -1766,14 +1766,14 @@ stock bool SetTag(char SID[64], char text[64], int client, bool IgnoreBan=false)
 	return true;
 }
 
-stock bool RemoveCCC(char SID[64], int client)
+stock bool RemoveCCC(int client)
 {
 	ResetClient(client);
 
 	return true;
 }
 
-stock void BanCCC(char SID[64], int client, int target, char Time[128])
+stock void BanCCC(int client, int target, char Time[128])
 {
 	DataPack pack = new DataPack();
 	pack.WriteCell(client);
@@ -1783,7 +1783,7 @@ stock void BanCCC(char SID[64], int client, int target, char Time[128])
 	SQLInsert_Ban(INVALID_HANDLE, pack);
 }
 
-stock void UnBanCCC(char SID[64], int client, int target)
+stock void UnBanCCC(int client, int target)
 {
 	DataPack pack = new DataPack();
 	pack.WriteCell(client);
@@ -1792,7 +1792,7 @@ stock void UnBanCCC(char SID[64], int client, int target)
 	SQLDelete_Ban(INVALID_HANDLE, pack);
 }
 
-stock void ToggleCCC(char SID[64], int client)
+stock void ToggleCCC(int client)
 {
 	g_iClientEnable[client] = g_iClientEnable[client] ? 0 : 1;
 }
@@ -2680,7 +2680,7 @@ public Action Command_CCCReset(int client, int args)
 	}
 
 	CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Cleared {green}%N's tag {default}&{green} colors{default}.", iTarget);
-	RemoveCCC(g_sSteamIDs[iTarget], iTarget);
+	RemoveCCC(iTarget);
 
 	return Plugin_Handled;
 }
@@ -2712,7 +2712,7 @@ public Action Command_CCCBan(int client, int args)
 		return Plugin_Handled;
 	}
 
-	BanCCC(g_sSteamIDs[iTarget], client, iTarget, sTime);
+	BanCCC(client, iTarget, sTime);
 
 	return Plugin_Handled;
 }
@@ -2738,7 +2738,7 @@ public Action Command_CCCUnban(int client, int args)
 		return Plugin_Handled;
 	}
 
-	UnBanCCC(g_sSteamIDs[iTarget], client, iTarget);
+	UnBanCCC(client, iTarget);
 
 	return Plugin_Handled;
 }
@@ -2779,7 +2779,7 @@ public Action Command_ClearTag(int client, int args)
 		return Plugin_Handled;
 	}
 
-	SetTag(g_sSteamIDs[client], "", client);
+	SetTag("", client);
 
 	return Plugin_Handled;
 }
@@ -2820,7 +2820,7 @@ public Action Command_ClearTagColor(int client, int args)
 		return Plugin_Handled;
 	}
 
-	SetColor(g_sSteamIDs[client], "tagcolor", "", client);
+	SetColor("tagcolor", "", client);
 
 	return Plugin_Handled;
 }
@@ -2861,7 +2861,7 @@ public Action Command_ClearNameColor(int client, int args)
 		return Plugin_Handled;
 	}
 
-	SetColor(g_sSteamIDs[client], "namecolor", "", client);
+	SetColor("namecolor", "", client);
 
 	return Plugin_Handled;
 }
@@ -2902,7 +2902,7 @@ public Action Command_ClearTextColor(int client, int args)
 		return Plugin_Handled;
 	}
 
-	SetColor(g_sSteamIDs[client], "textcolor", "", client);
+	SetColor("textcolor", "", client);
 
 	return Plugin_Handled;
 }
@@ -2915,7 +2915,7 @@ public Action Command_ToggleTag(int client, int args)
 		return Plugin_Handled;
 	}
 
-	ToggleCCC(g_sSteamIDs[client], client);
+	ToggleCCC(client);
 	CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} {green}Tag and color{default} displaying %s", g_iClientEnable[client] ? "{red}enabled{default}." : "{green}disabled{default}.");
 
 	return Plugin_Handled;
@@ -3004,7 +3004,7 @@ public int MenuHandler_AdminUnBan(Menu MenuAUnBan, MenuAction action, int param1
 		}
 		else
 		{
-			UnBanCCC(g_sSteamIDs[target], param1, target);
+			UnBanCCC(param1, target);
 		}
 
 		Menu_Admin(param1);
@@ -3072,7 +3072,7 @@ public int MenuHandler_Main(Menu MenuMain, MenuAction action, int param1, int pa
 		}
 		else if (strcmp(Selected, "CCC", false) == 0)
 		{
-			ToggleCCC(g_sSteamIDs[param1], param1);
+			ToggleCCC(param1);
 			CloseHandle(MenuMain);
 			Menu_Main(param1);
 		}
@@ -3299,7 +3299,7 @@ public int MenuHandler_AdminReset(Menu MenuAReset, MenuAction action, int param1
 		else
 		{
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Cleared {green}%N's tag {default}&{green} colors{default}.", target);
-			RemoveCCC(g_sSteamIDs[target], target);
+			RemoveCCC(target);
 		}
 
 		Menu_Admin(param1);
@@ -3392,7 +3392,7 @@ public int MenuHandler_AdminBanTime(Menu MenuABTime, MenuAction action, int para
 			Menu_Admin(param1);
 		}
 
-		BanCCC(g_sATargetSID[param1], param1, g_iATarget[param1], Selected);
+		BanCCC(param1, g_iATarget[param1], Selected);
 
 		Menu_Admin(param1);
 	}
@@ -3587,12 +3587,12 @@ public int MenuHandler_TagPrefs(Menu MenuTPrefs, MenuAction action, int param1, 
 
 		if (strcmp(Selected, "Reset", false) == 0)
 		{
-			SetTag(g_sSteamIDs[param1], "", param1);
+			SetTag("", param1);
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Cleared your custom {green}tag{default}.");
 		}
 		else if (strcmp(Selected, "ResetColor", false) == 0)
 		{
-			if (SetColor(g_sSteamIDs[param1], "tagcolor", "", param1))
+			if (SetColor("tagcolor", "", param1))
 				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Cleared your custom {green}tag color{default}.");
 		}
 		else if (strcmp(Selected, "ChangeTag", false) == 0)
@@ -3662,7 +3662,7 @@ public int MenuHandler_NameColor(Menu MenuNColor, MenuAction action, int param1,
 
 		if (strcmp(Selected, "ResetColor", false) == 0)
 		{
-			if (SetColor(g_sSteamIDs[param1], "namecolor", "", param1))
+			if (SetColor("namecolor", "", param1))
 				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Cleared your custom {green}name color{default}.");
 		}
 		else if (strcmp(Selected, "ColorName", false) == 0)
@@ -3731,7 +3731,7 @@ public int MenuHandler_ChatColor(Menu MenuCColor, MenuAction action, int param1,
 
 		if (strcmp(Selected, "ResetColor", false) == 0)
 		{
-			if (SetColor(g_sSteamIDs[param1], "textcolor", "", param1))
+			if (SetColor("textcolor", "", param1))
 				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Cleared your custom {green}text color{default}.");
 		}
 		else if (strcmp(Selected, "ColorText", false) == 0)
