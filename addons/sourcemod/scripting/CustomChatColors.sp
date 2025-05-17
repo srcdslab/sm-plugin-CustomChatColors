@@ -252,7 +252,7 @@ public void OnPluginStart()
 	g_cSmChatColor = CreateConVar("sm_ccc_sm_chat_color", "{cyan}", "Color used for SM chat", FCVAR_REPLICATED);
 	g_cvPsayCooldown = CreateConVar("sm_ccc_psay_cooldown", "4", "Cooldown between two usage of sm_psay", FCVAR_REPLICATED);
 	g_cvPsayPrivacy = CreateConVar("sm_ccc_psay_privacy", "1", "Hide to admins all usage of sm_psay", FCVAR_PROTECTED);
-	g_cvHUDChannel = CreateConVar("sm_ccc_hud_channel", "0", "The channel for the hud if using DynamicChannels", _, true, 0.0, true, 6.0);
+	g_cvHUDChannel = CreateConVar("sm_ccc_hud_channel", "0", "The channel for the hud if using DynamicChannels", _, true, 0.0, true, 5.0);
 
 	//colorForward = CreateGlobalForward("CCC_OnChatColor", ET_Event, Param_Cell);
 	//nameForward = CreateGlobalForward("CCC_OnNameColor", ET_Event, Param_Cell);
@@ -2322,7 +2322,7 @@ public Action Command_SmDsay(int client, int args)
 
 	int iHUDChannel = -1;
 	int iChannel = g_cvHUDChannel.IntValue;
-	if (iChannel < 0 || iChannel > 6)
+	if (iChannel < 0 || iChannel > 5)
 		iChannel = 0;
 
 #if defined _DynamicChannels_included_
