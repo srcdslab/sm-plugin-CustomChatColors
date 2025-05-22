@@ -567,8 +567,6 @@ stock void OnSQLConnected(Database db, const char[] err, any data)
 	char sDriver[16];
 	SQL_GetDriverIdent(g_hDatabase.Driver, sDriver, sizeof(sDriver));
 
-	SQL_LockDatabase(g_hDatabase);
-
 	if (!strncmp(sDriver, "my", 2, false))
 		g_bSQLite = false;
 	else
@@ -579,8 +577,6 @@ stock void OnSQLConnected(Database db, const char[] err, any data)
 	SQLTableCreation_Tag(INVALID_HANDLE);
 	SQLTableCreation_Ban(INVALID_HANDLE);
 	SQLTableCreation_Replace(INVALID_HANDLE);
-
-	SQL_UnlockDatabase(g_hDatabase);
 }
 
 stock bool SQL_Conn_Lost(DBResultSet db)
