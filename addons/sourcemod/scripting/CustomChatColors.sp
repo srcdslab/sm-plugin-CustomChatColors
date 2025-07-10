@@ -2232,8 +2232,8 @@ public Action Command_SmPsay(int client, int args)
 		return Plugin_Handled;
 
 	SendPrivateChat(client, target, text[len]);
-	g_iClientFastReply[target] = client;
-	g_iClientFastReply[client] = target;
+	g_iClientFastReply[target] = GetClientUserId(client);
+	g_iClientFastReply[client] = GetClientUserId(target);
 
 	return Plugin_Stop;
 }
@@ -2266,7 +2266,7 @@ public Action Command_SmPsayReply(int client, int args)
 		Format(message, sizeof(message), "%s %s", message, arg);
 	}
 	
-	int target = g_iClientFastReply[client];
+	int target = GetClientOfUserId(g_iClientFastReply[client]);
 	if (target == -1)
 		return Plugin_Handled;
 	
