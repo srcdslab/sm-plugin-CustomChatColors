@@ -59,6 +59,8 @@ ConVar g_cvHUDChannel;
 
 ConVar g_Cvar_Chatmode;
 
+ConVar g_cvar_DBConnectDelay;
+
 char g_sSmCategoryColor[32];
 char g_sSmNameColor[32];
 char g_sSmChatColor[32];
@@ -254,6 +256,8 @@ public void OnPluginStart()
 	g_cvPsayPrivacy = CreateConVar("sm_ccc_psay_privacy", "1", "Hide to admins all usage of sm_psay", FCVAR_PROTECTED);
 	g_cvHUDChannel = CreateConVar("sm_ccc_hud_channel", "0", "The channel for the hud if using DynamicChannels", _, true, 0.0, true, 5.0);
 
+	g_cvar_DBConnectDelay = CreateConVar("sm_ccc_db_connect_delay", "0.0", "Delay in seconds before connecting to the database (0.0 = instant, max 60.0)", FCVAR_NONE, true, 0.0, true, 60.0);
+
 	//colorForward = CreateGlobalForward("CCC_OnChatColor", ET_Event, Param_Cell);
 	//nameForward = CreateGlobalForward("CCC_OnNameColor", ET_Event, Param_Cell);
 	//tagForward = CreateGlobalForward("CCC_OnTagApplied", ET_Event, Param_Cell);
@@ -267,7 +271,12 @@ public void OnPluginStart()
 
 	AutoExecConfig(true);
 
-	DB_Connect();
+	float fDelay = g_cvar_DBConnectDelay.FloatValue;
+	if (fDelay > 0.0)
+		CreateTimer(fDelay, Timer_DelayedDBConnectCCC, _, TIMER_FLAG_NO_MAPCHANGE);
+	else
+		DB_Connect();
+
 	ResetReplace();
 	LoadColorArray();
 
@@ -1820,16 +1829,44 @@ void SendPrivateChat(int client, int target, const char[] message)
 		ShowSettingsMenu(client);
 		return;
 	}
+
+	if (client && (IsClientInGame(client) && BaseComm_IsClientGagged(client)))
+	{
+		CPrintToChat(client, "{green}[SM]{default} You are {red}not allowed {default}to use this command {red}since you are gagged{default}.");
+		return;
+	}
+
+#if defined _sourcecomms_included
+	if (g_bSourceCommsNative && client)
+	{
+		int IsGagged = SourceComms_GetClientGagType(client);
+		if (IsGagged > 0)
+		{
+			CPrintToChat(client, "{green}[SM]{default} You are {red}not allowed {default}to use this command {red}since you are gagged{default}.");
+			return;
+		}
+	}
+#endif
+
+	int iTime = GetTime();
+	if (g_iClientPsayCooldown[client] > iTime)
+	{
+		CPrintToChat(client, "{green}[SM]{default} You are on cooldown, wait {olive}%d {default}seconds to use this command again.", (g_iClientPsayCooldown[client] - iTime));
+		return;
+	}
+
 	if (!target || !IsClientInGame(target))
 	{
 		CPrintToChat(client, "{green}[SM]{default} The receiver is not in the game.");
 		return;
 	}
+
 	if (g_bDisablePsay[target])
 	{
 		CPrintToChat(client, "{green}[SM]{olive} %N{default} has{red} disabled{default} private messages.", target);
 		return;
 	}
+
 	char text[192];
 	Format(text, sizeof(text), "%s", message);
 	StripQuotes(text);
@@ -1895,7 +1932,7 @@ void SendPrivateChat(int client, int target, const char[] message)
 		g_sSmChatColor, text);
 #endif
 
-	g_iClientPsayCooldown[client] = GetTime() + g_cvPsayCooldown.IntValue;
+	g_iClientPsayCooldown[client] = iTime + g_cvPsayCooldown.IntValue;
 	CPrintToChat(target, "{green}[SM] {default}Use /r <message> to reply.");
 	LogAction(client, target, "\"%L\" triggered sm_psay to \"%L\" (text %s)", client, target, text);
 }
@@ -2194,27 +2231,6 @@ public Action Command_SmChat(int client, int args)
 
 public Action Command_SmPsay(int client, int args)
 {
-	if (client && (IsClientInGame(client) && BaseComm_IsClientGagged(client)))
-		return Plugin_Continue;
-
-#if defined _sourcecomms_included
-	if (g_bSourceCommsNative && client)
-	{
-		int IsGagged = SourceComms_GetClientGagType(client);
-		if(IsGagged > 0)
-		{
-			CReplyToCommand(client, "{green}[SM] {default}You are {red}not allowed {default}to use this command {red}since you are gagged{default}.");
-			return Plugin_Handled;
-		}
-	}
-#endif
-
-	if(g_iClientPsayCooldown[client] > GetTime())
-	{
-		CReplyToCommand(client, "{green}[SM] {default}You are on cooldown, wait {olive}%d {default}seconds to use this command again.", (g_iClientPsayCooldown[client] - GetTime()));
-		return Plugin_Handled;
-	}
-	
 	if (args < 2)
 	{
 		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_psay <name or #userid> <message>");
@@ -2226,14 +2242,17 @@ public Action Command_SmPsay(int client, int args)
 
 	int len = BreakString(text, arg, sizeof(arg));
 
-	int target = FindTarget(client, arg, true, false);
+	// We don't allow multi-target filters
+	if (arg[0] == '@')
+		ReplaceString(arg, sizeof(arg), "@", "");
 
+	int target = FindTarget(client, arg, true, false);
 	if (target == -1)
 		return Plugin_Handled;
 
 	SendPrivateChat(client, target, text[len]);
-	g_iClientFastReply[target] = client;
-	g_iClientFastReply[client] = target;
+	g_iClientFastReply[target] = GetClientUserId(client);
+	g_iClientFastReply[client] = GetClientUserId(target);
 
 	return Plugin_Stop;
 }
@@ -2266,7 +2285,7 @@ public Action Command_SmPsayReply(int client, int args)
 		Format(message, sizeof(message), "%s %s", message, arg);
 	}
 	
-	int target = g_iClientFastReply[client];
+	int target = GetClientOfUserId(g_iClientFastReply[client]);
 	if (target == -1)
 		return Plugin_Handled;
 	
@@ -4570,4 +4589,10 @@ public int Native_IsClientEnabled(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 	return (HasFlag(client, Admin_Generic) || HasFlag(client, Admin_Custom1)) && g_iClientEnable[client];
+}
+
+public Action Timer_DelayedDBConnectCCC(Handle timer, any data)
+{
+	DB_Connect();
+	return Plugin_Stop;
 }
