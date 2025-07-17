@@ -246,6 +246,7 @@ public void OnPluginStart()
 	g_cvar_GreenText = CreateConVar("sm_ccc_green_text", "1", "Enables greentexting (First chat character must be \">\")", FCVAR_REPLICATED);
 	g_cvar_ReplaceText = CreateConVar("sm_ccc_replace", "1", "Enables text replacing", FCVAR_REPLICATED);
 
+	g_cvar_DBConnectDelay = CreateConVar("sm_ccc_db_connect_delay", "0.0", "Delay in seconds before connecting to the database (0.0 = instant, max 60.0)", FCVAR_NONE, true, 0.0, true, 60.0);
 	g_cvar_SQLRetryTime = CreateConVar("sm_ccc_sql_retry_time", "10.0", "Number of seconds to wait before a new retry on a failed query", FCVAR_REPLICATED);
 	g_cvar_SQLMaxRetries = CreateConVar("sm_ccc_sql_max_retries", "1", "Number of sql retries on all queries if one fails", FCVAR_REPLICATED);
 
@@ -256,7 +257,6 @@ public void OnPluginStart()
 	g_cvPsayPrivacy = CreateConVar("sm_ccc_psay_privacy", "1", "Hide to admins all usage of sm_psay", FCVAR_PROTECTED);
 	g_cvHUDChannel = CreateConVar("sm_ccc_hud_channel", "0", "The channel for the hud if using DynamicChannels", _, true, 0.0, true, 5.0);
 
-	g_cvar_DBConnectDelay = CreateConVar("sm_ccc_db_connect_delay", "0.0", "Delay in seconds before connecting to the database (0.0 = instant, max 60.0)", FCVAR_NONE, true, 0.0, true, 60.0);
 
 	//colorForward = CreateGlobalForward("CCC_OnChatColor", ET_Event, Param_Cell);
 	//nameForward = CreateGlobalForward("CCC_OnNameColor", ET_Event, Param_Cell);
@@ -270,12 +270,6 @@ public void OnPluginStart()
 	g_bProto = CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "GetUserMessageType") == FeatureStatus_Available && GetUserMessageType() == UM_Protobuf;
 
 	AutoExecConfig(true);
-
-	float fDelay = g_cvar_DBConnectDelay.FloatValue;
-	if (fDelay > 0.0)
-		CreateTimer(fDelay, Timer_DelayedDBConnectCCC, _, TIMER_FLAG_NO_MAPCHANGE);
-	else
-		DB_Connect();
 
 	ResetReplace();
 	LoadColorArray();
@@ -382,6 +376,15 @@ public void OnConfigsExecuted()
 	g_cSmCategoryColor.GetString(g_sSmCategoryColor, sizeof(g_sSmCategoryColor));
 	g_cSmNameColor.GetString(g_sSmNameColor, sizeof(g_sSmNameColor));
 	g_cSmChatColor.GetString(g_sSmChatColor, sizeof(g_sSmChatColor));
+}
+
+public void OnMapStart()
+{
+	float fDelay = g_cvar_DBConnectDelay.FloatValue;
+	if (fDelay > 0.0)
+		CreateTimer(fDelay, Timer_DelayedDBConnectCCC, _, TIMER_FLAG_NO_MAPCHANGE);
+	else
+		DB_Connect();
 }
 
 public void OnClientDisconnect(int client)
