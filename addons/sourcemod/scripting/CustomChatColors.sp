@@ -59,6 +59,8 @@ ConVar g_cvHUDChannel;
 
 ConVar g_Cvar_Chatmode;
 
+ConVar g_cvar_DBConnectDelay;
+
 char g_sSmCategoryColor[32];
 char g_sSmNameColor[32];
 char g_sSmChatColor[32];
@@ -146,6 +148,9 @@ Handle g_hCookie_DisablePsay;
 int g_iClientPsayCooldown[MAXPLAYERS + 1] = { 0, ... };
 int g_iClientFastReply[MAXPLAYERS + 1] = { 0, ... };
 bool g_bDisablePsay[MAXPLAYERS + 1];
+
+bool g_bDBConnectDelayActive = false;
+bool g_bClientDataLoaded[MAXPLAYERS + 1] = {false, ...};
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -244,6 +249,7 @@ public void OnPluginStart()
 	g_cvar_GreenText = CreateConVar("sm_ccc_green_text", "1", "Enables greentexting (First chat character must be \">\")", FCVAR_REPLICATED);
 	g_cvar_ReplaceText = CreateConVar("sm_ccc_replace", "1", "Enables text replacing", FCVAR_REPLICATED);
 
+	g_cvar_DBConnectDelay = CreateConVar("sm_ccc_db_connect_delay", "0.0", "Delay in seconds before connecting to the database (0.0 = instant, max 60.0)", FCVAR_NONE, true, 0.0, true, 60.0);
 	g_cvar_SQLRetryTime = CreateConVar("sm_ccc_sql_retry_time", "10.0", "Number of seconds to wait before a new retry on a failed query", FCVAR_REPLICATED);
 	g_cvar_SQLMaxRetries = CreateConVar("sm_ccc_sql_max_retries", "1", "Number of sql retries on all queries if one fails", FCVAR_REPLICATED);
 
@@ -253,6 +259,7 @@ public void OnPluginStart()
 	g_cvPsayCooldown = CreateConVar("sm_ccc_psay_cooldown", "4", "Cooldown between two usage of sm_psay", FCVAR_REPLICATED);
 	g_cvPsayPrivacy = CreateConVar("sm_ccc_psay_privacy", "1", "Hide to admins all usage of sm_psay", FCVAR_PROTECTED);
 	g_cvHUDChannel = CreateConVar("sm_ccc_hud_channel", "0", "The channel for the hud if using DynamicChannels", _, true, 0.0, true, 5.0);
+
 
 	//colorForward = CreateGlobalForward("CCC_OnChatColor", ET_Event, Param_Cell);
 	//nameForward = CreateGlobalForward("CCC_OnNameColor", ET_Event, Param_Cell);
@@ -267,7 +274,6 @@ public void OnPluginStart()
 
 	AutoExecConfig(true);
 
-	DB_Connect();
 	ResetReplace();
 	LoadColorArray();
 
@@ -285,6 +291,11 @@ public void OnPluginEnd()
 	}
 	if (g_sColorsArray != null)
 		delete g_sColorsArray;
+
+	g_DatabaseState = DatabaseState_Disconnected;
+	g_hDatabase = null;
+	g_hReconnectTimer = null;
+	g_bDBConnectDelayActive = false;
 }
 
 public void OnAllPluginsLoaded()
@@ -370,6 +381,18 @@ stock void VerifyNative_DynamicChannel()
 
 public void OnConfigsExecuted()
 {
+	float fDelay = g_cvar_DBConnectDelay.FloatValue;
+	if (fDelay > 0.0)
+	{
+		g_bDBConnectDelayActive = true;
+		CreateTimer(fDelay, Timer_DelayedDBConnectCCC, _, TIMER_FLAG_NO_MAPCHANGE);
+	}
+	else
+	{
+		g_bDBConnectDelayActive = false;
+		DB_Connect();
+	}
+
 	g_cSmCategoryColor.GetString(g_sSmCategoryColor, sizeof(g_sSmCategoryColor));
 	g_cSmNameColor.GetString(g_sSmNameColor, sizeof(g_sSmNameColor));
 	g_cSmChatColor.GetString(g_sSmChatColor, sizeof(g_sSmChatColor));
@@ -377,6 +400,11 @@ public void OnConfigsExecuted()
 
 public void OnClientDisconnect(int client)
 {
+	g_bClientDataLoaded[client] = false;
+	g_iClientPsayCooldown[client] = 0;
+	g_iClientFastReply[client] = -1;
+	g_sSteamIDs[client][0] = '\0';
+
 	// Check if the client has changed anything in its ccc config
 	if (g_iDefaultClientEnable[client] == g_iClientEnable[client] &&
 		strcmp(g_sDefaultClientTag[client], g_sClientTag[client], false) == 0 &&
@@ -390,14 +418,16 @@ public void OnClientDisconnect(int client)
 		SQLUpdate_TagClient(client);
 	else
 		SQLInsert_TagClient(client);
-
-	g_iClientPsayCooldown[client] = 0;
-	g_iClientFastReply[client] = -1;
-	g_sSteamIDs[client][0] = '\0';
 }
 
 public void OnClientPostAdminCheck(int client)
 {
+	if (g_bClientDataLoaded[client])
+		return;
+
+	if (g_DatabaseState != DatabaseState_Connected)
+		return;
+
 	ResetClient(client);
 
 	char auth[MAX_AUTHID_LENGTH];
@@ -519,6 +549,9 @@ stock void ResetReplace()
 
 stock bool DB_Connect()
 {
+	if (g_bDBConnectDelayActive)
+		return false;
+
 	//PrintToServer("DB_Connect(handle %d, state %d, lock %d)", g_hDatabase, g_DatabaseState, g_iConnectLock);
 
 	if (g_hDatabase != null && g_DatabaseState == DatabaseState_Connected)
@@ -1201,8 +1234,6 @@ stock void OnSQLSelect_TagGroup(Database db, DBResultSet results, const char[] e
 	}
 	else if (SQL_FetchRow(results))
 	{
-		// pack.ReadString(g_sClientSID[client], sizeof(g_sClientSID[]));
-
 		g_iClientEnable[client] = SQL_FetchInt(results, 1);
 		SQL_FetchString(results, 2, g_sClientTag[client], sizeof(g_sClientTag[]));
 		SQL_FetchString(results, 3, g_sClientTagColor[client], sizeof(g_sClientTagColor[]));
@@ -1214,6 +1245,8 @@ stock void OnSQLSelect_TagGroup(Database db, DBResultSet results, const char[] e
 		strcopy(g_sDefaultClientTagColor[client], sizeof(g_sDefaultClientTagColor[]), g_sClientTagColor[client]);
 		strcopy(g_sDefaultClientNameColor[client], sizeof(g_sDefaultClientNameColor[]), g_sClientNameColor[client]);
 		strcopy(g_sDefaultClientChatColor[client], sizeof(g_sDefaultClientChatColor[]), g_sClientChatColor[client]);
+
+		g_bClientDataLoaded[client] = true;
 	}
 
 	g_bSQLSelectTagGroupRetry[client] = 0;
@@ -1259,6 +1292,8 @@ public void OnSQLSelect_Tag(Database db, DBResultSet results, const char[] err, 
 		Call_StartForward(loadedForward);
 		Call_PushCell(client);
 		Call_Finish();
+
+		g_bClientDataLoaded[client] = true;
 	}
 	else
 	{
@@ -4580,4 +4615,12 @@ public int Native_IsClientEnabled(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 	return (HasFlag(client, Admin_Generic) || HasFlag(client, Admin_Custom1)) && g_iClientEnable[client];
+}
+
+public Action Timer_DelayedDBConnectCCC(Handle timer, any data)
+{
+	g_bDBConnectDelayActive = false;
+	DB_Connect();
+	LateLoad();
+	return Plugin_Stop;
 }
