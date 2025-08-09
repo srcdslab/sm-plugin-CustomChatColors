@@ -35,11 +35,6 @@ public Plugin myinfo =
 	url         = "http://www.doctormckay.com"
 };
 
-//Handle colorForward;
-//Handle nameForward;
-//Handle tagForward;
-//Handle applicationForward;
-//Handle messageForward;
 Handle preLoadedForward;
 Handle loadedForward;
 Handle configReloadedForward;
@@ -260,12 +255,6 @@ public void OnPluginStart()
 	g_cvPsayPrivacy = CreateConVar("sm_ccc_psay_privacy", "1", "Hide to admins all usage of sm_psay", FCVAR_PROTECTED);
 	g_cvHUDChannel = CreateConVar("sm_ccc_hud_channel", "0", "The channel for the hud if using DynamicChannels", _, true, 0.0, true, 5.0);
 
-
-	//colorForward = CreateGlobalForward("CCC_OnChatColor", ET_Event, Param_Cell);
-	//nameForward = CreateGlobalForward("CCC_OnNameColor", ET_Event, Param_Cell);
-	//tagForward = CreateGlobalForward("CCC_OnTagApplied", ET_Event, Param_Cell);
-	//applicationForward = CreateGlobalForward("CCC_OnColor", ET_Event, Param_Cell, Param_String, Param_Cell);
-	//messageForward = CreateGlobalForward("CCC_OnChatMessage", ET_Ignore, Param_Cell, Param_String, Param_Cell);
 	preLoadedForward = CreateGlobalForward("CCC_OnUserConfigPreLoaded", ET_Event, Param_Cell);
 	loadedForward = CreateGlobalForward("CCC_OnUserConfigLoaded", ET_Ignore, Param_Cell);
 	configReloadedForward = CreateGlobalForward("CCC_OnConfigReloaded", ET_Ignore);
@@ -400,11 +389,6 @@ public void OnConfigsExecuted()
 
 public void OnClientDisconnect(int client)
 {
-	g_bClientDataLoaded[client] = false;
-	g_iClientPsayCooldown[client] = 0;
-	g_iClientFastReply[client] = -1;
-	g_sSteamIDs[client][0] = '\0';
-
 	// Check if the client has changed anything in its ccc config
 	if (g_iDefaultClientEnable[client] == g_iClientEnable[client] &&
 		strcmp(g_sDefaultClientTag[client], g_sClientTag[client], false) == 0 &&
@@ -418,6 +402,11 @@ public void OnClientDisconnect(int client)
 		SQLUpdate_TagClient(client);
 	else
 		SQLInsert_TagClient(client);
+
+	g_bClientDataLoaded[client] = false;
+	g_iClientPsayCooldown[client] = 0;
+	g_iClientFastReply[client] = -1;
+	g_sSteamIDs[client][0] = '\0';
 }
 
 public void OnClientPostAdminCheck(int client)
@@ -433,8 +422,8 @@ public void OnClientPostAdminCheck(int client)
 	char auth[MAX_AUTHID_LENGTH];
 	GetClientAuthId(client, AuthId_Steam2, auth, sizeof(auth));
 	FormatEx(g_sSteamIDs[client], sizeof(g_sSteamIDs[]), "%s", auth);
-	// if (strncmp(auth[6], "ID_", 3) == 0)
-	// 	GetClientAuthId(client, AuthId_Steam2, g_sSteamIDs[client], sizeof(g_sSteamIDs[]), false);
+
+	ConfigForward(client);
 
 	if (HasFlag(client, Admin_Custom1))
 	{
@@ -4226,72 +4215,6 @@ public void MenuHandler_CookieMenu(int client, CookieMenuAction action, any info
 //  888  Y88888   d88P   888     888       888     Y88o88P   888             "888
 //  888   Y8888  d8888888888     888       888      Y888P    888       Y88b  d88P
 //  888    Y888 d88P     888     888     8888888     Y8P     8888888888 "Y8888P"
-
-// stock bool CheckForward(int author, const char[] message, CCC_ColorType type)
-// {
-// 	Action result = Plugin_Continue;
-
-// 	Call_StartForward(applicationForward);
-// 	Call_PushCell(author);
-// 	Call_PushString(message);
-// 	Call_PushCell(type);
-// 	Call_Finish(result);
-
-// 	if (result >= Plugin_Handled)
-// 		return false;
-
-// 	// Compatibility
-// 	switch(type)
-// 	{
-// 		case CCC_TagColor: return TagForward(author);
-// 		case CCC_NameColor: return NameForward(author);
-// 		case CCC_ChatColor: return ColorForward(author);
-// 	}
-
-// 	return true;
-// }
-
-// stock bool ColorForward(int author)
-// {
-// 	Action result = Plugin_Continue;
-
-// 	Call_StartForward(colorForward);
-// 	Call_PushCell(author);
-// 	Call_Finish(result);
-
-// 	if (result >= Plugin_Handled)
-// 		return false;
-
-// 	return true;
-// }
-
-// stock bool NameForward(int author)
-// {
-// 	Action result = Plugin_Continue;
-
-// 	Call_StartForward(nameForward);
-// 	Call_PushCell(author);
-// 	Call_Finish(result);
-
-// 	if (result >= Plugin_Handled)
-// 		return false;
-
-// 	return true;
-// }
-
-// stock bool TagForward(int author)
-// {
-// 	Action result = Plugin_Continue;
-
-// 	Call_StartForward(tagForward);
-// 	Call_PushCell(author);
-// 	Call_Finish(result);
-
-// 	if (result >= Plugin_Handled)
-// 		return false;
-
-// 	return true;
-// }
 
 stock bool ConfigForward(int client)
 {
