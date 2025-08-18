@@ -389,20 +389,6 @@ public void OnConfigsExecuted()
 
 public void OnClientDisconnect(int client)
 {
-	// Check if the client has changed anything in its ccc config
-	if (g_iDefaultClientEnable[client] == g_iClientEnable[client] &&
-		strcmp(g_sDefaultClientTag[client], g_sClientTag[client], false) == 0 &&
-		strcmp(g_sDefaultClientTagColor[client], g_sClientTagColor[client], false) == 0 &&
-		strcmp(g_sDefaultClientNameColor[client], g_sClientNameColor[client], false) == 0 &&
-		strcmp(g_sDefaultClientChatColor[client], g_sClientChatColor[client], false) == 0)
-		return;
-
-	// If we successfully selected the client previously
-	if (g_sClientSID[client][0] != '\0')
-		SQLUpdate_TagClient(client);
-	else
-		SQLInsert_TagClient(client);
-
 	g_bClientDataLoaded[client] = false;
 	g_iClientPsayCooldown[client] = 0;
 	g_iClientFastReply[client] = -1;
@@ -427,8 +413,11 @@ public void OnClientPostAdminCheck(int client)
 
 	if (HasFlag(client, Admin_Custom1))
 	{
-		SQLSelect_TagClient(client);
-		SQLSelect_Ban(INVALID_HANDLE, client);
+		SQLSelect_TagClient(GetClientUserId(client));
+		DataPack banPack = new DataPack();
+		banPack.WriteCell(GetClientUserId(client));
+		banPack.WriteString(g_sSteamIDs[client]);
+		SQLSelect_Ban(INVALID_HANDLE, banPack);
 	}
 	else if (HasFlag(client, Admin_Generic))
 	{
@@ -436,7 +425,7 @@ public void OnClientPostAdminCheck(int client)
 		GetClientFlagString(client, sClientFlagString, sizeof(sClientFlagString));
 
 		DataPack pack = new DataPack();
-		pack.WriteCell(client);
+		pack.WriteCell(GetClientUserId(client));
 		pack.WriteString(g_sSteamIDs[client]);
 		pack.WriteString(sClientFlagString);
 
@@ -501,7 +490,7 @@ stock void SortColors()
 
 	char temp[64];
 
-    // Sorting strings using bubble sort
+	// Sorting strings using bubble sort
 	for (int j = 0; j < g_sColorsArray.Length - 1; j++)
 	{
 		for (int i = j + 1; i < g_sColorsArray.Length; i++)
@@ -693,14 +682,24 @@ stock Action SQLSelect_Replace(Handle timer)
 	return Plugin_Stop;
 }
 
-stock Action SQLSelect_Ban(Handle timer, any client)
+stock Action SQLSelect_Ban(Handle timer, any data)
 {
+	DataPack pack = view_as<DataPack>(data);
+	pack.Reset();
+
 	if (!DB_Connect())
+	{
+		delete pack;
 		return Plugin_Stop;
+	}
+
+	pack.ReadCell();
+	char steamId[64];
+	pack.ReadString(steamId, sizeof(steamId));
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
-	FormatEx(sQuery, sizeof(sQuery), "SELECT `length` FROM `ccc_ban` WHERE `steamid` = '%s';", g_sSteamIDs[client]);
-	SQL_TQuery(g_hDatabase, OnSQLSelect_Ban, sQuery, client, DBPrio_High);
+	FormatEx(sQuery, sizeof(sQuery), "SELECT `length` FROM `ccc_ban` WHERE `steamid` = '%s';", steamId);
+	SQL_TQuery(g_hDatabase, OnSQLSelect_Ban, sQuery, data, DBPrio_Low);
 	return Plugin_Stop;
 }
 
@@ -724,7 +723,7 @@ stock Action SQLSelect_TagGroup(Handle timer, any data)
 	char sQuery[512];
 
 	FormatEx(sQuery, sizeof(sQuery), "SELECT `steamid`, `enable`, `tag`, `tag_color`, `name_color`, `chat_color`, `flag` FROM `ccc_tag` WHERE `steamid` NOT LIKE 'STEAM_%' and `flag` IS NOT NULL and `flag` != '' and `flag` IN (%s) ORDER BY `flag` DESC;", sFlagList);
-	SQL_TQuery(g_hDatabase, OnSQLSelect_TagGroup, sQuery, data, DBPrio_High);
+	SQL_TQuery(g_hDatabase, OnSQLSelect_TagGroup, sQuery, data, DBPrio_Low);
 	return Plugin_Stop;
 }
 
@@ -761,13 +760,17 @@ stock void GetClientFlagString(int client, char[] sClientFlagString, int maxSize
 	}
 }
 
-stock Action SQLSelect_TagClient(any client)
+stock Action SQLSelect_TagClient(int userid)
 {
+	int client = GetClientOfUserId(userid);
+	if (!client)
+		return Plugin_Stop;
+
 	char sClientFlagString[64];
 	GetClientFlagString(client, sClientFlagString, sizeof(sClientFlagString));
 
 	DataPack pack = new DataPack();
-	pack.WriteCell(client);
+	pack.WriteCell(userid);
 	pack.WriteString(g_sSteamIDs[client]);
 	pack.WriteString(sClientFlagString);
 
@@ -795,7 +798,7 @@ stock Action SQLSelect_Tag(Handle timer, any data)
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
 	FormatEx(sQuery, sizeof(sQuery), "SELECT `steamid`, `enable`, `tag`, `tag_color`, `name_color`, `chat_color` FROM `ccc_tag` WHERE `steamid` = '%s';", sClientSteamID);
-	SQL_TQuery(g_hDatabase, OnSQLSelect_Tag, sQuery, data, DBPrio_High);
+	SQL_TQuery(g_hDatabase, OnSQLSelect_Tag, sQuery, data, DBPrio_Low);
 	return Plugin_Stop;
 }
 
@@ -857,13 +860,17 @@ stock Action SQLDelete_Replace(Handle timer, any data)
 	return Plugin_Stop;
 }
 
-stock Action SQLInsert_TagClient(any client)
+stock Action SQLInsert_TagClient(int userid)
 {
+	int client = GetClientOfUserId(userid);
+	if (!client)
+		return Plugin_Stop;
+
 	char sClientName[32];
 	GetClientName(client, sClientName, sizeof(sClientName));
 
 	DataPack pack = new DataPack();
-	pack.WriteCell(client);
+	pack.WriteCell(userid);
 	pack.WriteString(g_sSteamIDs[client]);
 	pack.WriteCell(g_iClientEnable[client]);
 	pack.WriteString(sClientName);
@@ -884,7 +891,7 @@ stock Action SQLInsert_Tag(Handle timer, any data)
 	pack.Reset();
 
 	if (!DB_Connect())
-	{	
+	{
 		delete pack;
 		return Plugin_Stop;
 	}
@@ -926,13 +933,17 @@ stock Action SQLInsert_Tag(Handle timer, any data)
 	return Plugin_Stop;
 }
 
-stock Action SQLUpdate_TagClient(any client)
+stock Action SQLUpdate_TagClient(int userid)
 {
+	int client = GetClientOfUserId(userid);
+	if (!client)
+		return Plugin_Stop;
+
 	char sClientName[32];
 	GetClientName(client, sClientName, sizeof(sClientName));
 
 	DataPack pack = new DataPack();
-	pack.WriteCell(client);
+	pack.WriteCell(userid);
 	pack.WriteString(g_sSteamIDs[client]);
 	pack.WriteCell(g_iClientEnable[client]);
 	pack.WriteString(sClientName);
@@ -953,7 +964,7 @@ stock Action SQLUpdate_Tag(Handle timer, any data)
 	pack.Reset();
 
 	if (!DB_Connect())
-	{	
+	{
 		delete pack;
 		return Plugin_Stop;
 	}
@@ -986,7 +997,7 @@ stock Action SQLUpdate_Tag(Handle timer, any data)
 	FormatEx(
 		sQuery,
 		sizeof(sQuery),
-		"UPDATE `ccc_tag` SET `name` = '%d', `enable` = '%d', `flag` = '%s', `tag` = '%s', `tag_color` = '%s', `name_color` = '%s', `chat_color` = '%s' WHERE `steamid` = '%s';",
+		"UPDATE `ccc_tag` SET `name` = '%s', `enable` = '%d', `flag` = '%s', `tag` = '%s', `tag_color` = '%s', `name_color` = '%s', `chat_color` = '%s' WHERE `steamid` = '%s';",
 		sNameEscaped, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor, sSteamID
 	);
 	SQL_TQuery(g_hDatabase, OnSQLUpdate_Tag, sQuery, data);
@@ -1006,7 +1017,13 @@ stock Action SQLDelete_Tag(Handle timer, any data)
 
 	char sSteamID[64];
 
-	pack.ReadCell();
+	int client = GetClientOfUserId(pack.ReadCell());
+	if (!client)
+	{
+		delete pack;
+		return Plugin_Stop;
+	}
+
 	pack.ReadString(sSteamID, sizeof(sSteamID));
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
@@ -1034,7 +1051,12 @@ public void OnSQLDelete_Tag(Database db, DBResultSet results, const char[] err, 
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
-	int client = pack.ReadCell();
+	int client = GetClientOfUserId(pack.ReadCell());
+	if (!client)
+	{
+		delete pack;
+		return;
+	}
 
 	if (SQL_Conn_Lost(results))
 	{
@@ -1062,11 +1084,25 @@ stock Action SQLInsert_Ban(Handle timer, any data)
 		return Plugin_Stop;
 	}
 
-	int client = pack.ReadCell();
-	int target = pack.ReadCell();
+	int client = GetClientOfUserId(pack.ReadCell());
+	int target = GetClientOfUserId(pack.ReadCell());
+	if (!client || !target)
+	{
+		delete pack;
+		return Plugin_Stop;
+	}
 
 	char sTime[128];
 	pack.ReadString(sTime, sizeof(sTime));
+	char targetSid[64];
+	char clientSid[64];
+	char sTargetNameSnap[32];
+	char sClientNameSnap[32];
+	pack.ReadString(targetSid, sizeof(targetSid));
+	pack.ReadString(clientSid, sizeof(clientSid));
+	pack.ReadString(sTargetNameSnap, sizeof(sTargetNameSnap));
+	pack.ReadString(sClientNameSnap, sizeof(sClientNameSnap));
+	
 
 	int time = StringToInt(sTime);
 	time = GetTime() + (time * 60);
@@ -1079,17 +1115,28 @@ stock Action SQLInsert_Ban(Handle timer, any data)
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 	char sClientName[32];
 	char sTargetName[32];
+	// Prefer snapshots; if empty (older pack), fallback to live names
+	if (sClientNameSnap[0] != '\0')
+		strcopy(sClientName, sizeof(sClientName), sClientNameSnap);
+	else
+		GetClientName(client, sClientName, sizeof(sClientName));
+	if (sTargetNameSnap[0] != '\0')
+		strcopy(sTargetName, sizeof(sTargetName), sTargetNameSnap);
+	else
+		GetClientName(target, sTargetName, sizeof(sTargetName));
 
-	GetClientName(client, sClientName, sizeof(sClientName));
-	GetClientName(target, sTargetName, sizeof(sTargetName));
+	char sClientNameEscaped[32+1];
+	char sTargetNameEscaped[32+1];
+	SQL_EscapeString(g_hDatabase, sClientName, sClientNameEscaped, sizeof(sClientNameEscaped));
+	SQL_EscapeString(g_hDatabase, sTargetName, sTargetNameEscaped, sizeof(sTargetNameEscaped));
 
 	FormatEx(
 		sQuery,
 		sizeof(sQuery),
 		"INSERT INTO `ccc_ban` (`steamid`, `name`, `issuer_steamid`, `issuer_name`, `length`) VALUES ('%s', '%s', '%s', '%s', '%d') \
 		ON DUPLICATE KEY UPDATE `steamid` = '%s', `name` = '%s', `issuer_steamid` = '%s', `issuer_name` = '%s', `length` = '%d';",
-		g_sSteamIDs[target], sTargetName, g_sSteamIDs[client], sClientName, time,
-		g_sSteamIDs[target], sTargetName, g_sSteamIDs[client], sClientName, time
+		targetSid[0] ? targetSid : g_sSteamIDs[target], sTargetNameEscaped, clientSid[0] ? clientSid : g_sSteamIDs[client], sClientNameEscaped, time,
+		targetSid[0] ? targetSid : g_sSteamIDs[target], sTargetNameEscaped, clientSid[0] ? clientSid : g_sSteamIDs[client], sClientNameEscaped, time
 	);
 	SQL_TQuery(g_hDatabase, OnSQLInsert_Ban, sQuery, data);
 
@@ -1107,14 +1154,20 @@ stock Action SQLDelete_Ban(Handle timer, any data)
 		return Plugin_Stop;
 	}
 
-	// client
-	pack.ReadCell();
-	// target
-	int target = pack.ReadCell();
+	int client = GetClientOfUserId(pack.ReadCell());
+	int target = GetClientOfUserId(pack.ReadCell());
+	if (!client || !target)
+	{
+		delete pack;
+		return Plugin_Stop;
+	}
+
+	char targetSid[64];
+	pack.ReadString(targetSid, sizeof(targetSid));
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
-	FormatEx(sQuery, sizeof(sQuery), "DELETE FROM `ccc_ban` WHERE `steamid` = '%s';", g_sSteamIDs[target]);
+	FormatEx(sQuery, sizeof(sQuery), "DELETE FROM `ccc_ban` WHERE `steamid` = '%s';", targetSid[0] ? targetSid : g_sSteamIDs[target]);
 	SQL_TQuery(g_hDatabase, OnSQLDelete_Ban, sQuery, data);
 
 	return Plugin_Stop;
@@ -1180,8 +1233,21 @@ public void OnSQLSelect_Replace(Database db, DBResultSet results, const char[] e
 	g_bSQLSelectReplaceRetry = 0;
 }
 
-public void OnSQLSelect_Ban(Database db, DBResultSet results, const char[] err, any client)
+public void OnSQLSelect_Ban(Database db, DBResultSet results, const char[] err, any data)
 {
+	DataPack pack = view_as<DataPack>(data);
+	pack.Reset();
+	int userid = pack.ReadCell();
+	char steamId[64];
+	pack.ReadString(steamId, sizeof(steamId));
+
+	int client = GetClientOfUserId(userid);
+	if (!client)
+	{
+		delete pack;
+		return;
+	}
+
 	if (SQL_Conn_Lost(results))
 	{
 		LogError("An error occurred while querying the database for the user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
@@ -1189,7 +1255,7 @@ public void OnSQLSelect_Ban(Database db, DBResultSet results, const char[] err, 
 		if (g_bSQLSelectBanRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLSelectBanRetry[client]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_Ban, client);
+			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_Ban, data);
 			return;
 		}
 	}
@@ -1199,6 +1265,8 @@ public void OnSQLSelect_Ban(Database db, DBResultSet results, const char[] err, 
 	}
 
 	g_bSQLSelectBanRetry[client] = 0;
+
+	delete pack;
 }
 
 stock void OnSQLSelect_TagGroup(Database db, DBResultSet results, const char[] err, DataPack data)
@@ -1206,7 +1274,12 @@ stock void OnSQLSelect_TagGroup(Database db, DBResultSet results, const char[] e
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
-	int client = pack.ReadCell();
+	int client = GetClientOfUserId(pack.ReadCell());
+	if (!client)
+	{
+		delete pack;
+		return;
+	}
 
 	g_sClientSID[client] = "";
 
@@ -1248,7 +1321,12 @@ public void OnSQLSelect_Tag(Database db, DBResultSet results, const char[] err, 
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
-	int client = pack.ReadCell();
+	int client = GetClientOfUserId(pack.ReadCell());
+	if (!client)
+	{
+		delete pack;
+		return;
+	}
 
 	g_sClientSID[client] = "";
 
@@ -1301,7 +1379,12 @@ public void OnSQLUpdate_Tag(Database db, DBResultSet results, const char[] err, 
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
-	int client = pack.ReadCell();
+	int client = GetClientOfUserId(pack.ReadCell());
+	if (!client)
+	{
+		delete pack;
+		return;
+	}
 
 	if (SQL_Conn_Lost(results))
 	{
@@ -1315,7 +1398,14 @@ public void OnSQLUpdate_Tag(Database db, DBResultSet results, const char[] err, 
 		}
 	}
 
-	ResetClient(client);
+	// Do not reset the client here; it clears SteamID and runtime state.
+	// Instead, snapshot current values as defaults so we don't trigger writes on disconnect.
+	g_iDefaultClientEnable[client] = g_iClientEnable[client];
+	strcopy(g_sDefaultClientTag[client], sizeof(g_sDefaultClientTag[]), g_sClientTag[client]);
+	strcopy(g_sDefaultClientTagColor[client], sizeof(g_sDefaultClientTagColor[]), g_sClientTagColor[client]);
+	strcopy(g_sDefaultClientNameColor[client], sizeof(g_sDefaultClientNameColor[]), g_sClientNameColor[client]);
+	strcopy(g_sDefaultClientChatColor[client], sizeof(g_sDefaultClientChatColor[]), g_sClientChatColor[client]);
+	g_bClientDataLoaded[client] = true;
 	g_bSQLUpdateTagRetry[client] = 0;
 
 	delete pack;
@@ -1326,7 +1416,12 @@ public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] e
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
-	int client = pack.ReadCell();
+	int client = GetClientOfUserId(pack.ReadCell());
+	if (!client)
+	{
+		delete pack;
+		return;
+	}
 
 	if (SQL_Conn_Lost(results))
 	{
@@ -1361,7 +1456,12 @@ public void OnSQLDelete_Replace(Database db, DBResultSet results, const char[] e
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
-	int client = pack.ReadCell();
+	int client = GetClientOfUserId(pack.ReadCell());
+	if (!client)
+	{
+		delete pack;
+		return;
+	}
 
 	if (SQL_Conn_Lost(results))
 	{
@@ -1411,7 +1511,12 @@ public void OnSQLInsert_Tag(Database db, DBResultSet results, const char[] err, 
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
-	int client = pack.ReadCell();
+	int client = GetClientOfUserId(pack.ReadCell());
+	if (!client)
+	{
+		delete pack;
+		return;
+	}
 
 	if (SQL_Conn_Lost(results))
 	{
@@ -1434,8 +1539,14 @@ public void OnSQLInsert_Ban(Database db, DBResultSet results, const char[] err, 
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
-	pack.ReadCell();
-	int target = pack.ReadCell();
+	int client = GetClientOfUserId(pack.ReadCell());
+	int target = GetClientOfUserId(pack.ReadCell());
+
+	if (!client || !target)
+	{
+		delete pack;
+		return;
+	}
 
 	if (SQL_Conn_Lost(results))
 	{
@@ -1472,8 +1583,14 @@ public void OnSQLDelete_Ban(Database db, DBResultSet results, const char[] err, 
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
-	pack.ReadCell();
-	int target = pack.ReadCell();
+	int client = GetClientOfUserId(pack.ReadCell());
+	int target = GetClientOfUserId(pack.ReadCell());
+
+	if (!client || !target)
+	{
+		delete pack;
+		return;
+	}
 
 	if (SQL_Conn_Lost(results))
 	{
@@ -1508,23 +1625,23 @@ bool MakeStringPrintable(char[] str, int str_len_max, const char[] empty) //func
 		{
 			if (str[r] < '\x20')
 			{
-			  modified = true;
+			modified = true;
 
-			  if((str[r] == '\n' || str[r] == '\t') && w > 0 && str[w-1] != '\x20')
+			if((str[r] == '\n' || str[r] == '\t') && w > 0 && str[w-1] != '\x20')
 				addspace = true;
 			}
 			else
 			{
-			  if (str[r] != '\x20')
-			  {
+			if (str[r] != '\x20')
+			{
 				nonspace = true;
 
 				if (addspace)
-				  str[w++] = '\x20';
-			  }
+				str[w++] = '\x20';
+			}
 
-			  addspace = false;
-			  str[w++] = str[r];
+			addspace = false;
+			str[w++] = str[r];
 			}
 		}
 		while(str[++r]);
@@ -1745,36 +1862,59 @@ stock bool IsClientBanned(int client, const char Key[64] = "")
 
 stock bool SetColor(char Key[64], char HEX[64], int client, bool IgnoreBan=false)
 {
+	if (g_DatabaseState != DatabaseState_Connected)
+		return false;
+
 	if (!IgnoreBan)
 	{
 		if (IsClientBanned(client, Key))
 			return false;
 	}
 
+	// Normalize HEX by stripping leading '#'
+	if (HEX[0] == '#')
+		ReplaceString(HEX, sizeof(HEX), "#", "");
+
+	// Avoid unnecessary DB writes if value unchanged
+	char current[32];
+	if (strcmp(Key, "tagcolor", false) == 0)
+		strcopy(current, sizeof(current), g_sClientTagColor[client]);
+	else if (strcmp(Key, "namecolor", false) == 0)
+		strcopy(current, sizeof(current), g_sClientNameColor[client]);
+	else if (strcmp(Key, "textcolor", false) == 0)
+		strcopy(current, sizeof(current), g_sClientChatColor[client]);
+	else
+		current[0] = '\0';
+
+	if (current[0] != '\0' && strcmp(current, HEX, false) == 0)
+		return true;
+
 	if (strcmp(Key, "tagcolor", false) == 0)
 	{
-		if (HEX[0] == '#')
-			ReplaceString(HEX, sizeof(HEX), "#", "");
 		strcopy(g_sClientTagColor[client], sizeof(g_sClientTagColor[]), HEX);
 	}
 	else if (strcmp(Key, "namecolor", false) == 0)
 	{
-		if (HEX[0] == '#')
-			ReplaceString(HEX, sizeof(HEX), "#", "");
 		strcopy(g_sClientNameColor[client], sizeof(g_sClientNameColor[]), HEX);
 	}
 	else if (strcmp(Key, "textcolor", false) == 0)
 	{
-		if (HEX[0] == '#')
-			ReplaceString(HEX, sizeof(HEX), "#", "");
 		strcopy(g_sClientChatColor[client], sizeof(g_sClientChatColor[]), HEX);
 	}
+
+	if (g_sClientSID[client][0] != '\0')
+		SQLUpdate_TagClient(GetClientUserId(client));
+	else
+		SQLInsert_TagClient(GetClientUserId(client));
 
 	return true;
 }
 
 stock bool SetTag(char text[64], int client, bool IgnoreBan=false)
 {
+	if (g_DatabaseState != DatabaseState_Connected)
+		return false;
+
 	if (!IgnoreBan)
 	{
 		if (IsClientBanned(client, "Tag"))
@@ -1782,6 +1922,11 @@ stock bool SetTag(char text[64], int client, bool IgnoreBan=false)
 	}
 
 	Format(g_sClientTag[client], sizeof(g_sClientTag[]), "%s ", text);
+
+	if (g_sClientSID[client][0] != '\0')
+		SQLUpdate_TagClient(GetClientUserId(client));
+	else
+		SQLInsert_TagClient(GetClientUserId(client));
 
 	return true;
 }
@@ -1796,9 +1941,24 @@ stock bool RemoveCCC(int client)
 stock void BanCCC(int client, int target, char Time[128])
 {
 	DataPack pack = new DataPack();
-	pack.WriteCell(client);
-	pack.WriteCell(target);
+	pack.WriteCell(GetClientUserId(client));
+	pack.WriteCell(GetClientUserId(target));
 	pack.WriteString(Time);
+
+	// Snapshot SteamIDs and names to keep operations stable across retries/disconnects
+	char targetSid[64];
+	char clientSid[64];
+	char sClientName[32];
+	char sTargetName[32];
+	FormatEx(targetSid, sizeof(targetSid), "%s", g_sSteamIDs[target]);
+	FormatEx(clientSid, sizeof(clientSid), "%s", g_sSteamIDs[client]);
+	GetClientName(client, sClientName, sizeof(sClientName));
+	GetClientName(target, sTargetName, sizeof(sTargetName));
+
+	pack.WriteString(targetSid);
+	pack.WriteString(clientSid);
+	pack.WriteString(sTargetName);
+	pack.WriteString(sClientName);
 
 	SQLInsert_Ban(INVALID_HANDLE, pack);
 }
@@ -1806,8 +1966,9 @@ stock void BanCCC(int client, int target, char Time[128])
 stock void UnBanCCC(int client, int target)
 {
 	DataPack pack = new DataPack();
-	pack.WriteCell(client);
-	pack.WriteCell(target);
+	pack.WriteCell(GetClientUserId(client));
+	pack.WriteCell(GetClientUserId(target));
+	pack.WriteString(g_sSteamIDs[target]);
 
 	SQLDelete_Ban(INVALID_HANDLE, pack);
 }
@@ -1822,7 +1983,7 @@ void SendChatToAdmins(int from, const char[] message)
 	// Message is empty, ignore it
 	if (strlen(message) == 0)
 		return;
- 
+
 	LogAction(from, -1, "\"%L\" triggered sm_chat (text %s)", from, message);
 
 	int fromAdmin = CheckCommandAccess(from, "sm_chat", ADMFLAG_CHAT);
@@ -2017,7 +2178,7 @@ public Action Command_CCCImportReplaceFile(int client, int argc)
 		kv.GetString(NULL_STRING, sValue, sizeof(sValue));
 
 		DataPack pack = new DataPack();
-		pack.WriteCell(client);
+		pack.WriteCell(GetClientUserId(client));
 		pack.WriteString(sTrigger);
 		pack.WriteString(sValue);
 
@@ -2059,7 +2220,7 @@ public Action Command_CCCAddTag(int client, int argc)
 		strlen(sTagColor) <= 6 && strlen(sNameColor) <= 6 && strlen(sChatColor) <= 6)
 	{
 		DataPack pack = new DataPack();
-		pack.WriteCell(client);
+		pack.WriteCell(GetClientUserId(client));
 		pack.WriteString(sSteamID);
 		pack.WriteCell(StringToInt(sEnable));
 		pack.WriteString(sName);
@@ -2094,7 +2255,7 @@ public Action Command_CCCDeleteTag(int client, int argc)
 	if (strlen(sSteamID) > 0)
 	{
 		DataPack pack = new DataPack();
-		pack.WriteCell(client);
+		pack.WriteCell(GetClientUserId(client));
 		pack.WriteString(sSteamID);
 
 		SQLDelete_Tag(INVALID_HANDLE, pack);
@@ -2134,7 +2295,7 @@ public Action Command_CCCAddTrigger(int client, int argc)
 	}
 
 	DataPack pack = new DataPack();
-	pack.WriteCell(client);
+	pack.WriteCell(GetClientUserId(client));
 	pack.WriteString(sTrigger);
 	pack.WriteString(sValue);
 
@@ -2162,7 +2323,7 @@ public Action Command_CCCDeleteTrigger(int client, int argc)
 	}
 
 	DataPack pack = new DataPack();
-	pack.WriteCell(client);
+	pack.WriteCell(GetClientUserId(client));
 	pack.WriteString(sTrigger);
 
 	SQLDelete_Replace(INVALID_HANDLE, pack);
@@ -2318,7 +2479,7 @@ public Action Command_SmHsay(int client, int args)
 	
 	char text[192];
 	GetCmdArgString(text, sizeof(text));
- 
+
 	char nameBuf[MAX_NAME_LENGTH];
 	
 	for (int i = 1; i <= MaxClients; i++)
@@ -4233,7 +4394,7 @@ stock bool ConfigForward(int client)
 stock bool GetColorKey(int client, CCC_ColorType colorType, char[] key, int size, bool skipChecks = false)
 {
 	if (!skipChecks && (!client || client > MaxClients || !IsClientInGame(client)))
-        return false;
+		return false;
 
 	StringMap smTrie = CGetTrie();
 	bool bFound = true;
