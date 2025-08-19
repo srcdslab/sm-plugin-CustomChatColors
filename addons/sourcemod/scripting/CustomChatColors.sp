@@ -1625,23 +1625,23 @@ bool MakeStringPrintable(char[] str, int str_len_max, const char[] empty) //func
 		{
 			if (str[r] < '\x20')
 			{
-			modified = true;
+				modified = true;
 
-			if((str[r] == '\n' || str[r] == '\t') && w > 0 && str[w-1] != '\x20')
+			if ((str[r] == '\n' || str[r] == '\t') && w > 0 && str[w-1] != '\x20')
 				addspace = true;
 			}
 			else
 			{
-			if (str[r] != '\x20')
-			{
-				nonspace = true;
+				if (str[r] != '\x20')
+				{
+					nonspace = true;
 
-				if (addspace)
-				str[w++] = '\x20';
-			}
+					if (addspace)
+						str[w++] = '\x20';
+				}
 
-			addspace = false;
-			str[w++] = str[r];
+				addspace = false;
+				str[w++] = str[r];
 			}
 		}
 		while(str[++r]);
