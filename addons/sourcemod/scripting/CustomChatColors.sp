@@ -297,7 +297,7 @@ public void OnAllPluginsLoaded()
 	// We dont need basechat as we already implemented our version with color support
 	char sBaseChatPlugin[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, sBaseChatPlugin, sizeof(sBaseChatPlugin), "plugins/basechat.smx");
-	if(!FileExists(sBaseChatPlugin))
+	if (!FileExists(sBaseChatPlugin))
 		return;
 
 	ServerCommand("sm plugins unload basechat");
@@ -453,7 +453,7 @@ stock void LateLoad()
 		if (!IsClientInGame(i) || IsFakeClient(i))
 			continue;
 
-		if(AreClientCookiesCached(i))
+		if (AreClientCookiesCached(i))
 			OnClientCookiesCached(i);
 
 		OnClientPostAdminCheck(i);
@@ -576,7 +576,7 @@ stock void OnSQLConnected(Database db, const char[] err, any data)
 	g_hDatabase = db;
 
 	char sDriver[16];
-	SQL_GetDriverIdent(g_hDatabase.Driver, sDriver, sizeof(sDriver));
+	SQL_GetDriverIdent(SQL_ReadDriver(g_hDatabase), sDriver, sizeof(sDriver));
 
 	if (!strncmp(sDriver, "my", 2, false))
 		g_bSQLite = false;
@@ -826,14 +826,26 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 	SQL_EscapeString(g_hDatabase, sTrigger, sTriggerEscaped, sizeof(sTriggerEscaped));
 	SQL_EscapeString(g_hDatabase, sValue, sValueEscaped, sizeof(sValueEscaped));
 
-	FormatEx(
-		sQuery,
-		sizeof(sQuery),
-		"INSERT INTO `ccc_replace` (`trigger`, `value`) VALUES ('%s', '%s') \
-		ON DUPLICATE KEY UPDATE `trigger` = '%s', `value` = '%s';",
-		sTriggerEscaped, sValueEscaped,
-		sTriggerEscaped, sValueEscaped
-	);
+	if (g_bSQLite)
+	{
+		FormatEx(
+			sQuery,
+			sizeof(sQuery),
+			"REPLACE INTO `ccc_replace` (`trigger`, `value`) VALUES ('%s', '%s');",
+			sTriggerEscaped, sValueEscaped
+		);
+	}
+	else
+	{
+		FormatEx(
+			sQuery,
+			sizeof(sQuery),
+			"INSERT INTO `ccc_replace` (`trigger`, `value`) VALUES ('%s', '%s') \
+			ON DUPLICATE KEY UPDATE `trigger` = '%s', `value` = '%s';",
+			sTriggerEscaped, sValueEscaped,
+			sTriggerEscaped, sValueEscaped
+		);
+	}
 	SQL_TQuery(g_hDatabase, OnSQLInsert_Replace, sQuery, data);
 	return Plugin_Stop;
 }
@@ -921,14 +933,26 @@ stock Action SQLInsert_Tag(Handle timer, any data)
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
-	FormatEx(
-		sQuery,
-		sizeof(sQuery),
-		"INSERT INTO `ccc_tag` (`steamid`, `name`, `enable`, `flag`, `tag`, `tag_color`, `name_color`, `chat_color`) VALUES ('%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s') \
-		ON DUPLICATE KEY UPDATE `steamid` = '%s', `name` = '%s', `enable` = '%d', `flag` = '%s', `tag` = '%s', `tag_color` = '%s', `name_color` = '%s', `chat_color` = '%s';",
-		sSteamID, sNameEscaped, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor,
-		sSteamID, sNameEscaped, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor
-	);
+	if (g_bSQLite)
+	{
+		FormatEx(
+			sQuery,
+			sizeof(sQuery),
+			"REPLACE INTO `ccc_tag` (`steamid`, `name`, `enable`, `flag`, `tag`, `tag_color`, `name_color`, `chat_color`) VALUES ('%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s');",
+			sSteamID, sNameEscaped, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor
+		);
+	}
+	else
+	{
+		FormatEx(
+			sQuery,
+			sizeof(sQuery),
+			"INSERT INTO `ccc_tag` (`steamid`, `name`, `enable`, `flag`, `tag`, `tag_color`, `name_color`, `chat_color`) VALUES ('%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s') \
+			ON DUPLICATE KEY UPDATE `steamid` = '%s', `name` = '%s', `enable` = '%d', `flag` = '%s', `tag` = '%s', `tag_color` = '%s', `name_color` = '%s', `chat_color` = '%s';",
+			sSteamID, sNameEscaped, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor,
+			sSteamID, sNameEscaped, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor
+		);
+	}
 	SQL_TQuery(g_hDatabase, OnSQLInsert_Tag, sQuery, data);
 	return Plugin_Stop;
 }
@@ -1130,14 +1154,26 @@ stock Action SQLInsert_Ban(Handle timer, any data)
 	SQL_EscapeString(g_hDatabase, sClientName, sClientNameEscaped, sizeof(sClientNameEscaped));
 	SQL_EscapeString(g_hDatabase, sTargetName, sTargetNameEscaped, sizeof(sTargetNameEscaped));
 
-	FormatEx(
-		sQuery,
-		sizeof(sQuery),
-		"INSERT INTO `ccc_ban` (`steamid`, `name`, `issuer_steamid`, `issuer_name`, `length`) VALUES ('%s', '%s', '%s', '%s', '%d') \
-		ON DUPLICATE KEY UPDATE `steamid` = '%s', `name` = '%s', `issuer_steamid` = '%s', `issuer_name` = '%s', `length` = '%d';",
-		targetSid[0] ? targetSid : g_sSteamIDs[target], sTargetNameEscaped, clientSid[0] ? clientSid : g_sSteamIDs[client], sClientNameEscaped, time,
-		targetSid[0] ? targetSid : g_sSteamIDs[target], sTargetNameEscaped, clientSid[0] ? clientSid : g_sSteamIDs[client], sClientNameEscaped, time
-	);
+	if (g_bSQLite)
+	{
+		FormatEx(
+			sQuery,
+			sizeof(sQuery),
+			"REPLACE INTO `ccc_ban` (`steamid`, `name`, `issuer_steamid`, `issuer_name`, `length`) VALUES ('%s', '%s', '%s', '%s', '%d');",
+			targetSid[0] ? targetSid : g_sSteamIDs[target], sTargetNameEscaped, clientSid[0] ? clientSid : g_sSteamIDs[client], sClientNameEscaped, time
+		);
+	}
+	else
+	{
+		FormatEx(
+			sQuery,
+			sizeof(sQuery),
+			"INSERT INTO `ccc_ban` (`steamid`, `name`, `issuer_steamid`, `issuer_name`, `length`) VALUES ('%s', '%s', '%s', '%s', '%d') \
+			ON DUPLICATE KEY UPDATE `steamid` = '%s', `name` = '%s', `issuer_steamid` = '%s', `issuer_name` = '%s', `length` = '%d';",
+			targetSid[0] ? targetSid : g_sSteamIDs[target], sTargetNameEscaped, clientSid[0] ? clientSid : g_sSteamIDs[client], sClientNameEscaped, time,
+			targetSid[0] ? targetSid : g_sSteamIDs[target], sTargetNameEscaped, clientSid[0] ? clientSid : g_sSteamIDs[client], sClientNameEscaped, time
+		);
+	}
 	SQL_TQuery(g_hDatabase, OnSQLInsert_Ban, sQuery, data);
 
 	return Plugin_Stop;
@@ -1886,13 +1922,7 @@ stock bool SetColor(char Key[64], char HEX[64], int client, bool IgnoreBan=false
 	else
 		current[0] = '\0';
 
-	// Normalize current value by stripping leading '#'
-	char normalizedCurrent[32];
-	strcopy(normalizedCurrent, sizeof(normalizedCurrent), current);
-	if (normalizedCurrent[0] == '#')
-		ReplaceString(normalizedCurrent, sizeof(normalizedCurrent), "#", "");
-
-	if (normalizedCurrent[0] != '\0' && strcmp(normalizedCurrent, HEX, false) == 0)
+	if (current[0] != '\0' && strcmp(current, HEX, false) == 0)
 		return true;
 
 	if (strcmp(Key, "tagcolor", false) == 0)
@@ -2100,7 +2130,7 @@ void SendPrivateChat(int client, int target, const char[] message)
 	}
 
 #if defined _SelfMute_included_
-	if(!g_bSelfMuteNative || !SelfMute_GetSelfMute(target, client) || CheckCommandAccess(client, "sm_kick", ADMFLAG_KICK, true))
+	if (!g_bSelfMuteNative || !SelfMute_GetSelfMute(target, client) || CheckCommandAccess(client, "sm_kick", ADMFLAG_KICK, true))
 		CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", 
 			g_sSmCategoryColor, 
 			g_sSmNameColor, target, g_sSmCategoryColor, 
@@ -2581,7 +2611,7 @@ public Action Command_SmTsay(int client, int args)
 
 public Action Command_SmMsay(int client, int args)
 {
-	if(IsVoteInProgress())
+	if (IsVoteInProgress())
 	{
 		CReplyToCommand(client, "{green}[SM] {default}A vote is in progress, please try again after the vote.");
 		return Plugin_Handled;
@@ -2702,7 +2732,7 @@ void SendPanelToAll(int from, char[] message)
 
 	for(int i = 1; i <= MaxClients; i++)
 	{
-		if(IsClientInGame(i) && !IsFakeClient(i))
+		if (IsClientInGame(i) && !IsFakeClient(i))
 		{
 			mSayPanel.Send(i, Handler_DoNothing, 10);
 		}
@@ -4152,7 +4182,7 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 				}
 			}
 
-			if(sBuff[0])
+			if (sBuff[0])
 			{
 				ReplaceString(g_msgText[CurrentIndex], sizeof(g_msgText) - CurrentIndex, sPart, sBuff);
 				CurrentIndex += strlen(sBuff);
@@ -4219,7 +4249,7 @@ public Action Event_PlayerSay(Handle event, const char[] name, bool dontBroadcas
 		{
 			if (IsClientInGame(client) && GetClientTeam(client) == team)
 			{
-				if(!g_Ignored[client * (MAXPLAYERS + 1) + g_msgAuthor])
+				if (!g_Ignored[client * (MAXPLAYERS + 1) + g_msgAuthor])
 					players[playersNum++] = client;
 			}
 		}
@@ -4230,7 +4260,7 @@ public Action Event_PlayerSay(Handle event, const char[] name, bool dontBroadcas
 		{
 			if (IsClientInGame(client))
 			{
-				if(!g_Ignored[client * (MAXPLAYERS + 1) + g_msgAuthor])
+				if (!g_Ignored[client * (MAXPLAYERS + 1) + g_msgAuthor])
 					players[playersNum++] = client;
 			}
 		}
@@ -4275,7 +4305,7 @@ public Action OnToggleCCCSettings(int client, int args)
 
 public void ToggleCCCSettings(int client)
 {
-	if(!client || IsFakeClient(client))
+	if (!client || IsFakeClient(client))
 		return;
 
 	if (!AreClientCookiesCached(client))
