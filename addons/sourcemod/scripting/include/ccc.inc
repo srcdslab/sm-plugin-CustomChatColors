@@ -11,7 +11,7 @@
 
 #define CCC_V_MAJOR   "7"
 #define CCC_V_MINOR   "4"
-#define CCC_V_PATCH   "17"
+#define CCC_V_PATCH   "18"
 
 #define CCC_VERSION            CCC_V_MAJOR..."."...CCC_V_MINOR..."."...CCC_V_PATCH
 
