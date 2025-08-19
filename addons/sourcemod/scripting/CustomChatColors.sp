@@ -1886,7 +1886,13 @@ stock bool SetColor(char Key[64], char HEX[64], int client, bool IgnoreBan=false
 	else
 		current[0] = '\0';
 
-	if (current[0] != '\0' && strcmp(current, HEX, false) == 0)
+	// Normalize current value by stripping leading '#'
+	char normalizedCurrent[32];
+	strcopy(normalizedCurrent, sizeof(normalizedCurrent), current);
+	if (normalizedCurrent[0] == '#')
+		ReplaceString(normalizedCurrent, sizeof(normalizedCurrent), "#", "");
+
+	if (normalizedCurrent[0] != '\0' && strcmp(normalizedCurrent, HEX, false) == 0)
 		return true;
 
 	if (strcmp(Key, "tagcolor", false) == 0)
