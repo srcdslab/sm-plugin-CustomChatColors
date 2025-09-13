@@ -231,7 +231,7 @@ public void OnPluginStart()
 
 	/* HintText does not work on Dark Messiah */
 	if (GetEngineVersion() != Engine_DarkMessiah)
-		RegAdminCmd("sm_hsay", Command_SmHsay, ADMFLAG_CHAT, "sm_hsay <message> - sends hint message to all players");	
+		RegAdminCmd("sm_hsay", Command_SmHsay, ADMFLAG_CHAT, "sm_hsay <message> - sends hint message to all players");
 
 	RegAdminCmd("sm_dsay", Command_SmDsay, ADMFLAG_CHAT, "sm_dsay <message> - sends hud message to all players");
 	RegAdminCmd("sm_tsay", Command_SmTsay, ADMFLAG_CHAT, "sm_tsay [color] <message> - sends top-left message to all players");
@@ -1034,7 +1034,7 @@ stock Action SQLDelete_Tag(Handle timer, any data)
 	pack.Reset();
 
 	if (!DB_Connect())
-	{	
+	{
 		delete pack;
 		return Plugin_Stop;
 	}
@@ -1103,7 +1103,7 @@ stock Action SQLInsert_Ban(Handle timer, any data)
 	pack.Reset();
 
 	if (!DB_Connect())
-	{	
+	{
 		delete pack;
 		return Plugin_Stop;
 	}
@@ -1126,7 +1126,7 @@ stock Action SQLInsert_Ban(Handle timer, any data)
 	pack.ReadString(clientSid, sizeof(clientSid));
 	pack.ReadString(sTargetNameSnap, sizeof(sTargetNameSnap));
 	pack.ReadString(sClientNameSnap, sizeof(sClientNameSnap));
-	
+
 
 	int time = StringToInt(sTime);
 	time = GetTime() + (time * 60);
@@ -1185,7 +1185,7 @@ stock Action SQLDelete_Ban(Handle timer, any data)
 	pack.Reset();
 
 	if (!DB_Connect())
-	{	
+	{
 		delete pack;
 		return Plugin_Stop;
 	}
@@ -1339,6 +1339,8 @@ stock void OnSQLSelect_TagGroup(Database db, DBResultSet results, const char[] e
 		SQL_FetchString(results, 5, g_sClientChatColor[client], sizeof(g_sClientChatColor[]));
 
 		g_iDefaultClientEnable[client] = g_iClientEnable[client];
+		if (strlen(g_sClientTag[client]) > 31)
+			g_sClientTag[client][31] = '\0';
 		strcopy(g_sDefaultClientTag[client], sizeof(g_sDefaultClientTag[]), g_sClientTag[client]);
 		strcopy(g_sDefaultClientTagColor[client], sizeof(g_sDefaultClientTagColor[]), g_sClientTagColor[client]);
 		strcopy(g_sDefaultClientNameColor[client], sizeof(g_sDefaultClientNameColor[]), g_sClientNameColor[client]);
@@ -1387,6 +1389,8 @@ public void OnSQLSelect_Tag(Database db, DBResultSet results, const char[] err, 
 		SQL_FetchString(results, 5, g_sClientChatColor[client], sizeof(g_sClientChatColor[]));
 
 		g_iDefaultClientEnable[client] = g_iClientEnable[client];
+		if (strlen(g_sClientTag[client]) > 31)
+			g_sClientTag[client][31] = '\0';
 		strcopy(g_sDefaultClientTag[client], sizeof(g_sDefaultClientTag[]), g_sClientTag[client]);
 		strcopy(g_sDefaultClientTagColor[client], sizeof(g_sDefaultClientTagColor[]), g_sClientTagColor[client]);
 		strcopy(g_sDefaultClientNameColor[client], sizeof(g_sDefaultClientNameColor[]), g_sClientNameColor[client]);
@@ -1437,6 +1441,8 @@ public void OnSQLUpdate_Tag(Database db, DBResultSet results, const char[] err, 
 	// Do not reset the client here; it clears SteamID and runtime state.
 	// Instead, snapshot current values as defaults so we don't trigger writes on disconnect.
 	g_iDefaultClientEnable[client] = g_iClientEnable[client];
+	if (strlen(g_sClientTag[client]) > 31)
+		g_sClientTag[client][31] = '\0';
 	strcopy(g_sDefaultClientTag[client], sizeof(g_sDefaultClientTag[]), g_sClientTag[client]);
 	strcopy(g_sDefaultClientTagColor[client], sizeof(g_sDefaultClientTagColor[]), g_sClientTagColor[client]);
 	strcopy(g_sDefaultClientNameColor[client], sizeof(g_sDefaultClientNameColor[]), g_sClientNameColor[client]);
@@ -1663,8 +1669,8 @@ bool MakeStringPrintable(char[] str, int str_len_max, const char[] empty) //func
 			{
 				modified = true;
 
-			if ((str[r] == '\n' || str[r] == '\t') && w > 0 && str[w-1] != '\x20')
-				addspace = true;
+				if ((str[r] == '\n' || str[r] == '\t') && w > 0 && str[w-1] != '\x20')
+					addspace = true;
 			}
 			else
 			{
@@ -1680,7 +1686,7 @@ bool MakeStringPrintable(char[] str, int str_len_max, const char[] empty) //func
 				str[w++] = str[r];
 			}
 		}
-		while(str[++r]);
+		while (str[++r]);
 	}
 
 	str[w] = '\0';
@@ -1745,8 +1751,14 @@ bool ChangeTag(int client, bool bAdmin)
 	}
 	else
 	{
-		iTarget = client;		
+		iTarget = client;
 		GetCmdArg(1, sTag, sizeof(sTag));
+	}
+
+	if (strlen(sTag) > 31)
+	{
+		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Tag is too long (32 characters max).");
+		return false;
 	}
 
 	return ChangeSingleTag(client, iTarget, sTag, bAdmin);
@@ -1828,7 +1840,7 @@ bool ChangeColor(int client, char Key[64], bool bAdmin)
 	}
 	else
 	{
-		iTarget = client;		
+		iTarget = client;
 		GetCmdArg(1, sCol, sizeof(sCol));
 	}
 
@@ -2027,7 +2039,7 @@ void SendChatToAdmins(int from, const char[] message)
 	{
 		if (IsClientInGame(i) && (from == i || CheckCommandAccess(i, "sm_chat", ADMFLAG_CHAT)))
 		{
-			CPrintToChat(i, "%s(%sADMINS) %s%N{default} : %s%s", g_sSmCategoryColor, fromAdmin ? "" : "TO ", 
+			CPrintToChat(i, "%s(%sADMINS) %s%N{default} : %s%s", g_sSmCategoryColor, fromAdmin ? "" : "TO ",
 				g_sSmNameColor, from, g_sSmChatColor, message);
 		}
 	}
@@ -2082,7 +2094,7 @@ void SendPrivateChat(int client, int target, const char[] message)
 	char text[192];
 	Format(text, sizeof(text), "%s", message);
 	StripQuotes(text);
-	
+
 	int admins[MAXPLAYERS + 1];
 	int adminsCount = 0;
 
@@ -2110,20 +2122,20 @@ void SendPrivateChat(int client, int target, const char[] message)
 	}
 	else if (target != client)
 	{
-		CPrintToChat(client, "%s(Private to %s%N%s) %s%N {default}: %s%s", 
-			g_sSmCategoryColor, 
-			g_sSmNameColor, target, g_sSmCategoryColor, 
-			g_sSmNameColor, client, 
+		CPrintToChat(client, "%s(Private to %s%N%s) %s%N {default}: %s%s",
+			g_sSmCategoryColor,
+			g_sSmNameColor, target, g_sSmCategoryColor,
+			g_sSmNameColor, client,
 			g_sSmChatColor, text);
 
 		if (g_cvPsayPrivacy.IntValue != 1)
 		{
 			for (int i = 0; i < adminsCount; i++)
 			{
-				CPrintToChat(admins[i], "%s(Private from %s%N%s to %s%N%s){default}: %s%s", 
-					g_sSmCategoryColor, 
-					g_sSmNameColor, client, g_sSmCategoryColor, 
-					g_sSmNameColor, target, g_sSmCategoryColor, 
+				CPrintToChat(admins[i], "%s(Private from %s%N%s to %s%N%s){default}: %s%s",
+					g_sSmCategoryColor,
+					g_sSmNameColor, client, g_sSmCategoryColor,
+					g_sSmNameColor, target, g_sSmCategoryColor,
 					g_sSmChatColor, text);
 			}
 		}
@@ -2131,16 +2143,16 @@ void SendPrivateChat(int client, int target, const char[] message)
 
 #if defined _SelfMute_included_
 	if (!g_bSelfMuteNative || !SelfMute_GetSelfMute(target, client) || CheckCommandAccess(client, "sm_kick", ADMFLAG_KICK, true))
-		CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", 
-			g_sSmCategoryColor, 
-			g_sSmNameColor, target, g_sSmCategoryColor, 
-			g_sSmNameColor, client, 
+		CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s",
+			g_sSmCategoryColor,
+			g_sSmNameColor, target, g_sSmCategoryColor,
+			g_sSmNameColor, client,
 			g_sSmChatColor, text);
 #else
-	CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s", 
-		g_sSmCategoryColor, 
-		g_sSmNameColor, target, g_sSmCategoryColor, 
-		g_sSmNameColor, client, 
+	CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s",
+		g_sSmCategoryColor,
+		g_sSmNameColor, target, g_sSmCategoryColor,
+		g_sSmNameColor, client,
 		g_sSmChatColor, text);
 #endif
 
@@ -2155,7 +2167,7 @@ void SendChatToAll(int client, const char[] message)
 		return;
 
 	char nameBuf[MAX_NAME_LENGTH];
-	
+
 	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (!IsClientInGame(i) || IsFakeClient(i))
@@ -2163,7 +2175,7 @@ void SendChatToAll(int client, const char[] message)
 			continue;
 		}
 		FormatActivitySource(client, i, nameBuf, sizeof(nameBuf));
-		
+
 		CPrintToChat(i, "%s(ALL) %s%s {default}: %s%s", g_sSmCategoryColor, g_sSmNameColor, nameBuf, g_sSmChatColor, message);
 	}
 }
@@ -2252,6 +2264,12 @@ public Action Command_CCCAddTag(int client, int argc)
 	GetCmdArg(7, sNameColor, sizeof(sNameColor));
 	GetCmdArg(8, sChatColor, sizeof(sChatColor));
 
+	if (strlen(sTag) > 31)
+	{
+		CReplyToCommand(client, "{green}[CCC]{white} Tag is too long (32 characters max).");
+		return Plugin_Handled;
+	}
+
 	if (strlen(sEnable) == 1 && strlen(sName) > 0 &&
 		strlen(sTagColor) <= 6 && strlen(sNameColor) <= 6 && strlen(sChatColor) <= 6)
 	{
@@ -2317,7 +2335,7 @@ public Action Command_CCCAddTrigger(int client, int argc)
 
 	GetCmdArg(1, sTrigger, sizeof(sTrigger));
 	GetCmdArg(2, sValue, sizeof(sValue));
-	
+
 	if (sTrigger[0] == '\0')
 	{
 		CReplyToCommand(client, "{green}[CCC]{white} Trigger must be non empty");
@@ -2351,7 +2369,7 @@ public Action Command_CCCDeleteTrigger(int client, int argc)
 	char sTrigger[MAX_CHAT_TRIGGER_LENGTH];
 
 	GetCmdArg(1, sTrigger, sizeof(sTrigger));
-	
+
 	if (sTrigger[0] == '\0')
 	{
 		CReplyToCommand(client, "{green}[CCC]{white} Trigger must be non empty");
@@ -2395,16 +2413,16 @@ public Action Command_SmSay(int client, int args)
 	if (args < 1)
 	{
 		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_say <message>");
-		return Plugin_Handled;	
+		return Plugin_Handled;
 	}
-	
+
 	char text[192];
 	GetCmdArgString(text, sizeof(text));
 
 	SendChatToAll(client, text);
 	LogAction(client, -1, "\"%L\" triggered sm_say (text %s)", client, text);
-	
-	return Plugin_Stop;		
+
+	return Plugin_Stop;
 }
 
 public Action Command_SmCsay(int client, int args)
@@ -2412,17 +2430,17 @@ public Action Command_SmCsay(int client, int args)
 	if (args < 1)
 	{
 		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_csay <message>");
-		return Plugin_Handled;	
+		return Plugin_Handled;
 	}
-	
+
 	char text[192];
 	GetCmdArgString(text, sizeof(text));
-	
+
 	DisplayCenterTextToAll(client, text);
-	
+
 	LogAction(client, -1, "\"%L\" triggered sm_csay (text %s)", client, text);
-	
-	return Plugin_Handled;		
+
+	return Plugin_Handled;
 }
 
 public Action Command_SmChat(int client, int args)
@@ -2430,14 +2448,14 @@ public Action Command_SmChat(int client, int args)
 	if (args < 1)
 	{
 		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_chat <message>");
-		return Plugin_Handled;	
+		return Plugin_Handled;
 	}
-	
+
 	char text[192];
 	GetCmdArgString(text, sizeof(text));
 
 	SendChatToAdmins(client, text);
-	
+
 	return Plugin_Stop;
 }
 
@@ -2446,7 +2464,7 @@ public Action Command_SmPsay(int client, int args)
 	if (args < 2)
 	{
 		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_psay <name or #userid> <message>");
-		return Plugin_Handled;	
+		return Plugin_Handled;
 	}
 
 	char text[192], arg[64];
@@ -2477,13 +2495,13 @@ public Action Command_SmPsayReply(int client, int args)
 		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_r <message>");
 		return Plugin_Handled;
 	}
-	
+
 	if (g_iClientFastReply[client] == 0)
 	{
 		CReplyToCommand(client, "{green}[SM] {default}You cannot reply to anything since you haven't sent or received a private message.");
 		return Plugin_Handled;
 	}
-	
+
 	if (g_iClientFastReply[client] == -1)
 	{
 		CReplyToCommand(client, "{green}[SM] {default}You cannot send a private message to a disconnected player.");
@@ -2496,11 +2514,11 @@ public Action Command_SmPsayReply(int client, int args)
 		GetCmdArg(i, arg, sizeof(arg));
 		Format(message, sizeof(message), "%s %s", message, arg);
 	}
-	
+
 	int target = GetClientOfUserId(g_iClientFastReply[client]);
 	if (target == -1)
 		return Plugin_Handled;
-	
+
 	SendPrivateChat(client, target, message);
 	return Plugin_Handled;
 }
@@ -2510,14 +2528,14 @@ public Action Command_SmHsay(int client, int args)
 	if (args < 1)
 	{
 		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_hsay <message>");
-		return Plugin_Handled;  
+		return Plugin_Handled;
 	}
-	
+
 	char text[192];
 	GetCmdArgString(text, sizeof(text));
 
 	char nameBuf[MAX_NAME_LENGTH];
-	
+
 	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (!IsClientInGame(i) || IsFakeClient(i))
@@ -2527,10 +2545,10 @@ public Action Command_SmHsay(int client, int args)
 		FormatActivitySource(client, i, nameBuf, sizeof(nameBuf));
 		PrintHintText(i, "%s: %s", nameBuf, text);
 	}
-	
+
 	LogAction(client, -1, "\"%L\" triggered sm_hsay (text %s)", client, text);
-	
-	return Plugin_Handled;	
+
+	return Plugin_Handled;
 }
 
 public Action Command_SmDsay(int client, int args)
@@ -2538,7 +2556,7 @@ public Action Command_SmDsay(int client, int args)
 	if (args < 1)
 	{
 		ReplyToCommand(client, "[SM] Usage: sm_dsay <message>");
-		return Plugin_Handled;  
+		return Plugin_Handled;
 	}
 
 	char text[192];
@@ -2577,23 +2595,23 @@ public Action Command_SmTsay(int client, int args)
 	if (args < 1)
 	{
 		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_tsay <message>");
-		return Plugin_Handled;  
+		return Plugin_Handled;
 	}
-	
+
 	char text[192], colorStr[16];
 	GetCmdArgString(text, sizeof(text));
-	
+
 	int len = BreakString(text, colorStr, 16);
-		
+
 	int color = FindColor(colorStr);
 	char nameBuf[MAX_NAME_LENGTH];
-	
+
 	if (color == -1)
 	{
 		color = 0;
 		len = 0;
 	}
-	
+
 	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (!IsClientInGame(i) || IsFakeClient(i))
@@ -2605,8 +2623,8 @@ public Action Command_SmTsay(int client, int args)
 	}
 
 	LogAction(client, -1, "\"%L\" triggered sm_tsay (text %s)", client, text);
-	
-	return Plugin_Handled;	
+
+	return Plugin_Handled;
 }
 
 public Action Command_SmMsay(int client, int args)
@@ -2616,21 +2634,21 @@ public Action Command_SmMsay(int client, int args)
 		CReplyToCommand(client, "{green}[SM] {default}A vote is in progress, please try again after the vote.");
 		return Plugin_Handled;
 	}
-	
+
 	if (args < 1)
 	{
 		CReplyToCommand(client, "{green}[SM] {default} Usage: sm_msay <message>");
-		return Plugin_Handled;	
+		return Plugin_Handled;
 	}
-	
+
 	char text[192];
 	GetCmdArgString(text, sizeof(text));
 
 	SendPanelToAll(client, text);
 
 	LogAction(client, -1, "\"%L\" triggered sm_msay (text %s)", client, text);
-	
-	return Plugin_Handled;		
+
+	return Plugin_Handled;
 }
 
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
@@ -2661,17 +2679,17 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 		{
 			return Plugin_Continue;
 		}
-		
+
 		char arg[64];
-		
+
 		int len = BreakString(sArgs[startidx], arg, sizeof(arg));
 		int target = FindTarget(client, arg, true, false);
-		
+
 		if (target == -1 || len == -1)
 			return Plugin_Stop;
-		
+
 		SendPrivateChat(client, target, sArgs[startidx+len]);
-		
+
 		return Plugin_Stop;
 	}
 	else if (strcmp(command, "say_team", false) == 0 || strcmp(command, "say_squad", false) == 0)
@@ -2680,12 +2698,12 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 		{
 			return Plugin_Continue;
 		}
-		
+
 		SendChatToAdmins(client, sArgs[startidx]);
-		
+
 		return Plugin_Stop;
 	}
-	
+
 	return Plugin_Continue;
 }
 
@@ -2696,20 +2714,20 @@ int FindColor(const char[] color)
 		if (strcmp(color, g_ColorNames[i], false) == 0)
 			return i;
 	}
-	
+
 	return -1;
 }
 
 void SendDialogToOne(int client, int color, const char[] text, any ...)
 {
 	char message[100];
-	VFormat(message, sizeof(message), text, 4);	
-	
+	VFormat(message, sizeof(message), text, 4);
+
 	KeyValues kv = new KeyValues("Stuff", "title", message);
 	kv.SetColor("color", g_Colors[color][0], g_Colors[color][1], g_Colors[color][2], 255);
 	kv.SetNum("level", 1);
 	kv.SetNum("time", 10);
-	
+
 	CreateDialog(client, kv, DialogType_Msg);
 
 	delete kv;
@@ -2719,9 +2737,9 @@ void SendPanelToAll(int from, char[] message)
 {
 	char title[100];
 	Format(title, 64, "%N:", from);
-	
+
 	ReplaceString(message, 192, "\\n", "\n");
-	
+
 	Panel mSayPanel = new Panel();
 	mSayPanel.SetTitle(title);
 	mSayPanel.DrawItem("", ITEMDRAW_SPACER);
@@ -2750,7 +2768,7 @@ public int Handler_DoNothing(Menu menu, MenuAction action, int param1, int param
 void DisplayCenterTextToAll(int client, const char[] message)
 {
 	char nameBuf[MAX_NAME_LENGTH];
-	
+
 	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (!IsClientInGame(i) || IsFakeClient(i))
@@ -2783,6 +2801,15 @@ public Action Command_Say(int client, const char[] command, int argc)
 
 			if (text[strlen(text)-1] == '"')
 				text[strlen(text)-1] = '\0';
+
+			if (strcmp(g_sInputType[client], "ChangeTag", false) == 0 || strcmp(g_sInputType[client], "MenuForceTag", false) == 0)
+			{
+				if (strlen(text[1]) > 31)
+				{
+					CReplyToCommand(client, "{green}[CCC]{white} Tag is too long (32 characters max).");
+					return Plugin_Handled;
+				}
+			}
 
 			strcopy(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), text[1]);
 
@@ -2984,7 +3011,7 @@ public Action Command_SetTag(int client, int args)
 
 	if (args < 1)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_tag <tag text>");		
+		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_tag <tag text>");
 		Menu_Main(client);
 		return Plugin_Handled;
 	}
@@ -3316,7 +3343,7 @@ public int MenuHandler_Main(Menu MenuMain, MenuAction action, int param1, int pa
 		}
 		else if (strcmp(Selected, "Current", false) == 0)
 		{
-			char sTagF[64];
+			char sTagF[32];
 			char sTagColorF[64];
 			char sNameColorF[64];
 			char sChatColorF[64];
@@ -3790,7 +3817,7 @@ public void Menu_AddColors(Menu ColorsMenu)
 				Format(info, sizeof(info), "%s", key);
 			ColorsMenu.AddItem(key, info);
 		}
-	}	
+	}
 }
 
 public int MenuHandler_TagPrefs(Menu MenuTPrefs, MenuAction action, int param1, int param2)
@@ -4203,6 +4230,11 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		if (strlen(sAuthorTag) > 0)
 			Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s%s", GetColor(sTagColorKey, sValue, sizeof(sValue)) ? "#" : "", bTagFound ? sTagColorKey : "default", sAuthorTag, g_msgSender);
 
+		if (strlen(g_sClientTag[g_msgAuthor]) > strlen(sAuthorTag) && IsClientInGame(g_msgAuthor))
+		{
+			CPrintToChat(g_msgAuthor, "{green}[{red}C{green}C{blue}C{green}]{default} Your tag is longer than 32 characters and has been truncated for display.");
+		}
+
 		StringMap smTrie = CGetTrie();
 		if (g_msgText[0] == '>' && GetConVarInt(g_cvar_GreenText) > 0 && smTrie.GetString("green", sValue, sizeof(sValue)))
 			Format(g_msgText, sizeof(g_msgText), "{green}%s", g_msgText);
@@ -4338,7 +4370,7 @@ public Action Command_PsayStatus(int client, int args)
 
 		CPrintToChat(client, "{green}[CCC]{default} Private messages are %s{default} for {olive}%N{default}.", g_bDisablePsay[target] ? "{red}disabled" : "{green}enabled", target);
 	}
-	
+
 	return Plugin_Handled;
 }
 
@@ -4645,7 +4677,15 @@ public int Native_SetTag(Handle plugin, int numParams)
 		return 0;
 	}
 
-	GetNativeString(2, g_sClientTag[client], sizeof(g_sClientTag[]));
+	char tempTag[32];
+	GetNativeString(2, tempTag, sizeof(tempTag));
+
+	if (strlen(tempTag) > 31)
+	{
+		tempTag[31] = '\0';
+	}
+
+	strcopy(g_sClientTag[client], sizeof(g_sClientTag[]), tempTag);
 	return 1;
 }
 
