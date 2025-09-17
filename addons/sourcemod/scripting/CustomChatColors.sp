@@ -2213,7 +2213,7 @@ public Action Command_CCCImportReplaceFile(int client, int argc)
 {
 	if (argc != 1)
 	{
-		CReplyToCommand(client, "{green}[CCC]{white} Usage: sm_cccimportreplacefile filename");
+		CReplyToCommand(client, "{green}[CCC]{default} Usage: sm_cccimportreplacefile filename");
 		return Plugin_Handled;
 	}
 
@@ -2227,7 +2227,7 @@ public Action Command_CCCImportReplaceFile(int client, int argc)
 
 	if (!kv.ImportFromFile(sFilepath))
 	{
-		CReplyToCommand(client, "{green}[CCC]{white} File missing, please make sure \"%s\" is in the \"sourcemod/configs\" folder.", sFilepath);
+		CReplyToCommand(client, "{green}[CCC]{default} File missing, please make sure \"%s\" is in the \"sourcemod/configs\" folder.", sFilepath);
 		return Plugin_Handled;
 	}
 
@@ -2261,7 +2261,7 @@ public Action Command_CCCAddTag(int client, int argc)
 {
 	if (argc != 8)
 	{
-		CReplyToCommand(client, "{green}[CCC]{white} Usage: sm_cccaddtag steamid enable name flag tag tag_color name_color chat_color");
+		CReplyToCommand(client, "{green}[CCC]{default} Usage: sm_cccaddtag steamid enable name flag tag tag_color name_color chat_color");
 		return Plugin_Handled;
 	}
 
@@ -2285,7 +2285,7 @@ public Action Command_CCCAddTag(int client, int argc)
 
 	if (strlen(sTag) > 31)
 	{
-		CReplyToCommand(client, "{green}[CCC]{white} Tag is too long (32 characters max).");
+		CReplyToCommand(client, "{green}[CCC]{default} Tag is too long (32 characters max).");
 		return Plugin_Handled;
 	}
 
@@ -2307,7 +2307,7 @@ public Action Command_CCCAddTag(int client, int argc)
 	}
 	else
 	{
-		CReplyToCommand(client, "{green}[CCC]{white} Wrong parameters.");
+		CReplyToCommand(client, "{green}[CCC]{default} Wrong parameters.");
 	}
 
 	return Plugin_Handled;
@@ -2317,7 +2317,7 @@ public Action Command_CCCDeleteTag(int client, int argc)
 {
 	if (argc != 8)
 	{
-		CReplyToCommand(client, "{green}[CCC]{white} Usage: sm_cccdeletetag steamid");
+		CReplyToCommand(client, "{green}[CCC]{default} Usage: sm_cccdeletetag steamid");
 		return Plugin_Handled;
 	}
 
@@ -2335,7 +2335,7 @@ public Action Command_CCCDeleteTag(int client, int argc)
 	}
 	else
 	{
-		CReplyToCommand(client, "{green}[CCC]{white} Wrong parameter.");
+		CReplyToCommand(client, "{green}[CCC]{default} Wrong parameter.");
 	}
 
 	return Plugin_Handled;
@@ -2345,7 +2345,7 @@ public Action Command_CCCAddTrigger(int client, int argc)
 {
 	if (argc != 2)
 	{
-		CReplyToCommand(client, "{green}[CCC]{white} Usage: sm_cccaddtrigger trigger value");
+		CReplyToCommand(client, "{green}[CCC]{default} Usage: sm_cccaddtrigger trigger value");
 		return Plugin_Handled;
 	}
 
@@ -2357,13 +2357,13 @@ public Action Command_CCCAddTrigger(int client, int argc)
 
 	if (sTrigger[0] == '\0')
 	{
-		CReplyToCommand(client, "{green}[CCC]{white} Trigger must be non empty");
+		CReplyToCommand(client, "{green}[CCC]{default} Trigger must be non empty");
 		return Plugin_Handled;
 	}
 
 	if (sValue[0] == '\0')
 	{
-		CReplyToCommand(client, "{green}[CCC]{white} Value must be non empty");
+		CReplyToCommand(client, "{green}[CCC]{default} Value must be non empty");
 		return Plugin_Handled;
 	}
 
@@ -2381,7 +2381,7 @@ public Action Command_CCCDeleteTrigger(int client, int argc)
 {
 	if (argc != 1)
 	{
-		CReplyToCommand(client, "{green}[CCC]{white} Usage: sm_cccdeletetrigger trigger");
+		CReplyToCommand(client, "{green}[CCC]{default} Usage: sm_cccdeletetrigger trigger");
 		return Plugin_Handled;
 	}
 
@@ -2391,7 +2391,7 @@ public Action Command_CCCDeleteTrigger(int client, int argc)
 
 	if (sTrigger[0] == '\0')
 	{
-		CReplyToCommand(client, "{green}[CCC]{white} Trigger must be non empty");
+		CReplyToCommand(client, "{green}[CCC]{default} Trigger must be non empty");
 		return Plugin_Handled;
 	}
 
@@ -2821,11 +2821,11 @@ public Action Command_Say(int client, const char[] command, int argc)
 
 			if (strcmp(g_sInputType[client], "ChangeTag", false) == 0 || strcmp(g_sInputType[client], "MenuForceTag", false) == 0)
 			{
-				// if (strlen(text[1]) > 31)
-				// {
-				// 	CPrintToChat(client, "{green}[CCC]{white} Tag is too long (32 characters max).");
-				// 	return Plugin_Handled;
-				// }
+				if (strlen(text[1]) > 31)
+				{
+					CPrintToChat(client, "{green}[CCC]{default} Tag is too long (32 characters max).");
+					return Plugin_Handled;
+				}
 			}
 
 			g_bWaitingForChatInput[client] = false;
@@ -2861,7 +2861,7 @@ public Action Command_Say(int client, const char[] command, int argc)
 	}
 
 	if (client != 0 && g_bTagTruncated[client])
-		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Your tag is longer than 32 characters and has been truncated for display. Please update it");
+		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Your tag is longer than 32 characters and has been truncated for display. {red}Please update it");
 
 	return Plugin_Continue;
 }
