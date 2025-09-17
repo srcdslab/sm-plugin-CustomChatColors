@@ -2803,6 +2803,9 @@ public Action Command_Say(int client, const char[] command, int argc)
 {
 	if (client > 0 && client <= MaxClients && IsClientInGame(client))
 	{
+		if (g_bTagTruncated[client] && !g_bWaitingForChatInput[client])
+			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Your tag is longer than 32 characters and has been truncated for display. Please update it");
+
 		char text[MAX_CHAT_LENGTH];
 		GetCmdArgString(text, sizeof(text));
 
@@ -2857,9 +2860,6 @@ public Action Command_Say(int client, const char[] command, int argc)
 				g_msgIsTeammate = true;
 			else
 				g_msgIsTeammate = false;
-
-			if (g_bTagTruncated[client])
-				CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Your tag is longer than 32 characters and has been truncated for display. Please update it");
 		}
 	}
 
