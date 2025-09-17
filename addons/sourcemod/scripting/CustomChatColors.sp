@@ -81,6 +81,7 @@ char g_sDefaultClientChatColor[MAXPLAYERS + 1][12];
 ArrayList g_sColorsArray = null;
 
 int g_iClientBanned[MAXPLAYERS + 1] = { -1, ...};
+bool g_bTagTruncated[MAXPLAYERS + 1];
 bool g_bWaitingForChatInput[MAXPLAYERS + 1];
 char g_sReceivedChatInput[MAXPLAYERS + 1][64];
 char g_sInputType[MAXPLAYERS + 1][32];
@@ -1340,7 +1341,13 @@ stock void OnSQLSelect_TagGroup(Database db, DBResultSet results, const char[] e
 
 		g_iDefaultClientEnable[client] = g_iClientEnable[client];
 		if (strlen(g_sClientTag[client]) > 31)
+		{
 			g_sClientTag[client][31] = '\0';
+			g_bTagTruncated[client] = true;
+		}
+		else
+			g_bTagTruncated[client] = false;
+
 		strcopy(g_sDefaultClientTag[client], sizeof(g_sDefaultClientTag[]), g_sClientTag[client]);
 		strcopy(g_sDefaultClientTagColor[client], sizeof(g_sDefaultClientTagColor[]), g_sClientTagColor[client]);
 		strcopy(g_sDefaultClientNameColor[client], sizeof(g_sDefaultClientNameColor[]), g_sClientNameColor[client]);
@@ -1390,7 +1397,13 @@ public void OnSQLSelect_Tag(Database db, DBResultSet results, const char[] err, 
 
 		g_iDefaultClientEnable[client] = g_iClientEnable[client];
 		if (strlen(g_sClientTag[client]) > 31)
+		{
 			g_sClientTag[client][31] = '\0';
+			g_bTagTruncated[client] = true;
+		}
+		else
+			g_bTagTruncated[client] = false;
+
 		strcopy(g_sDefaultClientTag[client], sizeof(g_sDefaultClientTag[]), g_sClientTag[client]);
 		strcopy(g_sDefaultClientTagColor[client], sizeof(g_sDefaultClientTagColor[]), g_sClientTagColor[client]);
 		strcopy(g_sDefaultClientNameColor[client], sizeof(g_sDefaultClientNameColor[]), g_sClientNameColor[client]);
@@ -1442,7 +1455,13 @@ public void OnSQLUpdate_Tag(Database db, DBResultSet results, const char[] err, 
 	// Instead, snapshot current values as defaults so we don't trigger writes on disconnect.
 	g_iDefaultClientEnable[client] = g_iClientEnable[client];
 	if (strlen(g_sClientTag[client]) > 31)
+	{
 		g_sClientTag[client][31] = '\0';
+		g_bTagTruncated[client] = true;
+	}
+	else
+		g_bTagTruncated[client] = false;
+
 	strcopy(g_sDefaultClientTag[client], sizeof(g_sDefaultClientTag[]), g_sClientTag[client]);
 	strcopy(g_sDefaultClientTagColor[client], sizeof(g_sDefaultClientTagColor[]), g_sClientTagColor[client]);
 	strcopy(g_sDefaultClientNameColor[client], sizeof(g_sDefaultClientNameColor[]), g_sClientNameColor[client]);
@@ -4254,9 +4273,9 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		CAddWhiteSpace(g_msgFinal, sizeof(g_msgFinal));
 	}
 
-	if (strlen(g_sClientTag[g_msgAuthor]) > 31 && IsClientInGame(g_msgAuthor))
+	if (g_bTagTruncated[g_msgAuthor])
 	{
-		CPrintToChat(g_msgAuthor, "{green}[{red}C{green}C{blue}C{green}]{default} Your tag is longer than 32 characters and has been truncated for display.");
+		CPrintToChat(g_msgAuthor, "{green}[{red}C{green}C{blue}C{green}]{default} Your tag is longer than 32 characters and has been truncated for display. Please update it");
 	}
 
 	return Plugin_Handled;
@@ -4683,6 +4702,7 @@ public int Native_SetTag(Handle plugin, int numParams)
 	if (strlen(tempTag) > 31)
 	{
 		tempTag[31] = '\0';
+		g_bTagTruncated[client] = true;
 	}
 
 	strcopy(g_sClientTag[client], sizeof(g_sClientTag[]), tempTag);
