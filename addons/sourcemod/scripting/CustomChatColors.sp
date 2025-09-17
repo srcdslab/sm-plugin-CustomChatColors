@@ -2821,11 +2821,11 @@ public Action Command_Say(int client, const char[] command, int argc)
 
 			if (strcmp(g_sInputType[client], "ChangeTag", false) == 0 || strcmp(g_sInputType[client], "MenuForceTag", false) == 0)
 			{
-				if (strlen(text[1]) > 31)
-				{
-					PrintToChat(client, "{green}[CCC]{white} Tag is too long (32 characters max).");
-					return Plugin_Handled;
-				}
+				// if (strlen(text[1]) > 31)
+				// {
+				// 	CPrintToChat(client, "{green}[CCC]{white} Tag is too long (32 characters max).");
+				// 	return Plugin_Handled;
+				// }
 			}
 
 			g_bWaitingForChatInput[client] = false;
