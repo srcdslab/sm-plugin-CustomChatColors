@@ -2860,6 +2860,15 @@ public Action Command_Say(int client, const char[] command, int argc)
 		}
 	}
 
+	if (g_bTagTruncated[client])
+	{
+		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Your tag is longer than 32 characters and has been truncated for display. Please update it");
+	}
+	else
+	{
+		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Your tag is shorter than 32 characters and has been updated for display.");
+	}
+
 	return Plugin_Continue;
 }
 
@@ -4273,16 +4282,6 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		CFormatColor(g_msgFinal, sizeof(g_msgFinal), g_msgAuthor);
 		CAddWhiteSpace(g_msgFinal, sizeof(g_msgFinal));
 	}
-
-	if (g_bTagTruncated[g_msgAuthor])
-	{
-		CPrintToChat(g_msgAuthor, "{green}[{red}C{green}C{blue}C{green}]{default} Your tag is longer than 32 characters and has been truncated for display. Please update it");
-	}
-	else
-	{
-		CPrintToChat(g_msgAuthor, "{green}[{red}C{green}C{blue}C{green}]{default} Your tag is shorter than 32 characters and has been updated for display.");
-	}
-
 
 	return Plugin_Handled;
 }
