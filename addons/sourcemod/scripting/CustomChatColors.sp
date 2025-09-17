@@ -2857,16 +2857,10 @@ public Action Command_Say(int client, const char[] command, int argc)
 				g_msgIsTeammate = true;
 			else
 				g_msgIsTeammate = false;
-		}
-	}
 
-	if (g_bTagTruncated[client])
-	{
-		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Your tag is longer than 32 characters and has been truncated for display. Please update it");
-	}
-	else
-	{
-		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Your tag is shorter than 32 characters and has been updated for display.");
+			if (g_bTagTruncated[client])
+				CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Your tag is longer than 32 characters and has been truncated for display. Please update it");
+		}
 	}
 
 	return Plugin_Continue;
