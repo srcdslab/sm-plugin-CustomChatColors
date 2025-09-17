@@ -4230,11 +4230,6 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		if (strlen(sAuthorTag) > 0)
 			Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s%s", GetColor(sTagColorKey, sValue, sizeof(sValue)) ? "#" : "", bTagFound ? sTagColorKey : "default", sAuthorTag, g_msgSender);
 
-		if (strlen(g_sClientTag[g_msgAuthor]) > 31 && IsClientInGame(g_msgAuthor))
-		{
-			CPrintToChat(g_msgAuthor, "{green}[{red}C{green}C{blue}C{green}]{default} Your tag is longer than 32 characters and has been truncated for display.");
-		}
-
 		StringMap smTrie = CGetTrie();
 		if (g_msgText[0] == '>' && GetConVarInt(g_cvar_GreenText) > 0 && smTrie.GetString("green", sValue, sizeof(sValue)))
 			Format(g_msgText, sizeof(g_msgText), "{green}%s", g_msgText);
@@ -4257,6 +4252,11 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 	{
 		CFormatColor(g_msgFinal, sizeof(g_msgFinal), g_msgAuthor);
 		CAddWhiteSpace(g_msgFinal, sizeof(g_msgFinal));
+	}
+
+	if (strlen(g_sClientTag[g_msgAuthor]) > 31 && IsClientInGame(g_msgAuthor))
+	{
+		CPrintToChat(g_msgAuthor, "{green}[{red}C{green}C{blue}C{green}]{default} Your tag is longer than 32 characters and has been truncated for display.");
 	}
 
 	return Plugin_Handled;
