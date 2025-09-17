@@ -2816,8 +2816,6 @@ public Action Command_Say(int client, const char[] command, int argc)
 
 		if (g_bWaitingForChatInput[client])
 		{
-			g_bWaitingForChatInput[client] = false;
-
 			if (text[strlen(text)-1] == '"')
 				text[strlen(text)-1] = '\0';
 
@@ -2825,10 +2823,12 @@ public Action Command_Say(int client, const char[] command, int argc)
 			{
 				if (strlen(text[1]) > 31)
 				{
-					CReplyToCommand(client, "{green}[CCC]{white} Tag is too long (32 characters max).");
+					PrintToChat(client, "{green}[CCC]{white} Tag is too long (32 characters max).");
 					return Plugin_Handled;
 				}
 			}
+
+			g_bWaitingForChatInput[client] = false;
 
 			strcopy(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), text[1]);
 
