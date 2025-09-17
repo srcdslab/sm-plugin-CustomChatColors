@@ -4142,6 +4142,7 @@ stock void ResetClient(int client)
 	Format(g_sInputType[client], sizeof(g_sInputType[]), "");
 	Format(g_sATargetSID[client], sizeof(g_sATargetSID[]), "");
 	g_bWaitingForChatInput[client] = false;
+	g_bTagTruncated[client] = false;
 	g_iClientFastReply[client] = 0;
 	g_iATarget[client] = 0;
 	g_sClientSID[client] = "";
