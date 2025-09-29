@@ -356,7 +356,7 @@ stock void VerifyNatives()
 
 stock void VerifyNative_SelfMute()
 {
-	g_bSelfMuteNative = g_bPlugin_SelfMute && CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "SelfMute_GetSelfMute") == FeatureStatus_Available;
+	g_bSelfMuteNative = g_bPlugin_SelfMute && CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "SelfMute_GetTextSelfMute") == FeatureStatus_Available;
 }
 
 stock void VerifyNative_SourceCommsPP()
@@ -2160,8 +2160,8 @@ void SendPrivateChat(int client, int target, const char[] message)
 		}
 	}
 
-#if defined _SelfMute_included_
-	if (!g_bSelfMuteNative || !SelfMute_GetSelfMute(target, client) || CheckCommandAccess(client, "sm_kick", ADMFLAG_KICK, true))
+#if defined _SelfMute_V2_included
+	if (!g_bSelfMuteNative || !SelfMute_GetTextSelfMute(target, client) || CheckCommandAccess(client, "sm_kick", ADMFLAG_KICK, true))
 		CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s",
 			g_sSmCategoryColor,
 			g_sSmNameColor, target, g_sSmCategoryColor,
