@@ -11,7 +11,7 @@
 
 #define CCC_V_MAJOR   "7"
 #define CCC_V_MINOR   "4"
-#define CCC_V_PATCH   "21"
+#define CCC_V_PATCH   "22"
 
 #define CCC_VERSION            CCC_V_MAJOR..."."...CCC_V_MINOR..."."...CCC_V_PATCH
 
@@ -223,7 +223,17 @@ forward void CCC_OnUserConfigLoaded(int client);
  */
 forward void CCC_OnConfigReloaded();
 
-native int CCC_UpdateIgnoredArray(bool IgnoredArray[(MAXPLAYERS + 1) * (MAXPLAYERS + 1)]);
+/**
+ * Sets Ignored value of a specific client to a specific target, this will ignore chat messages.
+ *
+ * @param client		The client index
+ * @param target		The target index
+ * @param ignored		The ignorance value, true/false
+ * @noreturn
+ *
+ * On error/errors:		Client or target is invalid
+ */
+native void CCC_SetIgnored(int client, int target, bool ignored);
 
 public SharedPlugin __pl_ccc =
 {
@@ -246,7 +256,7 @@ public __pl_ccc_SetNTVOptional() {
 	MarkNativeAsOptional("CCC_ResetTag");
 	MarkNativeAsOptional("CCC_ResetColor");
 	MarkNativeAsOptional("CCC_ResetTag");
-	MarkNativeAsOptional("CCC_UpdateIgnoredArray");
+	MarkNativeAsOptional("CCC_SetIgnored");
 	MarkNativeAsOptional("CCC_IsClientEnabled");
 }
 #endif

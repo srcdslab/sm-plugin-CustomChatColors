@@ -110,7 +110,7 @@ char g_msgText[MAX_CHAT_LENGTH];
 char g_msgFinal[255];
 bool g_msgIsTeammate;
 
-bool g_Ignored[(MAXPLAYERS + 1) * (MAXPLAYERS + 1)] = {false, ...};
+bool g_Ignored[MAXPLAYERS + 1][MAXPLAYERS + 1];
 
 int g_bSQLSelectReplaceRetry = 0;
 int g_bSQLInsertReplaceRetry[MAXPLAYERS + 1] = { 0, ... };
@@ -164,7 +164,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("CCC_ResetColor", Native_ResetColor);
 	CreateNative("CCC_ResetTag", Native_ResetTag);
 
-	CreateNative("CCC_UpdateIgnoredArray", Native_UpdateIgnoredArray);
+	CreateNative("CCC_SetIgnored", Native_SetIgnored);
 	CreateNative("CCC_IsClientEnabled", Native_IsClientEnabled);
 
 	RegPluginLibrary("ccc");
@@ -4299,7 +4299,7 @@ public Action Event_PlayerSay(Handle event, const char[] name, bool dontBroadcas
 		{
 			if (IsClientInGame(client) && GetClientTeam(client) == team)
 			{
-				if (!g_Ignored[client * (MAXPLAYERS + 1) + g_msgAuthor])
+				if (!g_Ignored[client][g_msgAuthor])
 					players[playersNum++] = client;
 			}
 		}
@@ -4310,7 +4310,7 @@ public Action Event_PlayerSay(Handle event, const char[] name, bool dontBroadcas
 		{
 			if (IsClientInGame(client))
 			{
-				if (!g_Ignored[client * (MAXPLAYERS + 1) + g_msgAuthor])
+				if (!g_Ignored[client][g_msgAuthor])
 					players[playersNum++] = client;
 			}
 		}
@@ -4751,10 +4751,26 @@ public int Native_ResetTag(Handle plugin, int numParams)
 	return 1;
 }
 
-public int Native_UpdateIgnoredArray(Handle plugin, int numParams)
+public int Native_SetIgnored(Handle plugin, int numParams)
 {
-	GetNativeArray(1, g_Ignored, sizeof(g_Ignored));
-
+	int client = GetNativeCell(1);
+	
+	if (!client || client > MaxClients)
+	{
+		ThrowNativeError(SP_ERROR_PARAM, "Invalid client or client is not in game");
+		return 0;
+	}
+	
+	int target = GetNativeCell(2);
+	
+	if (!target || target > MaxClients)
+	{
+		ThrowNativeError(SP_ERROR_PARAM, "Invalid target or target is not in game");
+		return 0;
+	}
+	
+	bool value = view_as<bool>(GetNativeCell(3));
+	g_Ignored[client][target] = value;
 	return 1;
 }
 
