@@ -4757,7 +4757,7 @@ public int Native_SetIgnored(Handle plugin, int numParams)
 	
 	if (!client || client > MaxClients)
 	{
-		ThrowNativeError(SP_ERROR_PARAM, "Invalid client or client is not in game");
+		ThrowNativeError(SP_ERROR_PARAM, "Invalid client");
 		return 0;
 	}
 	
@@ -4765,7 +4765,7 @@ public int Native_SetIgnored(Handle plugin, int numParams)
 	
 	if (!target || target > MaxClients)
 	{
-		ThrowNativeError(SP_ERROR_PARAM, "Invalid target or target is not in game");
+		ThrowNativeError(SP_ERROR_PARAM, "Invalid target");
 		return 0;
 	}
 	
