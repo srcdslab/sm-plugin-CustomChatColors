@@ -1064,7 +1064,7 @@ stock void OnSqlSetNames(Database db, DBResultSet results, const char[] err, Dat
 	if (SQL_Conn_Lost(results))
 	{
 		LogError("Database error while setting names as utf8, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
-		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSetNames);
+		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSetNames, _, TIMER_FLAG_NO_MAPCHANGE);
 
 		return;
 	}
@@ -1088,7 +1088,7 @@ public void OnSQLDelete_Tag(Database db, DBResultSet results, const char[] err, 
 		if (g_bSQLDeleteTagRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLDeleteTagRetry[client]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLDelete_Tag, data);
+			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLDelete_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1215,7 +1215,7 @@ public void OnSQLTableCreated_Tag(Database db, DBResultSet results, const char[]
 	if (SQL_Conn_Lost(results))
 	{
 		LogError("Database error while creating/checking for \"ccc_tag\" table, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
-		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLTableCreation_Tag);
+		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLTableCreation_Tag, _, TIMER_FLAG_NO_MAPCHANGE);
 
 		return;
 	}
@@ -1226,7 +1226,7 @@ public void OnSQLTableCreated_Ban(Database db, DBResultSet results, const char[]
 	if (SQL_Conn_Lost(results))
 	{
 		LogError("Database error while creating/checking for \"ccc_ban\" table, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
-		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLTableCreation_Ban);
+		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLTableCreation_Ban, _, TIMER_FLAG_NO_MAPCHANGE);
 
 		return;
 	}
@@ -1237,7 +1237,7 @@ public void OnSQLTableCreated_Replace(Database db, DBResultSet results, const ch
 	if (SQL_Conn_Lost(results))
 	{
 		LogError("Database error while creating/checking for \"ccc_replace\" table, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
-		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLTableCreation_Replace);
+		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLTableCreation_Replace, _, TIMER_FLAG_NO_MAPCHANGE);
 
 		return;
 	}
@@ -1252,7 +1252,7 @@ public void OnSQLSelect_Replace(Database db, DBResultSet results, const char[] e
 		if (g_bSQLSelectReplaceRetry + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLSelectReplaceRetry++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_Replace, client);
+			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_Replace, client, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1292,7 +1292,7 @@ public void OnSQLSelect_Ban(Database db, DBResultSet results, const char[] err, 
 		if (g_bSQLSelectBanRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLSelectBanRetry[client]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_Ban, data);
+			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_Ban, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1327,7 +1327,7 @@ stock void OnSQLSelect_TagGroup(Database db, DBResultSet results, const char[] e
 		if (g_bSQLSelectTagGroupRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLSelectTagGroupRetry[client]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_TagGroup, data);
+			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_TagGroup, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1382,7 +1382,7 @@ public void OnSQLSelect_Tag(Database db, DBResultSet results, const char[] err, 
 		if (g_bSQLSelectTagRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLSelectTagRetry[client]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_Tag, data);
+			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1446,7 +1446,7 @@ public void OnSQLUpdate_Tag(Database db, DBResultSet results, const char[] err, 
 		if (g_bSQLUpdateTagRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLUpdateTagRetry[client]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLUpdate_Tag, data);
+			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLUpdate_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1490,7 +1490,7 @@ public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] e
 		if (g_bSQLInsertReplaceRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLInsertReplaceRetry[client]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLInsert_Replace, data);
+			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLInsert_Replace, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1529,7 +1529,7 @@ public void OnSQLDelete_Replace(Database db, DBResultSet results, const char[] e
 		if (g_bSQLDeleteReplaceRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLDeleteReplaceRetry[client]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLDelete_Replace, data);
+			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLDelete_Replace, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1585,7 +1585,7 @@ public void OnSQLInsert_Tag(Database db, DBResultSet results, const char[] err, 
 		if (g_bSQLInsertTagRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLInsertTagRetry[client]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLInsert_Tag, data);
+			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLInsert_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1614,7 +1614,7 @@ public void OnSQLInsert_Ban(Database db, DBResultSet results, const char[] err, 
 		if (g_bSQLInsertBanRetry[target] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLInsertBanRetry[target]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLInsert_Ban, data);
+			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLInsert_Ban, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1658,7 +1658,7 @@ public void OnSQLDelete_Ban(Database db, DBResultSet results, const char[] err, 
 		if (g_bSQLDeleteBanRetry[target] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLDeleteBanRetry[target]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLDelete_Ban, data);
+			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLDelete_Ban, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
