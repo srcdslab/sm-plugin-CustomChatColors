@@ -477,6 +477,8 @@ stock void LoadColorArray()
 	if (g_sColorsArray != null)
 		delete g_sColorsArray;
 
+	MC_InitFastColors();
+	
 	g_sColorsArray = new ArrayList(sizeof(g_sColorKeys));
 
 	for (int i = 0; i < sizeof(g_sColorKeys); i++)
