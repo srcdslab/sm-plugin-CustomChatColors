@@ -9,9 +9,9 @@
 #endif
 #define _ccc_included
 
-#define CCC_V_MAJOR   "7"
-#define CCC_V_MINOR   "4"
-#define CCC_V_PATCH   "23"
+#define CCC_V_MAJOR   "8"
+#define CCC_V_MINOR   "0"
+#define CCC_V_PATCH   "8"
 
 #define CCC_VERSION            CCC_V_MAJOR..."."...CCC_V_MINOR..."."...CCC_V_PATCH
 
