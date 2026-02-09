@@ -2477,6 +2477,12 @@ public Action Command_SmChat(int client, int args)
 
 public Action Command_SmPsay(int client, int args)
 {
+	if (!client)
+	{
+		ReplyToCommand(client, "[SM] Cannot use this command from server console");
+		return Plugin_Handled;
+	}
+
 	if (args < 2)
 	{
 		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_psay <name or #userid> <message>");
