@@ -291,7 +291,10 @@ public void OnPluginEnd()
 	if (g_sColorsArray != null)
 		delete g_sColorsArray;
 	if (g_smReplacePendingTriggers != null)
+	{
 		delete g_smReplacePendingTriggers;
+		g_smReplacePendingTriggers = null;
+	}
 
 	g_DatabaseState = DatabaseState_Disconnected;
 	g_hDatabase = null;
@@ -559,6 +562,10 @@ stock void ResetReplace()
 		g_sReplaceList[i][1] = "";
 	}
 	g_iReplaceListSize = 0;
+	g_iReplacePendingInserts = 0;
+
+	if (g_smReplacePendingTriggers == null)
+		g_smReplacePendingTriggers = new StringMap();
 }
 
 stock int FindReplaceTriggerIndex(const char[] sTrigger)
