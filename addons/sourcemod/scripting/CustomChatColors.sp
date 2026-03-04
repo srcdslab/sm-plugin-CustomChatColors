@@ -884,6 +884,7 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 	pack.ReadString(sTrigger, sizeof(sTrigger));
 	pack.ReadString(sValue, sizeof(sValue));
 	bool bPendingTracked = view_as<bool>(pack.ReadCell());
+	bool bCountsTowardsLimit = view_as<bool>(pack.ReadCell());
 
 	if (!bPendingTracked && !CanQueueReplaceInsert(sTrigger))
 	{
@@ -896,7 +897,16 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 
 	if (!bPendingTracked)
 	{
-		g_iReplacePendingInserts++;
+		if (FindReplaceTriggerIndex(sTrigger) == -1)
+		{
+			g_iReplacePendingInserts++;
+			bCountsTowardsLimit = true;
+		}
+		else
+		{
+			bCountsTowardsLimit = false;
+		}
+
 		bPendingTracked = true;
 
 		pack.Reset();
@@ -904,6 +914,7 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 		pack.WriteString(sTrigger);
 		pack.WriteString(sValue);
 		pack.WriteCell(view_as<int>(bPendingTracked));
+		pack.WriteCell(view_as<int>(bCountsTowardsLimit));
 	}
 
 	SQL_EscapeString(g_hDatabase, sTrigger, sTriggerEscaped, sizeof(sTriggerEscaped));
@@ -1583,11 +1594,19 @@ public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] e
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
+	int userid = pack.ReadCell();
+	char sTrigger[MAX_CHAT_TRIGGER_LENGTH];
+	char sValue[MAX_CHAT_LENGTH];
+	pack.ReadString(sTrigger, sizeof(sTrigger));
+	pack.ReadString(sValue, sizeof(sValue));
+	pack.ReadCell();
+	bool bCountsTowardsLimit = view_as<bool>(pack.ReadCell());
 
-	int client = GetClientOfUserId(pack.ReadCell());
+	int client = GetClientOfUserId(userid);
 	if (!client)
 	{
-		DecrementReplacePendingInsert();
+		if (bCountsTowardsLimit)
+			DecrementReplacePendingInsert();
 		delete pack;
 		return;
 	}
@@ -1604,11 +1623,6 @@ public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] e
 	}
 	else
 	{
-		char sTrigger[MAX_CHAT_TRIGGER_LENGTH];
-		char sValue[MAX_CHAT_LENGTH];
-
-		pack.ReadString(sTrigger, sizeof(sTrigger));
-		pack.ReadString(sValue, sizeof(sValue));
 		int iReplaceIndex = FindReplaceTriggerIndex(sTrigger);
 
 		if (iReplaceIndex != -1)
@@ -1631,7 +1645,8 @@ public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] e
 	}
 
 	g_bSQLInsertReplaceRetry[client] = 0;
-	DecrementReplacePendingInsert();
+	if (bCountsTowardsLimit)
+		DecrementReplacePendingInsert();
 
 	delete pack;
 }
@@ -2380,6 +2395,7 @@ public Action Command_CCCImportReplaceFile(int client, int argc)
 		pack.WriteString(sTrigger);
 		pack.WriteString(sValue);
 		pack.WriteCell(0);
+		pack.WriteCell(0);
 
 		SQLInsert_Replace(INVALID_HANDLE, pack);
 		iQueued++;
@@ -2520,6 +2536,7 @@ public Action Command_CCCAddTrigger(int client, int argc)
 	pack.WriteCell(GetClientUserId(client));
 	pack.WriteString(sTrigger);
 	pack.WriteString(sValue);
+	pack.WriteCell(0);
 	pack.WriteCell(0);
 
 	SQLInsert_Replace(INVALID_HANDLE, pack);
