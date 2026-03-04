@@ -62,6 +62,7 @@ char g_sSmChatColor[32];
 
 char g_sReplaceList[REPLACE_LIST_MAX_LENGTH][2][MAX_CHAT_LENGTH];
 int g_iReplaceListSize = 0;
+int g_iReplacePendingInserts = 0;
 
 char g_sClientSID[MAXPLAYERS + 1][32];
 char g_sSteamIDs[MAXPLAYERS + 1][MAX_AUTHID_LENGTH];
@@ -554,6 +555,31 @@ stock void ResetReplace()
 	g_iReplaceListSize = 0;
 }
 
+stock int FindReplaceTriggerIndex(const char[] sTrigger)
+{
+	for (int i = 0; i < g_iReplaceListSize; i++)
+	{
+		if (strcmp(g_sReplaceList[i][0], sTrigger, false) == 0)
+			return i;
+	}
+
+	return -1;
+}
+
+stock bool CanQueueReplaceInsert(const char[] sTrigger)
+{
+	if (FindReplaceTriggerIndex(sTrigger) != -1)
+		return true;
+
+	return (g_iReplaceListSize + g_iReplacePendingInserts) < REPLACE_LIST_MAX_LENGTH;
+}
+
+stock void DecrementReplacePendingInsert()
+{
+	if (g_iReplacePendingInserts > 0)
+		g_iReplacePendingInserts--;
+}
+
 ///////////
 /// SQL ///
 ///////////
@@ -712,7 +738,7 @@ stock Action SQLSelect_Replace(Handle timer)
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
-	FormatEx(sQuery, sizeof(sQuery), "SELECT `trigger`, `value` FROM `ccc_replace`;");
+	FormatEx(sQuery, sizeof(sQuery), "SELECT `trigger`, `value` FROM `ccc_replace` ORDER BY `trigger` ASC;");
 	SQL_TQuery(g_hDatabase, OnSQLSelect_Replace, sQuery, 0, DBPrio_High);
 	return Plugin_Stop;
 }
@@ -854,9 +880,18 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 	char sValue[MAX_CHAT_LENGTH];
 	char sValueEscaped[2*MAX_CHAT_LENGTH+1];
 
-	pack.ReadCell();
+	int userid = pack.ReadCell();
 	pack.ReadString(sTrigger, sizeof(sTrigger));
 	pack.ReadString(sValue, sizeof(sValue));
+
+	if (!CanQueueReplaceInsert(sTrigger))
+	{
+		int client = GetClientOfUserId(userid);
+		if (client)
+			CReplyToCommand(client, "{green}[CCC]{default} Replace list is full ({olive}%d{default} entries). Trigger was not inserted.", REPLACE_LIST_MAX_LENGTH);
+		delete pack;
+		return Plugin_Stop;
+	}
 
 	SQL_EscapeString(g_hDatabase, sTrigger, sTriggerEscaped, sizeof(sTriggerEscaped));
 	SQL_EscapeString(g_hDatabase, sValue, sValueEscaped, sizeof(sValueEscaped));
@@ -881,6 +916,7 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 			sTriggerEscaped, sValueEscaped
 		);
 	}
+	g_iReplacePendingInserts++;
 	SQL_TQuery(g_hDatabase, OnSQLInsert_Replace, sQuery, data);
 	return Plugin_Stop;
 }
@@ -1301,18 +1337,27 @@ public void OnSQLSelect_Replace(Database db, DBResultSet results, const char[] e
 	else
 	{
 		ResetReplace();
+		int iTotalRows = 0;
+		int iSkippedRows = 0;
 
 		while (SQL_FetchRow(results))
 		{
+			iTotalRows++;
 			if (g_iReplaceListSize >= REPLACE_LIST_MAX_LENGTH)
 			{
-				break;
+				iSkippedRows++;
+				continue;
 			}
 
 			SQL_FetchString(results, 0, g_sReplaceList[g_iReplaceListSize][0], sizeof(g_sReplaceList[][]));
 			SQL_FetchString(results, 1, g_sReplaceList[g_iReplaceListSize][1], sizeof(g_sReplaceList[][]));
 			ReplaceString(g_sReplaceList[g_iReplaceListSize][1], sizeof(g_sReplaceList[][]), "\r\n", "\n");
 			g_iReplaceListSize++;
+		}
+
+		if (iSkippedRows > 0)
+		{
+			LogMessage("Replace list truncated: loaded %d/%d rows (cap %d).", g_iReplaceListSize, iTotalRows, REPLACE_LIST_MAX_LENGTH);
 		}
 	}
 
@@ -1529,6 +1574,7 @@ public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] e
 	int client = GetClientOfUserId(pack.ReadCell());
 	if (!client)
 	{
+		DecrementReplacePendingInsert();
 		delete pack;
 		return;
 	}
@@ -1550,20 +1596,29 @@ public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] e
 
 		pack.ReadString(sTrigger, sizeof(sTrigger));
 		pack.ReadString(sValue, sizeof(sValue));
+		int iReplaceIndex = FindReplaceTriggerIndex(sTrigger);
 
-		if (g_iReplaceListSize >= REPLACE_LIST_MAX_LENGTH)
+		if (iReplaceIndex != -1)
 		{
-			g_bSQLInsertReplaceRetry[client] = 0;
-			delete pack;
-			return;
+			g_sReplaceList[iReplaceIndex][1] = sValue;
 		}
-
-		g_sReplaceList[g_iReplaceListSize][0] = sTrigger;
-		g_sReplaceList[g_iReplaceListSize][1] = sValue;
-		g_iReplaceListSize++;
+		else
+		{
+			if (g_iReplaceListSize >= REPLACE_LIST_MAX_LENGTH)
+			{
+				LogMessage("Replace list cache is full (%d). Trigger '%s' was inserted in DB but skipped in memory; will apply on next reload.", REPLACE_LIST_MAX_LENGTH, sTrigger);
+			}
+			else
+			{
+				g_sReplaceList[g_iReplaceListSize][0] = sTrigger;
+				g_sReplaceList[g_iReplaceListSize][1] = sValue;
+				g_iReplaceListSize++;
+			}
+		}
 	}
 
 	g_bSQLInsertReplaceRetry[client] = 0;
+	DecrementReplacePendingInsert();
 
 	delete pack;
 }
@@ -2294,10 +2349,18 @@ public Action Command_CCCImportReplaceFile(int client, int argc)
 
 	char sTrigger[MAX_CHAT_TRIGGER_LENGTH];
 	char sValue[MAX_CHAT_LENGTH];
+	int iQueued = 0;
+	int iSkipped = 0;
 	do
 	{
 		kv.GetSectionName(sTrigger, sizeof(sTrigger));
 		kv.GetString(NULL_STRING, sValue, sizeof(sValue));
+
+		if (!CanQueueReplaceInsert(sTrigger))
+		{
+			iSkipped++;
+			continue;
+		}
 
 		DataPack pack = new DataPack();
 		pack.WriteCell(GetClientUserId(client));
@@ -2305,10 +2368,21 @@ public Action Command_CCCImportReplaceFile(int client, int argc)
 		pack.WriteString(sValue);
 
 		SQLInsert_Replace(INVALID_HANDLE, pack);
+		iQueued++;
 
 	} while (kv.GotoNextKey(false));
 
 	delete kv;
+
+	if (iSkipped > 0)
+	{
+		CReplyToCommand(client, "{green}[CCC]{default} Imported with limit: queued {olive}%d{default}, skipped {olive}%d{default} (max {olive}%d{default} entries).", iQueued, iSkipped, REPLACE_LIST_MAX_LENGTH);
+	}
+	else
+	{
+		CReplyToCommand(client, "{green}[CCC]{default} Imported {olive}%d{default} trigger(s).", iQueued);
+	}
+
 	return Plugin_Handled;
 }
 
@@ -2419,6 +2493,12 @@ public Action Command_CCCAddTrigger(int client, int argc)
 	if (sValue[0] == '\0')
 	{
 		CReplyToCommand(client, "{green}[CCC]{default} Value must be non empty");
+		return Plugin_Handled;
+	}
+
+	if (!CanQueueReplaceInsert(sTrigger))
+	{
+		CReplyToCommand(client, "{green}[CCC]{default} Replace list is full ({olive}%d{default} entries). Trigger was not inserted.", REPLACE_LIST_MAX_LENGTH);
 		return Plugin_Handled;
 	}
 
