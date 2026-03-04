@@ -458,7 +458,7 @@ public void OnClientCookiesCached(int client)
 	g_bDisablePsay[client] = StringToInt(sBuffer) != 0;
 }
 
-stock void LateLoad()
+stock void ReloadConfig()
 {
 	ResetReplace();
 
@@ -2624,7 +2624,7 @@ public Action Command_CCCDeleteTrigger(int client, int argc)
 
 public Action Command_ReloadConfig(int client, int args)
 {
-	LateLoad();
+	ReloadConfig();
 
 	LogAction(client, -1, "\"%L\" Reloaded Custom Chat Colors config file", client);
 	CReplyToCommand(client, "{green}[CCC] {default}Reloaded ccc.");
@@ -5019,7 +5019,7 @@ public int Native_LoadClient(Handle plugin, int numParams)
 
 public int Native_ReloadConfig(Handle plugin, int numParams)
 {
-	LateLoad();
+	ReloadConfig();
 	return 1;
 }
 
