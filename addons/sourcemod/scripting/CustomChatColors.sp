@@ -63,6 +63,7 @@ char g_sSmChatColor[32];
 char g_sReplaceList[REPLACE_LIST_MAX_LENGTH][2][MAX_CHAT_LENGTH];
 int g_iReplaceListSize = 0;
 int g_iReplacePendingInserts = 0;
+StringMap g_smReplacePendingTriggers = null;
 
 char g_sClientSID[MAXPLAYERS + 1][32];
 char g_sSteamIDs[MAXPLAYERS + 1][MAX_AUTHID_LENGTH];
@@ -131,7 +132,6 @@ char g_ColorNames[13][10] = {"White", "Red", "Green", "Blue", "Yellow", "Purple"
 int g_Colors[13][3] = {{255,255,255},{255,0,0},{0,255,0},{0,0,255},{255,255,0},{255,0,255},{0,255,255},{255,128,0},{255,0,128},{128,255,0},{0,255,128},{128,0,255},{0,128,255}};
 
 bool g_bSQLite = true;
-bool g_bLate = false;
 bool g_bPlugin_DynamicChannels = false;
 bool g_bDynamicNative = false;
 bool g_bPlugin_SelfMute = false;
@@ -152,6 +152,7 @@ bool g_bClientDataLoaded[MAXPLAYERS + 1] = {false, ...};
 bool g_bSQLTagTableReady = false;
 bool g_bSQLBanTableReady = false;
 bool g_bSQLReplaceTableReady = false;
+bool g_bSQLNamesReady = false;
 bool g_bSQLStartupReady = false;
 
 EngineVersion g_evEngineVersion;
@@ -176,8 +177,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("CCC_IsClientEnabled", Native_IsClientEnabled);
 
 	RegPluginLibrary("ccc");
-
-	g_bLate = late;
 
 	return APLRes_Success;
 }
@@ -272,6 +271,9 @@ public void OnPluginStart()
 
 	AutoExecConfig(true);
 
+	if (g_smReplacePendingTriggers == null)
+		g_smReplacePendingTriggers = new StringMap();
+
 	ResetReplace();
 	LoadColorArray();
 		
@@ -288,6 +290,11 @@ public void OnPluginEnd()
 	}
 	if (g_sColorsArray != null)
 		delete g_sColorsArray;
+	if (g_smReplacePendingTriggers != null)
+		delete g_smReplacePendingTriggers;
+
+	if (g_smReplacePendingTriggers != null)
+		delete g_smReplacePendingTriggers;
 
 	g_DatabaseState = DatabaseState_Disconnected;
 	g_hDatabase = null;
@@ -478,6 +485,7 @@ stock void ResetSQLStartupGate()
 	g_bSQLTagTableReady = false;
 	g_bSQLBanTableReady = false;
 	g_bSQLReplaceTableReady = false;
+	g_bSQLNamesReady = false;
 	g_bSQLStartupReady = false;
 }
 
@@ -486,15 +494,16 @@ stock void TryFinalizeSQLStartup()
 	if (g_bSQLStartupReady)
 		return;
 
+	if (!g_bSQLNamesReady)
+		return;
+
 	if (!g_bSQLTagTableReady || !g_bSQLBanTableReady || !g_bSQLReplaceTableReady)
 		return;
 
 	g_bSQLStartupReady = true;
 
 	SQLSelect_Replace(INVALID_HANDLE);
-
-	if (g_bLate)
-		LateLoadClientsOnly();
+	LateLoadClientsOnly();
 }
 
 stock void LoadColorArray()
@@ -566,18 +575,46 @@ stock int FindReplaceTriggerIndex(const char[] sTrigger)
 	return -1;
 }
 
+stock bool IsReplaceTriggerPending(const char[] sTrigger)
+{
+	if (g_smReplacePendingTriggers == null)
+		return false;
+
+	int dummy;
+	return g_smReplacePendingTriggers.GetValue(sTrigger, dummy);
+}
+
+stock void MarkReplaceTriggerPending(const char[] sTrigger)
+{
+	if (g_smReplacePendingTriggers == null)
+		g_smReplacePendingTriggers = new StringMap();
+
+	int dummy;
+	if (!g_smReplacePendingTriggers.GetValue(sTrigger, dummy))
+	{
+		g_smReplacePendingTriggers.SetValue(sTrigger, 1);
+		g_iReplacePendingInserts++;
+	}
+}
+
+stock void UnmarkReplaceTriggerPending(const char[] sTrigger)
+{
+	if (g_smReplacePendingTriggers == null)
+		return;
+
+	if (g_smReplacePendingTriggers.Remove(sTrigger) && g_iReplacePendingInserts > 0)
+		g_iReplacePendingInserts--;
+}
+
 stock bool CanQueueReplaceInsert(const char[] sTrigger)
 {
 	if (FindReplaceTriggerIndex(sTrigger) != -1)
 		return true;
 
-	return (g_iReplaceListSize + g_iReplacePendingInserts) < REPLACE_LIST_MAX_LENGTH;
-}
+	if (IsReplaceTriggerPending(sTrigger))
+		return true;
 
-stock void DecrementReplacePendingInsert()
-{
-	if (g_iReplacePendingInserts > 0)
-		g_iReplacePendingInserts--;
+	return (g_iReplaceListSize + g_iReplacePendingInserts) < REPLACE_LIST_MAX_LENGTH;
 }
 
 ///////////
@@ -691,7 +728,14 @@ stock Action SQLSetNames(Handle timer)
 		return Plugin_Stop;
 
 	if (!g_bSQLite)
+	{
 		SQL_TQuery(g_hDatabase, OnSqlSetNames, "SET NAMES \"UTF8MB4\"");
+	}
+	else
+	{
+		g_bSQLNamesReady = true;
+		TryFinalizeSQLStartup();
+	}
 	return Plugin_Continue;
 }
 
@@ -897,9 +941,9 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 
 	if (!bPendingTracked)
 	{
-		if (FindReplaceTriggerIndex(sTrigger) == -1)
+		if (FindReplaceTriggerIndex(sTrigger) == -1 && !IsReplaceTriggerPending(sTrigger))
 		{
-			g_iReplacePendingInserts++;
+			MarkReplaceTriggerPending(sTrigger);
 			bCountsTowardsLimit = true;
 		}
 		else
@@ -1162,6 +1206,9 @@ stock void OnSqlSetNames(Database db, DBResultSet results, const char[] err, Dat
 
 		return;
 	}
+
+	g_bSQLNamesReady = true;
+	TryFinalizeSQLStartup();
 }
 
 public void OnSQLDelete_Tag(Database db, DBResultSet results, const char[] err, DataPack data)
@@ -1606,7 +1653,7 @@ public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] e
 	if (!client)
 	{
 		if (bCountsTowardsLimit)
-			DecrementReplacePendingInsert();
+			UnmarkReplaceTriggerPending(sTrigger);
 		delete pack;
 		return;
 	}
@@ -1646,7 +1693,7 @@ public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] e
 
 	g_bSQLInsertReplaceRetry[client] = 0;
 	if (bCountsTowardsLimit)
-		DecrementReplacePendingInsert();
+		UnmarkReplaceTriggerPending(sTrigger);
 
 	delete pack;
 }
