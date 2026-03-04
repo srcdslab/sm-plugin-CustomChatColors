@@ -883,14 +883,27 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 	int userid = pack.ReadCell();
 	pack.ReadString(sTrigger, sizeof(sTrigger));
 	pack.ReadString(sValue, sizeof(sValue));
+	bool bPendingTracked = view_as<bool>(pack.ReadCell());
 
-	if (!CanQueueReplaceInsert(sTrigger))
+	if (!bPendingTracked && !CanQueueReplaceInsert(sTrigger))
 	{
 		int client = GetClientOfUserId(userid);
 		if (client)
 			CReplyToCommand(client, "{green}[CCC]{default} Replace list is full ({olive}%d{default} entries). Trigger was not inserted.", REPLACE_LIST_MAX_LENGTH);
 		delete pack;
 		return Plugin_Stop;
+	}
+
+	if (!bPendingTracked)
+	{
+		g_iReplacePendingInserts++;
+		bPendingTracked = true;
+
+		pack.Reset();
+		pack.WriteCell(userid);
+		pack.WriteString(sTrigger);
+		pack.WriteString(sValue);
+		pack.WriteCell(view_as<int>(bPendingTracked));
 	}
 
 	SQL_EscapeString(g_hDatabase, sTrigger, sTriggerEscaped, sizeof(sTriggerEscaped));
@@ -916,7 +929,7 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 			sTriggerEscaped, sValueEscaped
 		);
 	}
-	g_iReplacePendingInserts++;
+
 	SQL_TQuery(g_hDatabase, OnSQLInsert_Replace, sQuery, data);
 	return Plugin_Stop;
 }
@@ -2366,6 +2379,7 @@ public Action Command_CCCImportReplaceFile(int client, int argc)
 		pack.WriteCell(GetClientUserId(client));
 		pack.WriteString(sTrigger);
 		pack.WriteString(sValue);
+		pack.WriteCell(0);
 
 		SQLInsert_Replace(INVALID_HANDLE, pack);
 		iQueued++;
@@ -2506,6 +2520,7 @@ public Action Command_CCCAddTrigger(int client, int argc)
 	pack.WriteCell(GetClientUserId(client));
 	pack.WriteString(sTrigger);
 	pack.WriteString(sValue);
+	pack.WriteCell(0);
 
 	SQLInsert_Replace(INVALID_HANDLE, pack);
 
@@ -3967,22 +3982,9 @@ public void Menu_AddColors(Menu ColorsMenu)
 	for (int i = 0; i < g_sColorsArray.Length; i++)
 	{
 		char key[64];
-		char value[64];
 		g_sColorsArray.GetString(i, key, sizeof(key));
-		
-		if (IsSource2009())
-		{
-			if (!CGetColor(key, value, sizeof(value)))
-				continue;
 
-
-			if (value[0] == '\x07' || value[0] == '\x08')
-				Format(info, sizeof(info), "%s (#%s)", key, value[1]);
-			else
-				continue;
-		}
-		else
-			Format(info, sizeof(info), "%s", key);
+		Format(info, sizeof(info), "%s", key);
 			
 		ColorsMenu.AddItem(key, info);
 	}
