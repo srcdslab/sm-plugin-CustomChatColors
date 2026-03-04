@@ -148,6 +148,11 @@ bool g_bDisablePsay[MAXPLAYERS + 1];
 bool g_bDBConnectDelayActive = false;
 bool g_bClientDataLoaded[MAXPLAYERS + 1] = {false, ...};
 
+bool g_bSQLTagTableReady = false;
+bool g_bSQLBanTableReady = false;
+bool g_bSQLReplaceTableReady = false;
+bool g_bSQLStartupReady = false;
+
 EngineVersion g_evEngineVersion;
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -450,6 +455,11 @@ stock void LateLoad()
 	ResetReplace();
 
 	SQLSelect_Replace(INVALID_HANDLE);
+	LateLoadClientsOnly();
+}
+
+stock void LateLoadClientsOnly()
+{
 	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (!IsClientInGame(i) || IsFakeClient(i))
@@ -460,6 +470,30 @@ stock void LateLoad()
 
 		OnClientPostAdminCheck(i);
 	}
+}
+
+stock void ResetSQLStartupGate()
+{
+	g_bSQLTagTableReady = false;
+	g_bSQLBanTableReady = false;
+	g_bSQLReplaceTableReady = false;
+	g_bSQLStartupReady = false;
+}
+
+stock void TryFinalizeSQLStartup()
+{
+	if (g_bSQLStartupReady)
+		return;
+
+	if (!g_bSQLTagTableReady || !g_bSQLBanTableReady || !g_bSQLReplaceTableReady)
+		return;
+
+	g_bSQLStartupReady = true;
+
+	SQLSelect_Replace(INVALID_HANDLE);
+
+	if (g_bLate)
+		LateLoadClientsOnly();
 }
 
 stock void LoadColorArray()
@@ -582,14 +616,13 @@ stock void OnSQLConnected(Database db, const char[] err, any data)
 	else
 		g_bSQLite = true;
 
+	ResetSQLStartupGate();
+
 	SQLSetNames(INVALID_HANDLE);
 
 	SQLTableCreation_Tag(INVALID_HANDLE);
 	SQLTableCreation_Ban(INVALID_HANDLE);
 	SQLTableCreation_Replace(INVALID_HANDLE);
-
-	if (g_bLate)
-		LateLoad();
 }
 
 stock bool SQL_Conn_Lost(DBResultSet db)
@@ -1219,6 +1252,9 @@ public void OnSQLTableCreated_Tag(Database db, DBResultSet results, const char[]
 
 		return;
 	}
+
+	g_bSQLTagTableReady = true;
+	TryFinalizeSQLStartup();
 }
 
 public void OnSQLTableCreated_Ban(Database db, DBResultSet results, const char[] err, DataPack data)
@@ -1230,6 +1266,9 @@ public void OnSQLTableCreated_Ban(Database db, DBResultSet results, const char[]
 
 		return;
 	}
+
+	g_bSQLBanTableReady = true;
+	TryFinalizeSQLStartup();
 }
 
 public void OnSQLTableCreated_Replace(Database db, DBResultSet results, const char[] err, DataPack data)
@@ -1241,7 +1280,9 @@ public void OnSQLTableCreated_Replace(Database db, DBResultSet results, const ch
 
 		return;
 	}
-	SQLSelect_Replace(INVALID_HANDLE);
+
+	g_bSQLReplaceTableReady = true;
+	TryFinalizeSQLStartup();
 }
 
 public void OnSQLSelect_Replace(Database db, DBResultSet results, const char[] err, any client)
@@ -4842,6 +4883,5 @@ public Action Timer_DelayedDBConnectCCC(Handle timer, any data)
 {
 	g_bDBConnectDelayActive = false;
 	DB_Connect();
-	LateLoad();
 	return Plugin_Stop;
 }
