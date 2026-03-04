@@ -3829,18 +3829,9 @@ public void Menu_AddColors(Menu ColorsMenu)
 	for (int i = 0; i < g_sColorsArray.Length; i++)
 	{
 		char key[64];
-		char value[64];
 		g_sColorsArray.GetString(i, key, sizeof(key));
-		
-		if (IsSource2009())
-		{
-			if (!CGetColor(key, value, sizeof(value)) || value[0] != '#')
-				continue;
-			
-			Format(info, sizeof(info), "%s (%s)", key, value);
-		}
-		else
-			Format(info, sizeof(info), "%s", key);
+
+		Format(info, sizeof(info), "%s", key);
 			
 		ColorsMenu.AddItem(key, info);
 	}
