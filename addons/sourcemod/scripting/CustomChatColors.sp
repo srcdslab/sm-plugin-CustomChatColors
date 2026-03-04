@@ -271,9 +271,6 @@ public void OnPluginStart()
 
 	AutoExecConfig(true);
 
-	if (g_smReplacePendingTriggers == null)
-		g_smReplacePendingTriggers = new StringMap();
-
 	ResetReplace();
 	LoadColorArray();
 		
@@ -786,7 +783,7 @@ stock Action SQLSelect_Replace(Handle timer)
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
-	FormatEx(sQuery, sizeof(sQuery), "SELECT `trigger`, `value` FROM `ccc_replace` ORDER BY `trigger` ASC;");
+	FormatEx(sQuery, sizeof(sQuery), "SELECT `trigger`, `value` FROM `ccc_replace`;");
 	SQL_TQuery(g_hDatabase, OnSQLSelect_Replace, sQuery, 0, DBPrio_High);
 	return Plugin_Stop;
 }
@@ -1411,7 +1408,6 @@ public void OnSQLSelect_Replace(Database db, DBResultSet results, const char[] e
 	}
 	else
 	{
-		ResetReplace();
 		int iTotalRows = 0;
 		int iSkippedRows = 0;
 
