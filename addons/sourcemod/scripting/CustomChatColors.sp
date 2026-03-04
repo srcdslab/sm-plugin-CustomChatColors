@@ -268,9 +268,6 @@ public void OnPluginStart()
 
 	ResetReplace();
 	LoadColorArray();
-	
-	if (g_bLate)
-		LateLoad();
 		
 	g_evEngineVersion = GetEngineVersion();
 }
@@ -476,6 +473,9 @@ stock void LoadColorArray()
 
 	for (int i = 0; i < sizeof(g_sColorKeys); i++)
 	{
+		if (g_sColorKeys[i][0] == '\0')
+			continue;
+
 		g_sColorsArray.PushString(g_sColorKeys[i]);
 	}
 
@@ -587,6 +587,9 @@ stock void OnSQLConnected(Database db, const char[] err, any data)
 	SQLTableCreation_Tag(INVALID_HANDLE);
 	SQLTableCreation_Ban(INVALID_HANDLE);
 	SQLTableCreation_Replace(INVALID_HANDLE);
+
+	if (g_bLate)
+		LateLoad();
 }
 
 stock bool SQL_Conn_Lost(DBResultSet db)
@@ -1066,7 +1069,6 @@ stock void OnSqlSetNames(Database db, DBResultSet results, const char[] err, Dat
 
 		return;
 	}
-	SQLSelect_Replace(INVALID_HANDLE);
 }
 
 public void OnSQLDelete_Tag(Database db, DBResultSet results, const char[] err, DataPack data)
@@ -1239,6 +1241,7 @@ public void OnSQLTableCreated_Replace(Database db, DBResultSet results, const ch
 
 		return;
 	}
+	SQLSelect_Replace(INVALID_HANDLE);
 }
 
 public void OnSQLSelect_Replace(Database db, DBResultSet results, const char[] err, any client)
@@ -1256,8 +1259,15 @@ public void OnSQLSelect_Replace(Database db, DBResultSet results, const char[] e
 	}
 	else
 	{
+		ResetReplace();
+
 		while (SQL_FetchRow(results))
 		{
+			if (g_iReplaceListSize >= REPLACE_LIST_MAX_LENGTH)
+			{
+				break;
+			}
+
 			SQL_FetchString(results, 0, g_sReplaceList[g_iReplaceListSize][0], sizeof(g_sReplaceList[][]));
 			SQL_FetchString(results, 1, g_sReplaceList[g_iReplaceListSize][1], sizeof(g_sReplaceList[][]));
 			ReplaceString(g_sReplaceList[g_iReplaceListSize][1], sizeof(g_sReplaceList[][]), "\r\n", "\n");
@@ -1499,6 +1509,13 @@ public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] e
 
 		pack.ReadString(sTrigger, sizeof(sTrigger));
 		pack.ReadString(sValue, sizeof(sValue));
+
+		if (g_iReplaceListSize >= REPLACE_LIST_MAX_LENGTH)
+		{
+			g_bSQLInsertReplaceRetry[client] = 0;
+			delete pack;
+			return;
+		}
 
 		g_sReplaceList[g_iReplaceListSize][0] = sTrigger;
 		g_sReplaceList[g_iReplaceListSize][1] = sValue;
@@ -3834,10 +3851,14 @@ public void Menu_AddColors(Menu ColorsMenu)
 		
 		if (IsSource2009())
 		{
-			if (!CGetColor(key, value, sizeof(value)) || value[0] != '#')
+			if (!CGetColor(key, value, sizeof(value)))
 				continue;
-			
-			Format(info, sizeof(info), "%s (%s)", key, value);
+
+
+			if (value[0] == '\x07' || value[0] == '\x08')
+				Format(info, sizeof(info), "%s (#%s)", key, value[1]);
+			else
+				continue;
 		}
 		else
 			Format(info, sizeof(info), "%s", key);
