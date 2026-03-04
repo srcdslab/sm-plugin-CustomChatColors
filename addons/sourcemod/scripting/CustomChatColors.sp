@@ -293,9 +293,6 @@ public void OnPluginEnd()
 	if (g_smReplacePendingTriggers != null)
 		delete g_smReplacePendingTriggers;
 
-	if (g_smReplacePendingTriggers != null)
-		delete g_smReplacePendingTriggers;
-
 	g_DatabaseState = DatabaseState_Disconnected;
 	g_hDatabase = null;
 	g_hReconnectTimer = null;
