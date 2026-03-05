@@ -277,28 +277,6 @@ public void OnPluginStart()
 	g_evEngineVersion = GetEngineVersion();
 }
 
-public void OnPluginEnd()
-{
-	// Clean up on map end just so we can start a fresh connection when we need it later.
-	if (g_hDatabase != null)
-	{
-		delete g_hDatabase;
-		g_hDatabase = null;
-	}
-	if (g_sColorsArray != null)
-		delete g_sColorsArray;
-	if (g_smReplacePendingTriggers != null)
-	{
-		delete g_smReplacePendingTriggers;
-		g_smReplacePendingTriggers = null;
-	}
-
-	g_DatabaseState = DatabaseState_Disconnected;
-	g_hDatabase = null;
-	g_hReconnectTimer = null;
-	g_bDBConnectDelayActive = false;
-}
-
 public void OnAllPluginsLoaded()
 {
 	g_bPlugin_SelfMute = LibraryExists("SelfMute");
@@ -397,6 +375,26 @@ public void OnConfigsExecuted()
 	g_cSmCategoryColor.GetString(g_sSmCategoryColor, sizeof(g_sSmCategoryColor));
 	g_cSmNameColor.GetString(g_sSmNameColor, sizeof(g_sSmNameColor));
 	g_cSmChatColor.GetString(g_sSmChatColor, sizeof(g_sSmChatColor));
+}
+
+public void OnMapEnd()
+{
+	// Clean up on map end just so we can start a fresh connection when we need it later.
+	if (g_hReconnectTimer != null)
+	{
+		delete g_hReconnectTimer;
+		g_hReconnectTimer = null;
+	}
+
+	if (g_hDatabase != null)
+	{
+		delete g_hDatabase;
+		g_hDatabase = null;
+	}
+
+	g_DatabaseState = DatabaseState_Disconnected;
+	g_iConnectLock = 0;
+	g_bDBConnectDelayActive = false;
 }
 
 public void OnClientDisconnect(int client)
@@ -4042,15 +4040,11 @@ public void Menu_TagPrefs(int client)
 
 public void Menu_AddColors(Menu ColorsMenu)
 {
-	char info[64];
+	char key[64];
 	for (int i = 0; i < g_sColorsArray.Length; i++)
 	{
-		char key[64];
 		g_sColorsArray.GetString(i, key, sizeof(key));
-
-		Format(info, sizeof(info), "%s", key);
-			
-		ColorsMenu.AddItem(key, info);
+		ColorsMenu.AddItem(key, key);
 	}
 }
 
