@@ -2519,7 +2519,7 @@ public Action Command_CCCAddTag(int client, int argc)
 
 public Action Command_CCCDeleteTag(int client, int argc)
 {
-	if (argc != 8)
+	if (argc != 1)
 	{
 		CReplyToCommand(client, "{green}[CCC]{default} Usage: sm_cccdeletetag steamid");
 		return Plugin_Handled;
