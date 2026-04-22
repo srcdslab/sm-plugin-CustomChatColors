@@ -279,7 +279,7 @@ public void OnPluginStart()
 
 public void OnAllPluginsLoaded()
 {
-	g_bPlugin_SelfMute = LibraryExists("SelfMute");
+	g_bPlugin_SelfMute = LibraryExists("SelfMuteV2");
 	g_bPlugin_SourceComms = LibraryExists("sourcecomms++");
 	g_bPlugin_DynamicChannels = LibraryExists("DynamicChannels");
 	VerifyNatives();
@@ -300,7 +300,7 @@ public void OnAllPluginsLoaded()
 
 public void OnLibraryAdded(const char[] name)
 {
-	if (strcmp(name, "SelfMute", false) == 0)
+	if (strcmp(name, "SelfMuteV2", false) == 0)
 	{
 		g_bPlugin_SelfMute = true;
 		VerifyNative_SelfMute();
@@ -319,7 +319,7 @@ public void OnLibraryAdded(const char[] name)
 
 public void OnLibraryRemoved(const char[] name)
 {
-	if (strcmp(name, "SelfMute", false) == 0)
+	if (strcmp(name, "SelfMuteV2", false) == 0)
 	{
 		g_bPlugin_SelfMute = false;
 		VerifyNative_SelfMute();
