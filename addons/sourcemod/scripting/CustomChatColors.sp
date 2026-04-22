@@ -345,17 +345,17 @@ stock void VerifyNatives()
 
 stock void VerifyNative_SelfMute()
 {
-	g_bSelfMuteNative = g_bPlugin_SelfMute && CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "SelfMute_GetTextSelfMute") == FeatureStatus_Available;
+	g_bSelfMuteNative = g_bPlugin_SelfMute && GetFeatureStatus(FeatureType_Native, "SelfMute_GetTextSelfMute") == FeatureStatus_Available;
 }
 
 stock void VerifyNative_SourceCommsPP()
 {
-	g_bSourceCommsNative = g_bPlugin_SourceComms && CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "SourceComms_GetClientGagType") == FeatureStatus_Available;
+	g_bSourceCommsNative = g_bPlugin_SourceComms && GetFeatureStatus(FeatureType_Native, "SourceComms_GetClientGagType") == FeatureStatus_Available;
 }
 
 stock void VerifyNative_DynamicChannel()
 {
-	g_bDynamicNative = g_bPlugin_DynamicChannels && CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "GetDynamicChannel") == FeatureStatus_Available;
+	g_bDynamicNative = g_bPlugin_DynamicChannels && GetFeatureStatus(FeatureType_Native, "GetDynamicChannel") == FeatureStatus_Available;
 }
 
 public void OnConfigsExecuted()
