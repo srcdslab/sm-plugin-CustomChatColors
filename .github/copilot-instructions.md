@@ -20,16 +20,16 @@ This repository contains the **CustomChatColors** SourcePawn plugin for SourceMo
 - **Compiler**: Latest SourcePawn compiler (spcomp)
 - **Database**: MySQL/SQLite support with async operations
 
-### Dependencies (via sourceknight.yaml)
-- **sourcemod**: Core SourceMod framework (1.11.0-git6934+)
+### Dependencies (declared in .github/workflows/ci.yml)
+- **sourcemod**: Core SourceMod framework (1.12.x, via rumblefrog/setup-sp)
 - **multicolors**: Advanced color handling (`#include <multicolors>`)
 - **SelfMute**: Self-muting functionality (optional)
 - **sourcebans-pp**: SourceBans++ integration (optional)
 - **DynamicChannels**: Multi-channel chat support (optional)
 
 ### Build System
-- **Tool**: SourceKnight build system (`sourceknight.yaml`)
-- **CI**: GitHub Actions using `maxime1907/action-sourceknight@v1`
+- **Tool**: Native GitHub Actions workflow (`.github/workflows/ci.yml`)
+- **CI**: GitHub Actions using `rumblefrog/setup-sp` and `spcomp`
 - **Output**: Compiled `.smx` files in `/addons/sourcemod/plugins`
 
 ## File Structure & Architecture
@@ -127,9 +127,8 @@ g_hStringMap = new StringMap();
 
 ### 3. Build Process
 ```bash
-# The build uses SourceKnight (GitHub Actions handles this)
-# Local building requires SourceKnight installation
-sourceknight build
+# The build uses native GitHub Actions (spcomp via rumblefrog/setup-sp)
+# See .github/workflows/ci.yml for the full build steps
 ```
 
 ### 4. Testing Approach
