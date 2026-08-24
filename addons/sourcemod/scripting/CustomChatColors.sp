@@ -919,9 +919,7 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 	char sTrigger[MAX_CHAT_TRIGGER_LENGTH];
-	char sTriggerEscaped[2*MAX_CHAT_TRIGGER_LENGTH+1];
 	char sValue[MAX_CHAT_LENGTH];
-	char sValueEscaped[2*MAX_CHAT_LENGTH+1];
 
 	int userid = pack.ReadCell();
 	pack.ReadString(sTrigger, sizeof(sTrigger));
@@ -960,27 +958,24 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 		pack.WriteCell(view_as<int>(bCountsTowardsLimit));
 	}
 
-	SQL_EscapeString(g_hDatabase, sTrigger, sTriggerEscaped, sizeof(sTriggerEscaped));
-	SQL_EscapeString(g_hDatabase, sValue, sValueEscaped, sizeof(sValueEscaped));
-
 	if (g_bSQLite)
 	{
-		FormatEx(
+		g_hDatabase.Format(
 			sQuery,
 			sizeof(sQuery),
 			"REPLACE INTO `ccc_replace` (`trigger`, `value`) VALUES ('%s', '%s');",
-			sTriggerEscaped, sValueEscaped
+			sTrigger, sValue
 		);
 	}
 	else
 	{
-		FormatEx(
+		g_hDatabase.Format(
 			sQuery,
 			sizeof(sQuery),
 			"INSERT INTO `ccc_replace` (`trigger`, `value`) VALUES ('%s', '%s') \
 			ON DUPLICATE KEY UPDATE `trigger` = '%s', `value` = '%s';",
-			sTriggerEscaped, sValueEscaped,
-			sTriggerEscaped, sValueEscaped
+			sTrigger, sValue,
+			sTrigger, sValue
 		);
 	}
 
@@ -1048,10 +1043,8 @@ stock Action SQLInsert_Tag(Handle timer, any data)
 
 	char sSteamID[64];
 	char sName[32];
-	char sNameEscaped[32+1];
 	char sFlag[32];
 	char sTag[32];
-	char sTagEscaped[2*32+1];
 	char sTagColor[32];
 	char sNameColor[32];
 	char sChatColor[32];
@@ -1066,29 +1059,26 @@ stock Action SQLInsert_Tag(Handle timer, any data)
 	pack.ReadString(sNameColor, sizeof(sNameColor));
 	pack.ReadString(sChatColor, sizeof(sChatColor));
 
-	SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
-	SQL_EscapeString(g_hDatabase, sTag, sTagEscaped, sizeof(sTagEscaped));
-
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
 	if (g_bSQLite)
 	{
-		FormatEx(
+		g_hDatabase.Format(
 			sQuery,
 			sizeof(sQuery),
 			"REPLACE INTO `ccc_tag` (`steamid`, `name`, `enable`, `flag`, `tag`, `tag_color`, `name_color`, `chat_color`) VALUES ('%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s');",
-			sSteamID, sNameEscaped, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor
+			sSteamID, sName, iEnable, sFlag, sTag, sTagColor, sNameColor, sChatColor
 		);
 	}
 	else
 	{
-		FormatEx(
+		g_hDatabase.Format(
 			sQuery,
 			sizeof(sQuery),
 			"INSERT INTO `ccc_tag` (`steamid`, `name`, `enable`, `flag`, `tag`, `tag_color`, `name_color`, `chat_color`) VALUES ('%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s') \
 			ON DUPLICATE KEY UPDATE `steamid` = '%s', `name` = '%s', `enable` = '%d', `flag` = '%s', `tag` = '%s', `tag_color` = '%s', `name_color` = '%s', `chat_color` = '%s';",
-			sSteamID, sNameEscaped, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor,
-			sSteamID, sNameEscaped, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor
+			sSteamID, sName, iEnable, sFlag, sTag, sTagColor, sNameColor, sChatColor,
+			sSteamID, sName, iEnable, sFlag, sTag, sTagColor, sNameColor, sChatColor
 		);
 	}
 	SQL_TQuery(g_hDatabase, OnSQLInsert_Tag, sQuery, data);
@@ -1133,10 +1123,8 @@ stock Action SQLUpdate_Tag(Handle timer, any data)
 
 	char sSteamID[64];
 	char sName[32];
-	char sNameEscaped[32+1];
 	char sFlag[32];
 	char sTag[32];
-	char sTagEscaped[2*32+1];
 	char sTagColor[32];
 	char sNameColor[32];
 	char sChatColor[32];
@@ -1151,16 +1139,13 @@ stock Action SQLUpdate_Tag(Handle timer, any data)
 	pack.ReadString(sNameColor, sizeof(sNameColor));
 	pack.ReadString(sChatColor, sizeof(sChatColor));
 
-	SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
-	SQL_EscapeString(g_hDatabase, sTag, sTagEscaped, sizeof(sTagEscaped));
-
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
-	FormatEx(
+	g_hDatabase.Format(
 		sQuery,
 		sizeof(sQuery),
 		"UPDATE `ccc_tag` SET `name` = '%s', `enable` = '%d', `flag` = '%s', `tag` = '%s', `tag_color` = '%s', `name_color` = '%s', `chat_color` = '%s' WHERE `steamid` = '%s';",
-		sNameEscaped, iEnable, sFlag, sTagEscaped, sTagColor, sNameColor, sChatColor, sSteamID
+		sName, iEnable, sFlag, sTag, sTagColor, sNameColor, sChatColor, sSteamID
 	);
 	SQL_TQuery(g_hDatabase, OnSQLUpdate_Tag, sQuery, data);
 	return Plugin_Stop;
@@ -1289,29 +1274,24 @@ stock Action SQLInsert_Ban(Handle timer, any data)
 	else
 		GetClientName(target, sTargetName, sizeof(sTargetName));
 
-	char sClientNameEscaped[32+1];
-	char sTargetNameEscaped[32+1];
-	SQL_EscapeString(g_hDatabase, sClientName, sClientNameEscaped, sizeof(sClientNameEscaped));
-	SQL_EscapeString(g_hDatabase, sTargetName, sTargetNameEscaped, sizeof(sTargetNameEscaped));
-
 	if (g_bSQLite)
 	{
-		FormatEx(
+		g_hDatabase.Format(
 			sQuery,
 			sizeof(sQuery),
 			"REPLACE INTO `ccc_ban` (`steamid`, `name`, `issuer_steamid`, `issuer_name`, `length`) VALUES ('%s', '%s', '%s', '%s', '%d');",
-			targetSid[0] ? targetSid : g_sSteamIDs[target], sTargetNameEscaped, clientSid[0] ? clientSid : g_sSteamIDs[client], sClientNameEscaped, time
+			targetSid[0] ? targetSid : g_sSteamIDs[target], sTargetName, clientSid[0] ? clientSid : g_sSteamIDs[client], sClientName, time
 		);
 	}
 	else
 	{
-		FormatEx(
+		g_hDatabase.Format(
 			sQuery,
 			sizeof(sQuery),
 			"INSERT INTO `ccc_ban` (`steamid`, `name`, `issuer_steamid`, `issuer_name`, `length`) VALUES ('%s', '%s', '%s', '%s', '%d') \
 			ON DUPLICATE KEY UPDATE `steamid` = '%s', `name` = '%s', `issuer_steamid` = '%s', `issuer_name` = '%s', `length` = '%d';",
-			targetSid[0] ? targetSid : g_sSteamIDs[target], sTargetNameEscaped, clientSid[0] ? clientSid : g_sSteamIDs[client], sClientNameEscaped, time,
-			targetSid[0] ? targetSid : g_sSteamIDs[target], sTargetNameEscaped, clientSid[0] ? clientSid : g_sSteamIDs[client], sClientNameEscaped, time
+			targetSid[0] ? targetSid : g_sSteamIDs[target], sTargetName, clientSid[0] ? clientSid : g_sSteamIDs[client], sClientName, time,
+			targetSid[0] ? targetSid : g_sSteamIDs[target], sTargetName, clientSid[0] ? clientSid : g_sSteamIDs[client], sClientName, time
 		);
 	}
 	SQL_TQuery(g_hDatabase, OnSQLInsert_Ban, sQuery, data);
