@@ -3522,15 +3522,14 @@ public int MenuHandler_Main(Menu MenuMain, MenuAction action, int param1, int pa
 {
 	if (action == MenuAction_End)
 	{
-		if (param1 != MenuEnd_Selected)
-			delete MenuMain;
+		delete MenuMain;
 		return 0;
 	}
 
 	if (action == MenuAction_Select)
 	{
 		char Selected[32];
-		GetMenuItem(MenuMain, param2, Selected, sizeof(Selected));
+		MenuMain.GetItem(param2, Selected, sizeof(Selected));
 
 		if (strcmp(Selected, "Tag", false) == 0)
 		{
@@ -3547,7 +3546,6 @@ public int MenuHandler_Main(Menu MenuMain, MenuAction action, int param1, int pa
 		else if (strcmp(Selected, "CCC", false) == 0)
 		{
 			ToggleCCC(param1);
-			CloseHandle(MenuMain);
 			Menu_Main(param1);
 		}
 		else if (strcmp(Selected, "Admin", false) == 0)
