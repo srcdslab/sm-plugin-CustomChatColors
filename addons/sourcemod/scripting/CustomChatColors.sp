@@ -853,8 +853,9 @@ stock void GetClientFlagString(int client, char[] sClientFlagString, int maxSize
 		}
 	}
 
-	if (sClientFlagString[strlen(sClientFlagString) - 1] == ',')
-		sClientFlagString[strlen(sClientFlagString) - 1] = '\0';
+	int iFlagLen = strlen(sClientFlagString);
+	if (iFlagLen > 0 && sClientFlagString[iFlagLen - 1] == ',')
+		sClientFlagString[iFlagLen - 1] = '\0';
 
 	if (sClientFlagString[0] == '\0')
 	{
@@ -2725,16 +2726,16 @@ public Action Command_SmPsayReply(int client, int args)
 		return Plugin_Handled;
 	}
 
-	char message[224], arg[32];
-	for (int i = 1; i <= args; i++)
-	{
-		GetCmdArg(i, arg, sizeof(arg));
-		Format(message, sizeof(message), "%s %s", message, arg);
-	}
+	char message[224];
+	GetCmdArgString(message, sizeof(message));
+	StripQuotes(message);
 
 	int target = GetClientOfUserId(g_iClientFastReply[client]);
-	if (target == -1)
+	if (!target)
+	{
+		CReplyToCommand(client, "{green}[SM] {default}You cannot send a private message to a disconnected player.");
 		return Plugin_Handled;
+	}
 
 	SendPrivateChat(client, target, message);
 	return Plugin_Handled;
@@ -3014,8 +3015,9 @@ public Action Command_Say(int client, const char[] command, int argc)
 
 		if (g_bWaitingForChatInput[client])
 		{
-			if (text[strlen(text)-1] == '"')
-				text[strlen(text)-1] = '\0';
+			int iTextLen = strlen(text);
+			if (iTextLen > 0 && text[iTextLen - 1] == '"')
+				text[iTextLen - 1] = '\0';
 
 			if (strcmp(g_sInputType[client], "ChangeTag", false) == 0 || strcmp(g_sInputType[client], "MenuForceTag", false) == 0)
 			{
@@ -4390,7 +4392,8 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 	bool bChatFound = GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_ChatColor), sChatColorKey, sizeof(sChatColorKey));
 	bool bTagFound = GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_TagColor), sTagColorKey, sizeof(sTagColorKey));
 
-	if (!strncmp(g_msgText, "/me", 3, false))
+	// Require the trailing space so a bare "/me" or "/meword" is not treated as an action
+	if (!strncmp(g_msgText, "/me ", 4, false))
 	{
 		strcopy(g_msgName, sizeof(g_msgName), "Cstrike_Chat_Me");
 		strcopy(g_msgText, sizeof(g_msgText), g_msgText[4]);
