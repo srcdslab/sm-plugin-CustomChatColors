@@ -1209,7 +1209,7 @@ public void OnSQLDelete_Tag(Database db, DBResultSet results, const char[] err, 
 
 	if (SQL_Conn_Lost(results))
 	{
-		if (g_bSQLDeleteTagRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLDeleteTagRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLDeleteTagRetry[client]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLDelete_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -1377,7 +1377,7 @@ public void OnSQLSelect_Replace(Database db, DBResultSet results, const char[] e
 	{
 		LogError("An error occurred while querying the database for the replace list, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
-		if (g_bSQLSelectReplaceRetry + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLSelectReplaceRetry < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLSelectReplaceRetry++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_Replace, client, TIMER_FLAG_NO_MAPCHANGE);
@@ -1432,7 +1432,7 @@ public void OnSQLSelect_Ban(Database db, DBResultSet results, const char[] err, 
 	{
 		LogError("An error occurred while querying the database for the user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
-		if (g_bSQLSelectBanRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLSelectBanRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLSelectBanRetry[client]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_Ban, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -1467,7 +1467,7 @@ stock void OnSQLSelect_TagGroup(Database db, DBResultSet results, const char[] e
 	{
 		LogError("An error occurred while querying the database for the user group tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
-		if (g_bSQLSelectTagGroupRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLSelectTagGroupRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLSelectTagGroupRetry[client]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_TagGroup, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -1522,7 +1522,7 @@ public void OnSQLSelect_Tag(Database db, DBResultSet results, const char[] err, 
 	{
 		LogError("An error occurred while querying the database for the user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
-		if (g_bSQLSelectTagRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLSelectTagRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLSelectTagRetry[client]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -1586,7 +1586,7 @@ public void OnSQLUpdate_Tag(Database db, DBResultSet results, const char[] err, 
 	{
 		LogError("An error occurred while updating an user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
-		if (g_bSQLUpdateTagRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLUpdateTagRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLUpdateTagRetry[client]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLUpdate_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -1639,7 +1639,7 @@ public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] e
 	if (SQL_Conn_Lost(results))
 	{
 		LogError("An error occurred while inserting a chat trigger, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
-		if (g_bSQLInsertReplaceRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLInsertReplaceRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLInsertReplaceRetry[client]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLInsert_Replace, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -1690,7 +1690,7 @@ public void OnSQLDelete_Replace(Database db, DBResultSet results, const char[] e
 
 	if (SQL_Conn_Lost(results))
 	{
-		if (g_bSQLDeleteReplaceRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLDeleteReplaceRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLDeleteReplaceRetry[client]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLDelete_Replace, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -1746,7 +1746,7 @@ public void OnSQLInsert_Tag(Database db, DBResultSet results, const char[] err, 
 	if (SQL_Conn_Lost(results))
 	{
 		LogError("An error occurred while inserting an user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
-		if (g_bSQLInsertTagRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLInsertTagRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLInsertTagRetry[client]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLInsert_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -1775,7 +1775,7 @@ public void OnSQLInsert_Ban(Database db, DBResultSet results, const char[] err, 
 
 	if (SQL_Conn_Lost(results))
 	{
-		if (g_bSQLInsertBanRetry[target] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLInsertBanRetry[target] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLInsertBanRetry[target]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLInsert_Ban, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -1819,7 +1819,7 @@ public void OnSQLDelete_Ban(Database db, DBResultSet results, const char[] err, 
 
 	if (SQL_Conn_Lost(results))
 	{
-		if (g_bSQLDeleteBanRetry[target] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLDeleteBanRetry[target] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLDeleteBanRetry[target]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLDelete_Ban, data, TIMER_FLAG_NO_MAPCHANGE);
