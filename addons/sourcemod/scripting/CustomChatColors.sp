@@ -2441,6 +2441,41 @@ public Action Command_CCCImportReplaceFile(int client, int argc)
 	return Plugin_Handled;
 }
 
+// Validates a color argument of sm_cccaddtag: empty, a single letter code (G/O/T/X), the "teamcolor" and
+// "default" fallbacks, a 6 digit hex value or a color name known to MultiColors.
+bool IsValidColorArg(char[] sColor)
+{
+	if (sColor[0] == '\0')
+		return true;
+
+	if (sColor[1] == '\0')
+		return StrContains("GOTX", sColor, false) != -1;
+
+	if (StrEqual(sColor, "teamcolor", false) || StrEqual(sColor, "default", false))
+		return true;
+
+	if (sColor[0] != '#' && IsValidHex(sColor))
+		return true;
+
+	if (CColorExists(sColor))
+		return true;
+
+	// MultiColors has no name lookup outside Source 2009 engines, use its static tag list instead
+	if (!IsSource2009())
+	{
+		char sTag[34];
+		FormatEx(sTag, sizeof(sTag), "{%s}", sColor);
+
+		for (int i = 0; i < sizeof(C_Tag); i++)
+		{
+			if (StrEqual(sTag, C_Tag[i], false))
+				return true;
+		}
+	}
+
+	return false;
+}
+
 public Action Command_CCCAddTag(int client, int argc)
 {
 	if (argc != 8)
@@ -2450,7 +2485,7 @@ public Action Command_CCCAddTag(int client, int argc)
 	}
 
 	char sSteamID[64];
-	char sEnable[2];
+	char sEnable[4];
 	char sName[32];
 	char sFlag[32];
 	char sTag[32];
@@ -2473,8 +2508,8 @@ public Action Command_CCCAddTag(int client, int argc)
 		return Plugin_Handled;
 	}
 
-	if (strlen(sEnable) == 1 && strlen(sName) > 0 &&
-		strlen(sTagColor) <= 6 && strlen(sNameColor) <= 6 && strlen(sChatColor) <= 6)
+	if ((StrEqual(sEnable, "0") || StrEqual(sEnable, "1")) && strlen(sName) > 0 &&
+		IsValidColorArg(sTagColor) && IsValidColorArg(sNameColor) && IsValidColorArg(sChatColor))
 	{
 		DataPack pack = new DataPack();
 		pack.WriteCell(GetClientUserId(client));
