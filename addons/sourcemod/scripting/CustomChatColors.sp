@@ -549,7 +549,8 @@ stock void SortColors()
 	}
 }
 
-stock void ResetReplace()
+// Empties the cached replace list only, reservations of pending inserts are left untouched
+stock void ResetReplaceList()
 {
 	for (int i = 0; i < REPLACE_LIST_MAX_LENGTH; i++)
 	{
@@ -557,6 +558,11 @@ stock void ResetReplace()
 		g_sReplaceList[i][1] = "";
 	}
 	g_iReplaceListSize = 0;
+}
+
+stock void ResetReplace()
+{
+	ResetReplaceList();
 	g_iReplacePendingInserts = 0;
 
 	if (g_smReplacePendingTriggers == null)
@@ -911,12 +917,6 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
-	if (!DB_Connect())
-	{
-		delete pack;
-		return Plugin_Stop;
-	}
-
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 	char sTrigger[MAX_CHAT_TRIGGER_LENGTH];
 	char sValue[MAX_CHAT_LENGTH];
@@ -926,6 +926,21 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 	pack.ReadString(sValue, sizeof(sValue));
 	bool bPendingTracked = view_as<bool>(pack.ReadCell());
 	bool bCountsTowardsLimit = view_as<bool>(pack.ReadCell());
+
+	if (!DB_Connect())
+	{
+		// When called from a retry timer the insert already owns a reservation: release it, the callback that
+		// normally does so will never run for an abandoned request
+		if (bPendingTracked && bCountsTowardsLimit)
+			UnmarkReplaceTriggerPending(sTrigger);
+
+		int iRetryClient = GetClientOfUserId(userid);
+		if (iRetryClient)
+			g_bSQLInsertReplaceRetry[iRetryClient] = 0;
+
+		delete pack;
+		return Plugin_Stop;
+	}
 
 	if (!bPendingTracked && !CanQueueReplaceInsert(sTrigger))
 	{
@@ -1388,6 +1403,9 @@ public void OnSQLSelect_Replace(Database db, DBResultSet results, const char[] e
 	{
 		int iTotalRows = 0;
 		int iSkippedRows = 0;
+
+		// A retry timer or a reload can run after another successful SELECT: rebuild the cache instead of appending to it
+		ResetReplaceList();
 
 		while (SQL_FetchRow(results))
 		{
