@@ -55,7 +55,8 @@ native bool CCC_GetColor(char key[32], char[] color, int size);
 native bool CCC_GetColorKey(int client, CCC_ColorType type, char[] color, int size);
 
 /**
- * Sets a client's color for the current session only (nothing is saved to the database).
+ * Sets a client's color in memory, without issuing a database write.
+ * A later tag or color change for this client saves all of their current values, so it can persist this one.
  *
  * @param client		Client index
  * @param type			Color type to set
@@ -80,7 +81,8 @@ native int CCC_SetColor(int client, CCC_ColorType type, int color, bool alpha);
 native int CCC_GetTag(int client, char[] buffer, int maxlen);
 
 /**
- * Sets a client's tag for the current session only (nothing is saved to the database).
+ * Sets a client's tag in memory, without issuing a database write.
+ * A later tag or color change for this client saves all of their current values, so it can persist this one.
  * Tags longer than 31 characters are truncated.
  *
  * @param client		Client index
@@ -92,7 +94,7 @@ native int CCC_GetTag(int client, char[] buffer, int maxlen);
 native void CCC_SetTag(int client, const char[] tag);
 
 /**
- * Resets a client's color to the value in the config file.
+ * Resets a client's color to the value that was loaded for them from the database.
  *
  * @param client		Client index
  * @param type			Color type to restore
@@ -103,7 +105,7 @@ native void CCC_SetTag(int client, const char[] tag);
 native int CCC_ResetColor(int client, CCC_ColorType type);
 
 /**
- * Resets a client's tag to the value in the config file.
+ * Resets a client's tag to the value that was loaded for them from the database.
  *
  * @param client		Client index
  * @return				1 on success
@@ -113,7 +115,8 @@ native int CCC_ResetColor(int client, CCC_ColorType type);
 native int CCC_ResetTag(int client);
 
 /**
- * Loads a client's tag and colors from the config file and the database.
+ * Starts loading a client's tag and colors from the database. The load is asynchronous: the values
+ * are applied, and CCC_OnUserConfigLoaded is called, once the queries return.
  * Does nothing if the client's data is already loaded or the database is not connected,
  * call CCC_UnLoadClient first to force a reload.
  *
@@ -126,7 +129,7 @@ native void CCC_LoadClient(int client);
 
 /**
  * Marks a client's data as unloaded so that a following CCC_LoadClient reloads it
- * from the config file and the database.
+ * from the database.
  *
  * @param client		Client index
  * @noreturn
