@@ -76,9 +76,9 @@ char g_sClientChatColor[MAXPLAYERS + 1][32];
 
 int g_iDefaultClientEnable[MAXPLAYERS + 1] = { 1, ... };
 char g_sDefaultClientTag[MAXPLAYERS + 1][32];
-char g_sDefaultClientTagColor[MAXPLAYERS + 1][12];
-char g_sDefaultClientNameColor[MAXPLAYERS + 1][12];
-char g_sDefaultClientChatColor[MAXPLAYERS + 1][12];
+char g_sDefaultClientTagColor[MAXPLAYERS + 1][32];
+char g_sDefaultClientNameColor[MAXPLAYERS + 1][32];
+char g_sDefaultClientChatColor[MAXPLAYERS + 1][32];
 
 ArrayList g_sColorsArray = null;
 
@@ -2457,20 +2457,18 @@ bool IsValidColorArg(char[] sColor)
 	if (sColor[0] != '#' && IsValidHex(sColor))
 		return true;
 
-	if (CColorExists(sColor))
-		return true;
+	// The palette behind CColorExists is only rendered on Source 2009 engines, elsewhere unknown tags are
+	// printed as is in chat. Use the static tag list MultiColors replaces on those engines instead.
+	if (IsSource2009())
+		return CColorExists(sColor);
 
-	// MultiColors has no name lookup outside Source 2009 engines, use its static tag list instead
-	if (!IsSource2009())
+	char sTag[34];
+	FormatEx(sTag, sizeof(sTag), "{%s}", sColor);
+
+	for (int i = 0; i < sizeof(C_Tag); i++)
 	{
-		char sTag[34];
-		FormatEx(sTag, sizeof(sTag), "{%s}", sColor);
-
-		for (int i = 0; i < sizeof(C_Tag); i++)
-		{
-			if (StrEqual(sTag, C_Tag[i], false))
-				return true;
-		}
+		if (StrEqual(sTag, C_Tag[i], false))
+			return true;
 	}
 
 	return false;
@@ -4720,6 +4718,10 @@ stock bool GetColorKey(int client, CCC_ColorType colorType, char[] key, int size
 				strcopy(key, size, "green");
 			else if (strcmp(g_sClientTagColor[client], "O", false) == 0)
 				strcopy(key, size, "olive");
+			else if (strcmp(g_sClientTagColor[client], "teamcolor", false) == 0)
+				strcopy(key, size, "teamcolor");
+			else if (strcmp(g_sClientTagColor[client], "default", false) == 0)
+				strcopy(key, size, "default");
 			else if (IsSource2009() && IsValidHex(g_sClientTagColor[client]))
 				strcopy(key, size, g_sClientTagColor[client]);
 			else if (CGetColor(g_sClientTagColor[client], value, sizeof(value)))
@@ -4736,6 +4738,10 @@ stock bool GetColorKey(int client, CCC_ColorType colorType, char[] key, int size
 				strcopy(key, size, "");
 			else if (strcmp(g_sClientNameColor[client], "O", false) == 0)
 				strcopy(key, size, "olive");
+			else if (strcmp(g_sClientNameColor[client], "teamcolor", false) == 0)
+				strcopy(key, size, "teamcolor");
+			else if (strcmp(g_sClientNameColor[client], "default", false) == 0)
+				strcopy(key, size, "default");
 			else if (IsSource2009() && IsValidHex(g_sClientNameColor[client]))
 				strcopy(key, size, g_sClientNameColor[client]);
 			else if (CGetColor(g_sClientNameColor[client], value, sizeof(value)))
@@ -4752,6 +4758,10 @@ stock bool GetColorKey(int client, CCC_ColorType colorType, char[] key, int size
 				strcopy(key, size, "green");
 			else if (strcmp(g_sClientChatColor[client], "O", false) == 0)
 				strcopy(key, size, "olive");
+			else if (strcmp(g_sClientChatColor[client], "teamcolor", false) == 0)
+				strcopy(key, size, "teamcolor");
+			else if (strcmp(g_sClientChatColor[client], "default", false) == 0)
+				strcopy(key, size, "default");
 			else if (IsSource2009() && IsValidHex(g_sClientChatColor[client]))
 				strcopy(key, size, g_sClientChatColor[client]);
 			else if (CGetColor(g_sClientChatColor[client], value, sizeof(value)))
