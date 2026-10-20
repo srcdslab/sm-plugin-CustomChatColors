@@ -796,7 +796,7 @@ stock Action SQLSelect_Replace(Handle timer)
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
-	FormatEx(sQuery, sizeof(sQuery), "SELECT `trigger`, `value` FROM `ccc_replace`;");
+	g_hDatabase.Format(sQuery, sizeof(sQuery), "SELECT `trigger`, `value` FROM `ccc_replace`;");
 	SQL_TQuery(g_hDatabase, OnSQLSelect_Replace, sQuery, 0, DBPrio_High);
 	return Plugin_Stop;
 }
@@ -817,7 +817,7 @@ stock Action SQLSelect_Ban(Handle timer, any data)
 	pack.ReadString(steamId, sizeof(steamId));
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
-	FormatEx(sQuery, sizeof(sQuery), "SELECT `length` FROM `ccc_ban` WHERE `steamid` = '%s';", steamId);
+	g_hDatabase.Format(sQuery, sizeof(sQuery), "SELECT `length` FROM `ccc_ban` WHERE `steamid` = '%s';", steamId);
 	SQL_TQuery(g_hDatabase, OnSQLSelect_Ban, sQuery, data, DBPrio_Low);
 	return Plugin_Stop;
 }
@@ -841,6 +841,8 @@ stock Action SQLSelect_TagGroup(Handle timer, any data)
 
 	char sQuery[512];
 
+	// sFlagList is built by GetClientFlagString() from admin flag letters only and already carries its own
+	// quotes ("a","b"): it must stay on FormatEx, Database.Format would escape those quotes and break the IN (...).
 	FormatEx(sQuery, sizeof(sQuery), "SELECT `steamid`, `enable`, `tag`, `tag_color`, `name_color`, `chat_color`, `flag` FROM `ccc_tag` WHERE `steamid` NOT LIKE 'STEAM_%' and `flag` IS NOT NULL and `flag` != '' and `flag` IN (%s) ORDER BY `flag` DESC;", sFlagList);
 	SQL_TQuery(g_hDatabase, OnSQLSelect_TagGroup, sQuery, data, DBPrio_Low);
 	return Plugin_Stop;
@@ -917,7 +919,7 @@ stock Action SQLSelect_Tag(Handle timer, any data)
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
-	FormatEx(sQuery, sizeof(sQuery), "SELECT `steamid`, `enable`, `tag`, `tag_color`, `name_color`, `chat_color` FROM `ccc_tag` WHERE `steamid` = '%s';", sClientSteamID);
+	g_hDatabase.Format(sQuery, sizeof(sQuery), "SELECT `steamid`, `enable`, `tag`, `tag_color`, `name_color`, `chat_color` FROM `ccc_tag` WHERE `steamid` = '%s';", sClientSteamID);
 	SQL_TQuery(g_hDatabase, OnSQLSelect_Tag, sQuery, data, DBPrio_Low);
 	return Plugin_Stop;
 }
@@ -1016,7 +1018,7 @@ stock Action SQLDelete_Replace(Handle timer, any data)
 	pack.ReadCell();
 	pack.ReadString(sTrigger, sizeof(sTrigger));
 
-	FormatEx(sQuery, sizeof(sQuery), "DELETE FROM `ccc_replace` WHERE `trigger` = '%s';", sTrigger);
+	g_hDatabase.Format(sQuery, sizeof(sQuery), "DELETE FROM `ccc_replace` WHERE `trigger` = '%s';", sTrigger);
 	SQL_TQuery(g_hDatabase, OnSQLDelete_Replace, sQuery, data);
 	return Plugin_Stop;
 }
@@ -1191,7 +1193,7 @@ stock Action SQLDelete_Tag(Handle timer, any data)
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
-	FormatEx(sQuery, sizeof(sQuery), "DELETE FROM `ccc_tag` WHERE `steamid` = '%s';", sSteamID);
+	g_hDatabase.Format(sQuery, sizeof(sQuery), "DELETE FROM `ccc_tag` WHERE `steamid` = '%s';", sSteamID);
 	SQL_TQuery(g_hDatabase, OnSQLDelete_Tag, sQuery, data);
 
 	return Plugin_Stop;
@@ -1339,7 +1341,7 @@ stock Action SQLDelete_Ban(Handle timer, any data)
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
-	FormatEx(sQuery, sizeof(sQuery), "DELETE FROM `ccc_ban` WHERE `steamid` = '%s';", targetSid[0] ? targetSid : g_sSteamIDs[target]);
+	g_hDatabase.Format(sQuery, sizeof(sQuery), "DELETE FROM `ccc_ban` WHERE `steamid` = '%s';", targetSid[0] ? targetSid : g_sSteamIDs[target]);
 	SQL_TQuery(g_hDatabase, OnSQLDelete_Ban, sQuery, data);
 
 	return Plugin_Stop;
