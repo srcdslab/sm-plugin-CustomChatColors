@@ -37,7 +37,7 @@ This repository contains the **CustomChatColors** SourcePawn plugin for SourceMo
 ```
 addons/sourcemod/
 ├── scripting/
-│   ├── CustomChatColors.sp      # Main plugin (4746 lines)
+│   ├── CustomChatColors.sp      # Main plugin (~5000 lines)
 │   └── include/
 │       └── ccc.inc              # Native API definitions
 ├── configs/
@@ -273,8 +273,8 @@ if (!IsValidColor(colorInput)) {
 ## Version Management
 
 ### Versioning Pattern
-- Uses semantic versioning in `ccc.inc`: `#define CCC_VERSION "7.4.19"`
-- Update version in three places: `CCC_V_MAJOR`, `CCC_V_MINOR`, `CCC_V_PATCH`
+- Uses semantic versioning in `ccc.inc`: `CCC_VERSION` is built from `CCC_V_MAJOR`, `CCC_V_MINOR` and `CCC_V_PATCH` (shown in the plugin info)
+- `ccc.inc` is the only place holding the version, bump `CCC_V_PATCH` there with each fix
 - Tag releases in Git to match version numbers
 
 ### Compatibility
