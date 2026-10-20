@@ -399,6 +399,21 @@ public void OnMapEnd()
 
 public void OnClientDisconnect(int client)
 {
+	UnloadClientData(client);
+
+	// Client slots are reused: a player must not inherit the previous occupant's ban or ignore list.
+	// Kept out of UnloadClientData() so CCC_UnLoadClient() does not wipe state set via CCC_SetIgnored().
+	g_iClientBanned[client] = -1;
+
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		g_Ignored[client][i] = false;
+		g_Ignored[i][client] = false;
+	}
+}
+
+void UnloadClientData(int client)
+{
 	g_bClientDataLoaded[client] = false;
 	g_iClientPsayCooldown[client] = 0;
 	g_iClientFastReply[client] = -1;
@@ -549,7 +564,8 @@ stock void SortColors()
 	}
 }
 
-stock void ResetReplace()
+// Empties the cached replace list only, reservations of pending inserts are left untouched
+stock void ResetReplaceList()
 {
 	for (int i = 0; i < REPLACE_LIST_MAX_LENGTH; i++)
 	{
@@ -557,6 +573,11 @@ stock void ResetReplace()
 		g_sReplaceList[i][1] = "";
 	}
 	g_iReplaceListSize = 0;
+}
+
+stock void ResetReplace()
+{
+	ResetReplaceList();
 	g_iReplacePendingInserts = 0;
 
 	if (g_smReplacePendingTriggers == null)
@@ -781,7 +802,7 @@ stock Action SQLSelect_Replace(Handle timer)
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
-	FormatEx(sQuery, sizeof(sQuery), "SELECT `trigger`, `value` FROM `ccc_replace`;");
+	g_hDatabase.Format(sQuery, sizeof(sQuery), "SELECT `trigger`, `value` FROM `ccc_replace`;");
 	SQL_TQuery(g_hDatabase, OnSQLSelect_Replace, sQuery, 0, DBPrio_High);
 	return Plugin_Stop;
 }
@@ -802,7 +823,7 @@ stock Action SQLSelect_Ban(Handle timer, any data)
 	pack.ReadString(steamId, sizeof(steamId));
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
-	FormatEx(sQuery, sizeof(sQuery), "SELECT `length` FROM `ccc_ban` WHERE `steamid` = '%s';", steamId);
+	g_hDatabase.Format(sQuery, sizeof(sQuery), "SELECT `length` FROM `ccc_ban` WHERE `steamid` = '%s';", steamId);
 	SQL_TQuery(g_hDatabase, OnSQLSelect_Ban, sQuery, data, DBPrio_Low);
 	return Plugin_Stop;
 }
@@ -826,6 +847,8 @@ stock Action SQLSelect_TagGroup(Handle timer, any data)
 
 	char sQuery[512];
 
+	// sFlagList is built by GetClientFlagString() from admin flag letters only and already carries its own
+	// quotes ("a","b"): it must stay on FormatEx, Database.Format would escape those quotes and break the IN (...).
 	FormatEx(sQuery, sizeof(sQuery), "SELECT `steamid`, `enable`, `tag`, `tag_color`, `name_color`, `chat_color`, `flag` FROM `ccc_tag` WHERE `steamid` NOT LIKE 'STEAM_%' and `flag` IS NOT NULL and `flag` != '' and `flag` IN (%s) ORDER BY `flag` DESC;", sFlagList);
 	SQL_TQuery(g_hDatabase, OnSQLSelect_TagGroup, sQuery, data, DBPrio_Low);
 	return Plugin_Stop;
@@ -853,8 +876,9 @@ stock void GetClientFlagString(int client, char[] sClientFlagString, int maxSize
 		}
 	}
 
-	if (sClientFlagString[strlen(sClientFlagString) - 1] == ',')
-		sClientFlagString[strlen(sClientFlagString) - 1] = '\0';
+	int iFlagLen = strlen(sClientFlagString);
+	if (iFlagLen > 0 && sClientFlagString[iFlagLen - 1] == ',')
+		sClientFlagString[iFlagLen - 1] = '\0';
 
 	if (sClientFlagString[0] == '\0')
 	{
@@ -901,7 +925,7 @@ stock Action SQLSelect_Tag(Handle timer, any data)
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
-	FormatEx(sQuery, sizeof(sQuery), "SELECT `steamid`, `enable`, `tag`, `tag_color`, `name_color`, `chat_color` FROM `ccc_tag` WHERE `steamid` = '%s';", sClientSteamID);
+	g_hDatabase.Format(sQuery, sizeof(sQuery), "SELECT `steamid`, `enable`, `tag`, `tag_color`, `name_color`, `chat_color` FROM `ccc_tag` WHERE `steamid` = '%s';", sClientSteamID);
 	SQL_TQuery(g_hDatabase, OnSQLSelect_Tag, sQuery, data, DBPrio_Low);
 	return Plugin_Stop;
 }
@@ -910,12 +934,6 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
-
-	if (!DB_Connect())
-	{
-		delete pack;
-		return Plugin_Stop;
-	}
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 	char sTrigger[MAX_CHAT_TRIGGER_LENGTH];
@@ -926,6 +944,21 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 	pack.ReadString(sValue, sizeof(sValue));
 	bool bPendingTracked = view_as<bool>(pack.ReadCell());
 	bool bCountsTowardsLimit = view_as<bool>(pack.ReadCell());
+
+	if (!DB_Connect())
+	{
+		// When called from a retry timer the insert already owns a reservation: release it, the callback that
+		// normally does so will never run for an abandoned request
+		if (bPendingTracked && bCountsTowardsLimit)
+			UnmarkReplaceTriggerPending(sTrigger);
+
+		int iRetryClient = GetClientOfUserId(userid);
+		if (iRetryClient)
+			g_bSQLInsertReplaceRetry[iRetryClient] = 0;
+
+		delete pack;
+		return Plugin_Stop;
+	}
 
 	if (!bPendingTracked && !CanQueueReplaceInsert(sTrigger))
 	{
@@ -1000,7 +1033,7 @@ stock Action SQLDelete_Replace(Handle timer, any data)
 	pack.ReadCell();
 	pack.ReadString(sTrigger, sizeof(sTrigger));
 
-	FormatEx(sQuery, sizeof(sQuery), "DELETE FROM `ccc_replace` WHERE `trigger` = '%s';", sTrigger);
+	g_hDatabase.Format(sQuery, sizeof(sQuery), "DELETE FROM `ccc_replace` WHERE `trigger` = '%s';", sTrigger);
 	SQL_TQuery(g_hDatabase, OnSQLDelete_Replace, sQuery, data);
 	return Plugin_Stop;
 }
@@ -1175,7 +1208,7 @@ stock Action SQLDelete_Tag(Handle timer, any data)
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
-	FormatEx(sQuery, sizeof(sQuery), "DELETE FROM `ccc_tag` WHERE `steamid` = '%s';", sSteamID);
+	g_hDatabase.Format(sQuery, sizeof(sQuery), "DELETE FROM `ccc_tag` WHERE `steamid` = '%s';", sSteamID);
 	SQL_TQuery(g_hDatabase, OnSQLDelete_Tag, sQuery, data);
 
 	return Plugin_Stop;
@@ -1209,7 +1242,7 @@ public void OnSQLDelete_Tag(Database db, DBResultSet results, const char[] err, 
 
 	if (SQL_Conn_Lost(results))
 	{
-		if (g_bSQLDeleteTagRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLDeleteTagRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLDeleteTagRetry[client]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLDelete_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -1323,7 +1356,7 @@ stock Action SQLDelete_Ban(Handle timer, any data)
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
-	FormatEx(sQuery, sizeof(sQuery), "DELETE FROM `ccc_ban` WHERE `steamid` = '%s';", targetSid[0] ? targetSid : g_sSteamIDs[target]);
+	g_hDatabase.Format(sQuery, sizeof(sQuery), "DELETE FROM `ccc_ban` WHERE `steamid` = '%s';", targetSid[0] ? targetSid : g_sSteamIDs[target]);
 	SQL_TQuery(g_hDatabase, OnSQLDelete_Ban, sQuery, data);
 
 	return Plugin_Stop;
@@ -1377,7 +1410,7 @@ public void OnSQLSelect_Replace(Database db, DBResultSet results, const char[] e
 	{
 		LogError("An error occurred while querying the database for the replace list, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
-		if (g_bSQLSelectReplaceRetry + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLSelectReplaceRetry < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLSelectReplaceRetry++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_Replace, client, TIMER_FLAG_NO_MAPCHANGE);
@@ -1388,6 +1421,9 @@ public void OnSQLSelect_Replace(Database db, DBResultSet results, const char[] e
 	{
 		int iTotalRows = 0;
 		int iSkippedRows = 0;
+
+		// A retry timer or a reload can run after another successful SELECT: rebuild the cache instead of appending to it
+		ResetReplaceList();
 
 		while (SQL_FetchRow(results))
 		{
@@ -1432,7 +1468,7 @@ public void OnSQLSelect_Ban(Database db, DBResultSet results, const char[] err, 
 	{
 		LogError("An error occurred while querying the database for the user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
-		if (g_bSQLSelectBanRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLSelectBanRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLSelectBanRetry[client]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_Ban, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -1442,6 +1478,10 @@ public void OnSQLSelect_Ban(Database db, DBResultSet results, const char[] err, 
 	else if (SQL_FetchRow(results))
 	{
 		g_iClientBanned[client] = SQL_FetchInt(results, 0);
+	}
+	else
+	{
+		g_iClientBanned[client] = -1;
 	}
 
 	g_bSQLSelectBanRetry[client] = 0;
@@ -1467,7 +1507,7 @@ stock void OnSQLSelect_TagGroup(Database db, DBResultSet results, const char[] e
 	{
 		LogError("An error occurred while querying the database for the user group tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
-		if (g_bSQLSelectTagGroupRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLSelectTagGroupRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLSelectTagGroupRetry[client]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_TagGroup, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -1522,7 +1562,7 @@ public void OnSQLSelect_Tag(Database db, DBResultSet results, const char[] err, 
 	{
 		LogError("An error occurred while querying the database for the user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
-		if (g_bSQLSelectTagRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLSelectTagRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLSelectTagRetry[client]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -1586,7 +1626,7 @@ public void OnSQLUpdate_Tag(Database db, DBResultSet results, const char[] err, 
 	{
 		LogError("An error occurred while updating an user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
 
-		if (g_bSQLUpdateTagRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLUpdateTagRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLUpdateTagRetry[client]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLUpdate_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -1639,7 +1679,7 @@ public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] e
 	if (SQL_Conn_Lost(results))
 	{
 		LogError("An error occurred while inserting a chat trigger, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
-		if (g_bSQLInsertReplaceRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLInsertReplaceRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLInsertReplaceRetry[client]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLInsert_Replace, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -1690,7 +1730,7 @@ public void OnSQLDelete_Replace(Database db, DBResultSet results, const char[] e
 
 	if (SQL_Conn_Lost(results))
 	{
-		if (g_bSQLDeleteReplaceRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLDeleteReplaceRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLDeleteReplaceRetry[client]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLDelete_Replace, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -1746,7 +1786,7 @@ public void OnSQLInsert_Tag(Database db, DBResultSet results, const char[] err, 
 	if (SQL_Conn_Lost(results))
 	{
 		LogError("An error occurred while inserting an user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
-		if (g_bSQLInsertTagRetry[client] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLInsertTagRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLInsertTagRetry[client]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLInsert_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -1775,7 +1815,7 @@ public void OnSQLInsert_Ban(Database db, DBResultSet results, const char[] err, 
 
 	if (SQL_Conn_Lost(results))
 	{
-		if (g_bSQLInsertBanRetry[target] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLInsertBanRetry[target] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLInsertBanRetry[target]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLInsert_Ban, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -1819,7 +1859,7 @@ public void OnSQLDelete_Ban(Database db, DBResultSet results, const char[] err, 
 
 	if (SQL_Conn_Lost(results))
 	{
-		if (g_bSQLDeleteBanRetry[target] + 1 < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_bSQLDeleteBanRetry[target] < GetConVarInt(g_cvar_SQLMaxRetries))
 		{
 			g_bSQLDeleteBanRetry[target]++;
 			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLDelete_Ban, data, TIMER_FLAG_NO_MAPCHANGE);
@@ -2049,45 +2089,52 @@ bool IsValidHex(char[] arg)
 	return true;
 }
 
+// Pure predicate: true while the client is CCC-banned (permanent or not expired). Never prints.
+stock bool IsClientCCCBanned(int client)
+{
+	return g_iClientBanned[client] == 0 || g_iClientBanned[client] >= GetTime();
+}
+
+// Same check as IsClientCCCBanned, but also tells the client why they are refused.
 stock bool IsClientBanned(int client, const char Key[64] = "")
 {
+	if (!IsClientCCCBanned(client))
+		return false;
+
 	if (g_iClientBanned[client] == 0)
 	{
 		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} You are currently {red}permanently banned{default} from changing your {green}%s{default}.", Key);
 		return true;
 	}
-	else if (g_iClientBanned[client] >= GetTime())
+
+	char TimeBuffer[64];
+	int tstamp = g_iClientBanned[client];
+	tstamp = (tstamp - GetTime());
+
+	int days = (tstamp / 86400);
+	int hrs = ((tstamp / 3600) % 24);
+	int mins = ((tstamp / 60) % 60);
+	int sec = (tstamp % 60);
+
+	if (tstamp > 86400)
 	{
-		char TimeBuffer[64];
-		int tstamp = g_iClientBanned[client];
-		tstamp = (tstamp - GetTime());
-
-		int days = (tstamp / 86400);
-		int hrs = ((tstamp / 3600) % 24);
-		int mins = ((tstamp / 60) % 60);
-		int sec = (tstamp % 60);
-
-		if (tstamp > 86400)
-		{
-			Format(TimeBuffer, sizeof(TimeBuffer), "%d %s, %d %s, %d %s, %d %s", days, SingularOrMultiple(days) ? "Days" : "Day", hrs, SingularOrMultiple(hrs) ? "Hours" : "Hour", mins, SingularOrMultiple(mins) ? "Minutes" : "Minute", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
-		}
-		else if (tstamp > 3600)
-		{
-			Format(TimeBuffer, sizeof(TimeBuffer), "%d %s, %d %s, %d %s", hrs, SingularOrMultiple(hrs) ? "Hours" : "Hour", mins, SingularOrMultiple(mins) ? "Minutes" : "Minute", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
-		}
-		else if (tstamp > 60)
-		{
-			Format(TimeBuffer, sizeof(TimeBuffer), "%d %s, %d %s", mins, SingularOrMultiple(mins) ? "Minutes" : "Minute", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
-		}
-		else
-		{
-			Format(TimeBuffer, sizeof(TimeBuffer), "%d %s", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
-		}
-
-		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} You are currently {red}banned{default} from changing your {green}%s{default}. (Time remaining: {green}%s{default})", Key, TimeBuffer);
-		return true;
+		Format(TimeBuffer, sizeof(TimeBuffer), "%d %s, %d %s, %d %s, %d %s", days, SingularOrMultiple(days) ? "Days" : "Day", hrs, SingularOrMultiple(hrs) ? "Hours" : "Hour", mins, SingularOrMultiple(mins) ? "Minutes" : "Minute", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
 	}
-	return false;
+	else if (tstamp > 3600)
+	{
+		Format(TimeBuffer, sizeof(TimeBuffer), "%d %s, %d %s, %d %s", hrs, SingularOrMultiple(hrs) ? "Hours" : "Hour", mins, SingularOrMultiple(mins) ? "Minutes" : "Minute", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
+	}
+	else if (tstamp > 60)
+	{
+		Format(TimeBuffer, sizeof(TimeBuffer), "%d %s, %d %s", mins, SingularOrMultiple(mins) ? "Minutes" : "Minute", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
+	}
+	else
+	{
+		Format(TimeBuffer, sizeof(TimeBuffer), "%d %s", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
+	}
+
+	CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} You are currently {red}banned{default} from changing your {green}%s{default}. (Time remaining: {green}%s{default})", Key, TimeBuffer);
+	return true;
 }
 
 stock bool SetColor(char Key[64], char HEX[64], int client, bool IgnoreBan=false)
@@ -2758,16 +2805,16 @@ public Action Command_SmPsayReply(int client, int args)
 		return Plugin_Handled;
 	}
 
-	char message[224], arg[32];
-	for (int i = 1; i <= args; i++)
-	{
-		GetCmdArg(i, arg, sizeof(arg));
-		Format(message, sizeof(message), "%s %s", message, arg);
-	}
+	char message[224];
+	GetCmdArgString(message, sizeof(message));
+	StripQuotes(message);
 
 	int target = GetClientOfUserId(g_iClientFastReply[client]);
-	if (target == -1)
+	if (!target)
+	{
+		CReplyToCommand(client, "{green}[SM] {default}You cannot send a private message to a disconnected player.");
 		return Plugin_Handled;
+	}
 
 	SendPrivateChat(client, target, message);
 	return Plugin_Handled;
@@ -3047,8 +3094,9 @@ public Action Command_Say(int client, const char[] command, int argc)
 
 		if (g_bWaitingForChatInput[client])
 		{
-			if (text[strlen(text)-1] == '"')
-				text[strlen(text)-1] = '\0';
+			int iTextLen = strlen(text);
+			if (iTextLen > 0 && text[iTextLen - 1] == '"')
+				text[iTextLen - 1] = '\0';
 
 			if (strcmp(g_sInputType[client], "ChangeTag", false) == 0 || strcmp(g_sInputType[client], "MenuForceTag", false) == 0)
 			{
@@ -3447,14 +3495,14 @@ public void AdminMenu_UnBanList(int client)
 
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if (IsClientInGame(i) && IsClientBanned(i))
+		if (IsClientInGame(i) && IsClientCCCBanned(i))
 		{
 			char info[64];
 			char id[32];
 			int remaining;
-			remaining = ((g_iClientBanned[client] - GetTime()) / 60);
+			remaining = ((g_iClientBanned[i] - GetTime()) / 60);
 
-			if (g_iClientBanned[client] == 0)
+			if (g_iClientBanned[i] == 0)
 			{
 				Format(info, sizeof(info), "%N (Permanent)", i);
 			}
@@ -3555,15 +3603,14 @@ public int MenuHandler_Main(Menu MenuMain, MenuAction action, int param1, int pa
 {
 	if (action == MenuAction_End)
 	{
-		if (param1 != MenuEnd_Selected)
-			delete MenuMain;
+		delete MenuMain;
 		return 0;
 	}
 
 	if (action == MenuAction_Select)
 	{
 		char Selected[32];
-		GetMenuItem(MenuMain, param2, Selected, sizeof(Selected));
+		MenuMain.GetItem(param2, Selected, sizeof(Selected));
 
 		if (strcmp(Selected, "Tag", false) == 0)
 		{
@@ -3580,7 +3627,6 @@ public int MenuHandler_Main(Menu MenuMain, MenuAction action, int param1, int pa
 		else if (strcmp(Selected, "CCC", false) == 0)
 		{
 			ToggleCCC(param1);
-			CloseHandle(MenuMain);
 			Menu_Main(param1);
 		}
 		else if (strcmp(Selected, "Admin", false) == 0)
@@ -3897,6 +3943,7 @@ public int MenuHandler_AdminBanTime(Menu MenuABTime, MenuAction action, int para
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Player no longer available.");
 
 			Menu_Admin(param1);
+			return 0;
 		}
 
 		BanCCC(param1, g_iATarget[param1], Selected);
@@ -4423,7 +4470,8 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 	bool bChatFound = GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_ChatColor), sChatColorKey, sizeof(sChatColorKey));
 	bool bTagFound = GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_TagColor), sTagColorKey, sizeof(sTagColorKey));
 
-	if (!strncmp(g_msgText, "/me", 3, false))
+	// Require the trailing space so a bare "/me" or "/meword" is not treated as an action
+	if (!strncmp(g_msgText, "/me ", 4, false))
 	{
 		strcopy(g_msgName, sizeof(g_msgName), "Cstrike_Chat_Me");
 		strcopy(g_msgText, sizeof(g_msgText), g_msgText[4]);
@@ -5015,7 +5063,7 @@ public int Native_UnLoadClient(Handle plugin, int numParams)
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid client or client is not in game");
 		return 0;
 	}
-	OnClientDisconnect(client);
+	UnloadClientData(client);
 	return 1;
 }
 
