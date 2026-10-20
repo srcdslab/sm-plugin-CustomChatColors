@@ -399,6 +399,21 @@ public void OnMapEnd()
 
 public void OnClientDisconnect(int client)
 {
+	UnloadClientData(client);
+
+	// Client slots are reused: a player must not inherit the previous occupant's ban or ignore list.
+	// Kept out of UnloadClientData() so CCC_UnLoadClient() does not wipe state set via CCC_SetIgnored().
+	g_iClientBanned[client] = -1;
+
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		g_Ignored[client][i] = false;
+		g_Ignored[i][client] = false;
+	}
+}
+
+void UnloadClientData(int client)
+{
 	g_bClientDataLoaded[client] = false;
 	g_iClientPsayCooldown[client] = 0;
 	g_iClientFastReply[client] = -1;
@@ -1444,6 +1459,10 @@ public void OnSQLSelect_Ban(Database db, DBResultSet results, const char[] err, 
 	{
 		g_iClientBanned[client] = SQL_FetchInt(results, 0);
 	}
+	else
+	{
+		g_iClientBanned[client] = -1;
+	}
 
 	g_bSQLSelectBanRetry[client] = 0;
 
@@ -2050,45 +2069,52 @@ bool IsValidHex(char[] arg)
 	return true;
 }
 
+// Pure predicate: true while the client is CCC-banned (permanent or not expired). Never prints.
+stock bool IsClientCCCBanned(int client)
+{
+	return g_iClientBanned[client] == 0 || g_iClientBanned[client] >= GetTime();
+}
+
+// Same check as IsClientCCCBanned, but also tells the client why they are refused.
 stock bool IsClientBanned(int client, const char Key[64] = "")
 {
+	if (!IsClientCCCBanned(client))
+		return false;
+
 	if (g_iClientBanned[client] == 0)
 	{
 		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} You are currently {red}permanently banned{default} from changing your {green}%s{default}.", Key);
 		return true;
 	}
-	else if (g_iClientBanned[client] >= GetTime())
+
+	char TimeBuffer[64];
+	int tstamp = g_iClientBanned[client];
+	tstamp = (tstamp - GetTime());
+
+	int days = (tstamp / 86400);
+	int hrs = ((tstamp / 3600) % 24);
+	int mins = ((tstamp / 60) % 60);
+	int sec = (tstamp % 60);
+
+	if (tstamp > 86400)
 	{
-		char TimeBuffer[64];
-		int tstamp = g_iClientBanned[client];
-		tstamp = (tstamp - GetTime());
-
-		int days = (tstamp / 86400);
-		int hrs = ((tstamp / 3600) % 24);
-		int mins = ((tstamp / 60) % 60);
-		int sec = (tstamp % 60);
-
-		if (tstamp > 86400)
-		{
-			Format(TimeBuffer, sizeof(TimeBuffer), "%d %s, %d %s, %d %s, %d %s", days, SingularOrMultiple(days) ? "Days" : "Day", hrs, SingularOrMultiple(hrs) ? "Hours" : "Hour", mins, SingularOrMultiple(mins) ? "Minutes" : "Minute", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
-		}
-		else if (tstamp > 3600)
-		{
-			Format(TimeBuffer, sizeof(TimeBuffer), "%d %s, %d %s, %d %s", hrs, SingularOrMultiple(hrs) ? "Hours" : "Hour", mins, SingularOrMultiple(mins) ? "Minutes" : "Minute", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
-		}
-		else if (tstamp > 60)
-		{
-			Format(TimeBuffer, sizeof(TimeBuffer), "%d %s, %d %s", mins, SingularOrMultiple(mins) ? "Minutes" : "Minute", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
-		}
-		else
-		{
-			Format(TimeBuffer, sizeof(TimeBuffer), "%d %s", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
-		}
-
-		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} You are currently {red}banned{default} from changing your {green}%s{default}. (Time remaining: {green}%s{default})", Key, TimeBuffer);
-		return true;
+		Format(TimeBuffer, sizeof(TimeBuffer), "%d %s, %d %s, %d %s, %d %s", days, SingularOrMultiple(days) ? "Days" : "Day", hrs, SingularOrMultiple(hrs) ? "Hours" : "Hour", mins, SingularOrMultiple(mins) ? "Minutes" : "Minute", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
 	}
-	return false;
+	else if (tstamp > 3600)
+	{
+		Format(TimeBuffer, sizeof(TimeBuffer), "%d %s, %d %s, %d %s", hrs, SingularOrMultiple(hrs) ? "Hours" : "Hour", mins, SingularOrMultiple(mins) ? "Minutes" : "Minute", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
+	}
+	else if (tstamp > 60)
+	{
+		Format(TimeBuffer, sizeof(TimeBuffer), "%d %s, %d %s", mins, SingularOrMultiple(mins) ? "Minutes" : "Minute", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
+	}
+	else
+	{
+		Format(TimeBuffer, sizeof(TimeBuffer), "%d %s", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
+	}
+
+	CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} You are currently {red}banned{default} from changing your {green}%s{default}. (Time remaining: {green}%s{default})", Key, TimeBuffer);
+	return true;
 }
 
 stock bool SetColor(char Key[64], char HEX[64], int client, bool IgnoreBan=false)
@@ -3416,14 +3442,14 @@ public void AdminMenu_UnBanList(int client)
 
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if (IsClientInGame(i) && IsClientBanned(i))
+		if (IsClientInGame(i) && IsClientCCCBanned(i))
 		{
 			char info[64];
 			char id[32];
 			int remaining;
-			remaining = ((g_iClientBanned[client] - GetTime()) / 60);
+			remaining = ((g_iClientBanned[i] - GetTime()) / 60);
 
-			if (g_iClientBanned[client] == 0)
+			if (g_iClientBanned[i] == 0)
 			{
 				Format(info, sizeof(info), "%N (Permanent)", i);
 			}
@@ -3524,15 +3550,14 @@ public int MenuHandler_Main(Menu MenuMain, MenuAction action, int param1, int pa
 {
 	if (action == MenuAction_End)
 	{
-		if (param1 != MenuEnd_Selected)
-			delete MenuMain;
+		delete MenuMain;
 		return 0;
 	}
 
 	if (action == MenuAction_Select)
 	{
 		char Selected[32];
-		GetMenuItem(MenuMain, param2, Selected, sizeof(Selected));
+		MenuMain.GetItem(param2, Selected, sizeof(Selected));
 
 		if (strcmp(Selected, "Tag", false) == 0)
 		{
@@ -3549,7 +3574,6 @@ public int MenuHandler_Main(Menu MenuMain, MenuAction action, int param1, int pa
 		else if (strcmp(Selected, "CCC", false) == 0)
 		{
 			ToggleCCC(param1);
-			CloseHandle(MenuMain);
 			Menu_Main(param1);
 		}
 		else if (strcmp(Selected, "Admin", false) == 0)
@@ -3866,6 +3890,7 @@ public int MenuHandler_AdminBanTime(Menu MenuABTime, MenuAction action, int para
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Player no longer available.");
 
 			Menu_Admin(param1);
+			return 0;
 		}
 
 		BanCCC(param1, g_iATarget[param1], Selected);
@@ -4973,7 +4998,7 @@ public int Native_UnLoadClient(Handle plugin, int numParams)
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid client or client is not in game");
 		return 0;
 	}
-	OnClientDisconnect(client);
+	UnloadClientData(client);
 	return 1;
 }
 
