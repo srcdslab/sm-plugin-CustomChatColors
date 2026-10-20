@@ -340,24 +340,24 @@ public void OnLibraryRemoved(const char[] name)
 	}
 }
 
-stock void VerifyNatives()
+void VerifyNatives()
 {
 	VerifyNative_SelfMute();
 	VerifyNative_SourceCommsPP();
 	VerifyNative_DynamicChannel();
 }
 
-stock void VerifyNative_SelfMute()
+void VerifyNative_SelfMute()
 {
 	g_bSelfMuteNative = g_bPlugin_SelfMute && GetFeatureStatus(FeatureType_Native, "SelfMute_GetTextSelfMute") == FeatureStatus_Available;
 }
 
-stock void VerifyNative_SourceCommsPP()
+void VerifyNative_SourceCommsPP()
 {
 	g_bSourceCommsNative = g_bPlugin_SourceComms && GetFeatureStatus(FeatureType_Native, "SourceComms_GetClientGagType") == FeatureStatus_Available;
 }
 
-stock void VerifyNative_DynamicChannel()
+void VerifyNative_DynamicChannel()
 {
 	g_bDynamicNative = g_bPlugin_DynamicChannels && GetFeatureStatus(FeatureType_Native, "GetDynamicChannel") == FeatureStatus_Available;
 }
@@ -476,7 +476,7 @@ public void OnClientCookiesCached(int client)
 	g_bDisablePsay[client] = StringToInt(sBuffer) != 0;
 }
 
-stock void ReloadConfig()
+void ReloadConfig()
 {
 	ResetReplace();
 
@@ -484,7 +484,7 @@ stock void ReloadConfig()
 	LateLoadClientsOnly();
 }
 
-stock void LateLoadClientsOnly()
+void LateLoadClientsOnly()
 {
 	for (int i = 1; i <= MaxClients; i++)
 	{
@@ -498,7 +498,7 @@ stock void LateLoadClientsOnly()
 	}
 }
 
-stock void ResetSQLStartupGate()
+void ResetSQLStartupGate()
 {
 	g_bSQLTagTableReady = false;
 	g_bSQLBanTableReady = false;
@@ -507,7 +507,7 @@ stock void ResetSQLStartupGate()
 	g_bSQLStartupReady = false;
 }
 
-stock void TryFinalizeSQLStartup()
+void TryFinalizeSQLStartup()
 {
 	if (g_bSQLStartupReady)
 		return;
@@ -524,7 +524,7 @@ stock void TryFinalizeSQLStartup()
 	LateLoadClientsOnly();
 }
 
-stock void LoadColorArray()
+void LoadColorArray()
 {
 	if (g_sColorsArray != null)
 		delete g_sColorsArray;
@@ -545,7 +545,7 @@ stock void LoadColorArray()
 	SortColors();
 }
 
-stock void SortColors()
+void SortColors()
 {
 	if (g_sColorsArray == null)
 		return;
@@ -554,7 +554,7 @@ stock void SortColors()
 }
 
 // Empties the cached replace list only, reservations of pending inserts are left untouched
-stock void ResetReplaceList()
+void ResetReplaceList()
 {
 	for (int i = 0; i < REPLACE_LIST_MAX_LENGTH; i++)
 	{
@@ -564,7 +564,7 @@ stock void ResetReplaceList()
 	g_iReplaceListSize = 0;
 }
 
-stock void ResetReplace()
+void ResetReplace()
 {
 	ResetReplaceList();
 	g_iReplacePendingInserts = 0;
@@ -573,7 +573,7 @@ stock void ResetReplace()
 		g_smReplacePendingTriggers = new StringMap();
 }
 
-stock int FindReplaceTriggerIndex(const char[] sTrigger)
+int FindReplaceTriggerIndex(const char[] sTrigger)
 {
 	for (int i = 0; i < g_iReplaceListSize; i++)
 	{
@@ -584,7 +584,7 @@ stock int FindReplaceTriggerIndex(const char[] sTrigger)
 	return -1;
 }
 
-stock bool IsReplaceTriggerPending(const char[] sTrigger)
+bool IsReplaceTriggerPending(const char[] sTrigger)
 {
 	if (g_smReplacePendingTriggers == null)
 		return false;
@@ -593,7 +593,7 @@ stock bool IsReplaceTriggerPending(const char[] sTrigger)
 	return g_smReplacePendingTriggers.GetValue(sTrigger, dummy);
 }
 
-stock void MarkReplaceTriggerPending(const char[] sTrigger)
+void MarkReplaceTriggerPending(const char[] sTrigger)
 {
 	if (g_smReplacePendingTriggers == null)
 		g_smReplacePendingTriggers = new StringMap();
@@ -606,7 +606,7 @@ stock void MarkReplaceTriggerPending(const char[] sTrigger)
 	}
 }
 
-stock void UnmarkReplaceTriggerPending(const char[] sTrigger)
+void UnmarkReplaceTriggerPending(const char[] sTrigger)
 {
 	if (g_smReplacePendingTriggers == null)
 		return;
@@ -617,7 +617,7 @@ stock void UnmarkReplaceTriggerPending(const char[] sTrigger)
 
 // Drops every reservation of a pending insert. Used when the inserts holding them can never report back (their
 // retry timer died with the map): the callback of an insert still in flight only decrements for a reservation it finds.
-stock void ClearReplaceReservations()
+void ClearReplaceReservations()
 {
 	if (g_smReplacePendingTriggers != null)
 		g_smReplacePendingTriggers.Clear();
@@ -625,7 +625,7 @@ stock void ClearReplaceReservations()
 	g_iReplacePendingInserts = 0;
 }
 
-stock bool CanQueueReplaceInsert(const char[] sTrigger)
+bool CanQueueReplaceInsert(const char[] sTrigger)
 {
 	if (FindReplaceTriggerIndex(sTrigger) != -1)
 		return true;
@@ -642,7 +642,7 @@ stock bool CanQueueReplaceInsert(const char[] sTrigger)
 
 // Hands the DataPack of a failed request to a retry timer. The timer is killed by a map change and then never
 // gives the pack back, so pending packs are tracked and freed on map end (see SQL_ClearPendingRetries).
-stock void SQL_ScheduleRetry(Timer callback, DataPack pack)
+void SQL_ScheduleRetry(Timer callback, DataPack pack)
 {
 	if (g_alRetryPacks == null)
 		g_alRetryPacks = new ArrayList();
@@ -651,7 +651,7 @@ stock void SQL_ScheduleRetry(Timer callback, DataPack pack)
 	CreateTimer(g_cvar_SQLRetryTime.FloatValue, callback, pack, TIMER_FLAG_NO_MAPCHANGE);
 }
 
-stock void SQL_ClearPendingRetries()
+void SQL_ClearPendingRetries()
 {
 	if (g_alRetryPacks == null)
 		return;
@@ -669,7 +669,7 @@ stock void SQL_ClearPendingRetries()
 // new request and starts with its full retry budget. The counter can be stale when the previous request was
 // abandoned (database still down when its retry timer fired), when its timer was killed by a map change, or when
 // the client left in the middle of a retry.
-stock void SQL_BeginRequest(Handle timer, DataPack pack, int[] iRetryCounters, int client)
+void SQL_BeginRequest(Handle timer, DataPack pack, int[] iRetryCounters, int client)
 {
 	if (timer != INVALID_HANDLE)
 	{
@@ -684,7 +684,7 @@ stock void SQL_BeginRequest(Handle timer, DataPack pack, int[] iRetryCounters, i
 		iRetryCounters[client] = 0;
 }
 
-stock bool DB_Connect()
+bool DB_Connect()
 {
 	if (g_bDBConnectDelayActive)
 		return false;
@@ -711,7 +711,7 @@ stock bool DB_Connect()
 	return false;
 }
 
-stock void OnSQLConnected(Database db, const char[] err, any data)
+void OnSQLConnected(Database db, const char[] err, any data)
 {
 	// See if the connection is valid.
 	if (db == null)
@@ -764,7 +764,7 @@ stock void OnSQLConnected(Database db, const char[] err, any data)
 // Errors that can only mean the connection itself is gone: MySQL client errors 2002, 2003, 2005, 2006, 2013 and 2055,
 // server shutdown and killed connections. There is no error code in a threaded query callback, only the text, so
 // only the start of the message is compared: the rest can contain data (a duplicate key value, a constraint name).
-stock bool SQL_IsConnectionError(const char[] err)
+bool SQL_IsConnectionError(const char[] err)
 {
 	static const char sSignatures[][] = {
 		"MySQL server has gone away", "Lost connection to", "Can't connect to", "Unknown MySQL server host",
@@ -780,7 +780,7 @@ stock bool SQL_IsConnectionError(const char[] err)
 	return false;
 }
 
-stock void SQL_ScheduleReconnect()
+void SQL_ScheduleReconnect()
 {
 	if (g_DatabaseState != DatabaseState_Wait && g_hReconnectTimer == null)
 	{
@@ -789,7 +789,7 @@ stock void SQL_ScheduleReconnect()
 	}
 }
 
-stock void SQL_DropConnection(const char[] err)
+void SQL_DropConnection(const char[] err)
 {
 	if (g_hDatabase != null)
 	{
@@ -806,7 +806,7 @@ stock void SQL_DropConnection(const char[] err)
 #define PROBE_MAX_FAILURES 3
 
 // The error text does not always tell a dead connection from a failed query: check the connection itself.
-stock void SQL_ProbeConnection()
+void SQL_ProbeConnection()
 {
 	if (g_hDatabase == null || g_DatabaseState != DatabaseState_Connected || g_iConnEpoch == 0 || g_iProbeEpoch == g_iConnEpoch)
 		return;
@@ -838,7 +838,7 @@ public void OnSQLConnProbe(Database db, DBResultSet results, const char[] err, a
 // Returns true when a query failed (results == null), so the caller runs its failure path (retry or give up).
 // The connection is only dropped when it is really gone: an ordinary query error (syntax, constraint, deadlock...)
 // must not tear down a healthy connection and trigger a reconnect.
-stock bool SQL_QueryFailed(DBResultSet results, const char[] err)
+bool SQL_QueryFailed(DBResultSet results, const char[] err)
 {
 	if (results != null)
 		return false;
@@ -851,7 +851,7 @@ stock bool SQL_QueryFailed(DBResultSet results, const char[] err)
 	return true;
 }
 
-stock Action SQLReconnect(Handle hTimer)
+Action SQLReconnect(Handle hTimer)
 {
 	g_hReconnectTimer = null;
 	if (g_DatabaseState == DatabaseState_Disconnected || g_DatabaseState == DatabaseState_Wait)
@@ -862,7 +862,7 @@ stock Action SQLReconnect(Handle hTimer)
 	return Plugin_Continue;
 }
 
-stock Action SQLSetNames(Handle timer)
+Action SQLSetNames(Handle timer)
 {
 	if (!DB_Connect())
 		return Plugin_Stop;
@@ -879,7 +879,7 @@ stock Action SQLSetNames(Handle timer)
 	return Plugin_Continue;
 }
 
-stock Action SQLTableCreation_Tag(Handle timer)
+Action SQLTableCreation_Tag(Handle timer)
 {
 	if (!DB_Connect())
 		return Plugin_Stop;
@@ -891,7 +891,7 @@ stock Action SQLTableCreation_Tag(Handle timer)
 	return Plugin_Stop;
 }
 
-stock Action SQLTableCreation_Ban(Handle timer)
+Action SQLTableCreation_Ban(Handle timer)
 {
 	if (!DB_Connect())
 		return Plugin_Stop;
@@ -903,7 +903,7 @@ stock Action SQLTableCreation_Ban(Handle timer)
 	return Plugin_Stop;
 }
 
-stock Action SQLTableCreation_Replace(Handle timer)
+Action SQLTableCreation_Replace(Handle timer)
 {
 	if (!DB_Connect())
 		return Plugin_Stop;
@@ -915,7 +915,7 @@ stock Action SQLTableCreation_Replace(Handle timer)
 	return Plugin_Stop;
 }
 
-stock Action SQLSelect_Replace(Handle timer)
+Action SQLSelect_Replace(Handle timer)
 {
 	if (timer == INVALID_HANDLE)
 		g_iSQLSelectReplaceRetry = 0;
@@ -930,7 +930,7 @@ stock Action SQLSelect_Replace(Handle timer)
 	return Plugin_Stop;
 }
 
-stock Action SQLSelect_Ban(Handle timer, any data)
+Action SQLSelect_Ban(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
@@ -953,7 +953,7 @@ stock Action SQLSelect_Ban(Handle timer, any data)
 	return Plugin_Stop;
 }
 
-stock Action SQLSelect_TagGroup(Handle timer, any data)
+Action SQLSelect_TagGroup(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
@@ -981,7 +981,7 @@ stock Action SQLSelect_TagGroup(Handle timer, any data)
 	return Plugin_Stop;
 }
 
-stock void GetClientFlagString(int client, char[] sClientFlagString, int maxSize)
+void GetClientFlagString(int client, char[] sClientFlagString, int maxSize)
 {
 	sClientFlagString[0] = '\0';
 
@@ -1015,7 +1015,7 @@ stock void GetClientFlagString(int client, char[] sClientFlagString, int maxSize
 	}
 }
 
-stock Action SQLSelect_TagClient(int userid)
+Action SQLSelect_TagClient(int userid)
 {
 	int client = GetClientOfUserId(userid);
 	if (!client)
@@ -1034,7 +1034,7 @@ stock Action SQLSelect_TagClient(int userid)
 	return Plugin_Stop;
 }
 
-stock Action SQLSelect_Tag(Handle timer, any data)
+Action SQLSelect_Tag(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
@@ -1059,7 +1059,7 @@ stock Action SQLSelect_Tag(Handle timer, any data)
 	return Plugin_Stop;
 }
 
-stock Action SQLInsert_Replace(Handle timer, any data)
+Action SQLInsert_Replace(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
@@ -1143,7 +1143,7 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 	return Plugin_Stop;
 }
 
-stock Action SQLDelete_Replace(Handle timer, any data)
+Action SQLDelete_Replace(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
@@ -1167,7 +1167,7 @@ stock Action SQLDelete_Replace(Handle timer, any data)
 	return Plugin_Stop;
 }
 
-stock Action SQLInsert_TagClient(int userid)
+Action SQLInsert_TagClient(int userid)
 {
 	int client = GetClientOfUserId(userid);
 	if (!client)
@@ -1192,7 +1192,7 @@ stock Action SQLInsert_TagClient(int userid)
 	return Plugin_Stop;
 }
 
-stock Action SQLInsert_Tag(Handle timer, any data)
+Action SQLInsert_Tag(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
@@ -1249,7 +1249,7 @@ stock Action SQLInsert_Tag(Handle timer, any data)
 	return Plugin_Stop;
 }
 
-stock Action SQLUpdate_TagClient(int userid)
+Action SQLUpdate_TagClient(int userid)
 {
 	int client = GetClientOfUserId(userid);
 	if (!client)
@@ -1274,7 +1274,7 @@ stock Action SQLUpdate_TagClient(int userid)
 	return Plugin_Stop;
 }
 
-stock Action SQLUpdate_Tag(Handle timer, any data)
+Action SQLUpdate_Tag(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
@@ -1317,7 +1317,7 @@ stock Action SQLUpdate_Tag(Handle timer, any data)
 	return Plugin_Stop;
 }
 
-stock Action SQLDelete_Tag(Handle timer, any data)
+Action SQLDelete_Tag(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
@@ -1349,7 +1349,7 @@ stock Action SQLDelete_Tag(Handle timer, any data)
 	return Plugin_Stop;
 }
 
-stock void OnSqlSetNames(Database db, DBResultSet results, const char[] err, DataPack data)
+void OnSqlSetNames(Database db, DBResultSet results, const char[] err, DataPack data)
 {
 	if (SQL_QueryFailed(results, err))
 	{
@@ -1392,7 +1392,7 @@ public void OnSQLDelete_Tag(Database db, DBResultSet results, const char[] err, 
 	delete pack;
 }
 
-stock Action SQLInsert_Ban(Handle timer, any data)
+Action SQLInsert_Ban(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
@@ -1472,7 +1472,7 @@ stock Action SQLInsert_Ban(Handle timer, any data)
 	return Plugin_Stop;
 }
 
-stock Action SQLDelete_Ban(Handle timer, any data)
+Action SQLDelete_Ban(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
@@ -1632,7 +1632,7 @@ public void OnSQLSelect_Ban(Database db, DBResultSet results, const char[] err, 
 	delete pack;
 }
 
-stock void OnSQLSelect_TagGroup(Database db, DBResultSet results, const char[] err, DataPack data)
+void OnSQLSelect_TagGroup(Database db, DBResultSet results, const char[] err, DataPack data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
@@ -2239,13 +2239,13 @@ bool IsValidHex(char[] arg)
 }
 
 // Pure predicate: true while the client is CCC-banned (permanent or not expired). Never prints.
-stock bool IsClientCCCBanned(int client)
+bool IsClientCCCBanned(int client)
 {
 	return g_iClientBanned[client] == 0 || g_iClientBanned[client] >= GetTime();
 }
 
 // Same check as IsClientCCCBanned, but also tells the client why they are refused.
-stock bool IsClientBanned(int client, const char Key[64] = "")
+bool IsClientBanned(int client, const char Key[64] = "")
 {
 	if (!IsClientCCCBanned(client))
 		return false;
@@ -2286,7 +2286,7 @@ stock bool IsClientBanned(int client, const char Key[64] = "")
 	return true;
 }
 
-stock bool SetColor(char Key[64], char HEX[64], int client, bool IgnoreBan=false)
+bool SetColor(char Key[64], char HEX[64], int client, bool IgnoreBan=false)
 {
 	if (g_DatabaseState != DatabaseState_Connected)
 		return false;
@@ -2336,7 +2336,7 @@ stock bool SetColor(char Key[64], char HEX[64], int client, bool IgnoreBan=false
 	return true;
 }
 
-stock bool SetTag(char text[64], int client, bool IgnoreBan=false)
+bool SetTag(char text[64], int client, bool IgnoreBan=false)
 {
 	if (g_DatabaseState != DatabaseState_Connected)
 		return false;
@@ -2357,14 +2357,14 @@ stock bool SetTag(char text[64], int client, bool IgnoreBan=false)
 	return true;
 }
 
-stock bool RemoveCCC(int client)
+bool RemoveCCC(int client)
 {
 	ResetClient(client);
 
 	return true;
 }
 
-stock void BanCCC(int client, int target, char Time[128])
+void BanCCC(int client, int target, char Time[128])
 {
 	DataPack pack = new DataPack();
 	pack.WriteCell(GetClientUserId(client));
@@ -2389,7 +2389,7 @@ stock void BanCCC(int client, int target, char Time[128])
 	SQLInsert_Ban(INVALID_HANDLE, pack);
 }
 
-stock void UnBanCCC(int client, int target)
+void UnBanCCC(int client, int target)
 {
 	DataPack pack = new DataPack();
 	pack.WriteCell(GetClientUserId(client));
@@ -2399,7 +2399,7 @@ stock void UnBanCCC(int client, int target)
 	SQLDelete_Ban(INVALID_HANDLE, pack);
 }
 
-stock void ToggleCCC(int client)
+void ToggleCCC(int client)
 {
 	g_iClientEnable[client] = g_iClientEnable[client] ? 0 : 1;
 }
@@ -3682,7 +3682,7 @@ public int MenuHandler_AdminUnBan(Menu MenuAUnBan, MenuAction action, int param1
 {
 	if (action == MenuAction_End)
 	{
-		CloseHandle(MenuAUnBan);
+		delete MenuAUnBan;
 		return 0;
 	}
 
@@ -3825,7 +3825,7 @@ public int MenuHandler_Current(Menu hMenuCurrent, MenuAction action, int param1,
 {
 	if (action == MenuAction_End)
 	{
-		CloseHandle(hMenuCurrent);
+		delete hMenuCurrent;
 		return 0;
 	}
 
@@ -3866,7 +3866,7 @@ public int MenuHandler_Admin(Menu MenuAdmin, MenuAction action, int param1, int 
 {
 	if (action == MenuAction_End)
 	{
-		CloseHandle(MenuAdmin);
+		delete MenuAdmin;
 		return 0;
 	}
 
@@ -3974,7 +3974,7 @@ public int MenuHandler_AdminReset(Menu MenuAReset, MenuAction action, int param1
 {
 	if (action == MenuAction_End)
 	{
-		CloseHandle(MenuAReset);
+		delete MenuAReset;
 		return 0;
 	}
 
@@ -4014,7 +4014,7 @@ public int MenuHandler_AdminBan(Menu MenuABan, MenuAction action, int param1, in
 {
 	if (action == MenuAction_End)
 	{
-		CloseHandle(MenuABan);
+		delete MenuABan;
 		return 0;
 	}
 
@@ -4066,7 +4066,7 @@ public int MenuHandler_AdminBanTime(Menu MenuABTime, MenuAction action, int para
 {
 	if (action == MenuAction_End)
 	{
-		CloseHandle(MenuABTime);
+		delete MenuABTime;
 		return 0;
 	}
 
@@ -4137,7 +4137,7 @@ public int MenuHandler_AdminForceTag(Menu MenuAFTag, MenuAction action, int para
 {
 	if (action == MenuAction_End)
 	{
-		CloseHandle(MenuAFTag);
+		delete MenuAFTag;
 		return 0;
 	}
 
@@ -4161,7 +4161,7 @@ public int MenuHandler_AdminForceTagColor(Menu MenuAFTColor, MenuAction action, 
 {
 	if (action == MenuAction_End)
 	{
-		CloseHandle(MenuAFTColor);
+		delete MenuAFTColor;
 		return 0;
 	}
 
@@ -4185,7 +4185,7 @@ public int MenuHandler_AdminForceNameColor(Menu MenuAFNColor, MenuAction action,
 {
 	if (action == MenuAction_End)
 	{
-		CloseHandle(MenuAFNColor);
+		delete MenuAFNColor;
 		return 0;
 	}
 
@@ -4209,7 +4209,7 @@ public int MenuHandler_AdminForceTextColor(Menu MenuAFTeColor, MenuAction action
 {
 	if (action == MenuAction_End)
 	{
-		CloseHandle(MenuAFTeColor);
+		delete MenuAFTeColor;
 		return 0;
 	}
 
@@ -4261,7 +4261,7 @@ public int MenuHandler_TagPrefs(Menu MenuTPrefs, MenuAction action, int param1, 
 {
 	if (action == MenuAction_End)
 	{
-		CloseHandle(MenuTPrefs);
+		delete MenuTPrefs;
 		return 0;
 	}
 
@@ -4336,7 +4336,7 @@ public int MenuHandler_NameColor(Menu MenuNColor, MenuAction action, int param1,
 {
 	if (action == MenuAction_End)
 	{
-		CloseHandle(MenuNColor);
+		delete MenuNColor;
 		return 0;
 	}
 
@@ -4405,7 +4405,7 @@ public int MenuHandler_ChatColor(Menu MenuCColor, MenuAction action, int param1,
 {
 	if (action == MenuAction_End)
 	{
-		CloseHandle(MenuCColor);
+		delete MenuCColor;
 		return 0;
 	}
 
@@ -4453,7 +4453,7 @@ public int MenuHandler_TagColorSub(Menu MenuTCSub, MenuAction action, int param1
 {
 	if (action == MenuAction_End)
 	{
-		CloseHandle(MenuTCSub);
+		delete MenuTCSub;
 		return 0;
 	}
 
@@ -4480,7 +4480,7 @@ public int MenuHandler_NameColorSub(Menu MenuNCSub, MenuAction action, int param
 {
 	if (action == MenuAction_End)
 	{
-		CloseHandle(MenuNCSub);
+		delete MenuNCSub;
 		return 0;
 	}
 
@@ -4507,7 +4507,7 @@ public int MenuHandler_ChatColorSub(Menu MenuCCSub, MenuAction action, int param
 {
 	if (action == MenuAction_End)
 	{
-		CloseHandle(MenuCCSub);
+		delete MenuCCSub;
 		return 0;
 	}
 
@@ -4539,7 +4539,7 @@ public int MenuHandler_ChatColorSub(Menu MenuCCSub, MenuAction action, int param
 //      888   d8888888888 Y88b  d88P      Y88b  d88P 888            888         888       888   888   Y8888 Y88b  d88P
 //      888  d88P     888  "Y8888P88       "Y8888P"  8888888888     888         888     8888888 888    Y888  "Y8888P88
 
-stock void ClearValues(int client)
+void ClearValues(int client)
 {
 	g_iClientEnable[client] = 1;
 	Format(g_sClientTag[client], sizeof(g_sClientTag[]), "");
@@ -4554,7 +4554,7 @@ stock void ClearValues(int client)
 	Format(g_sDefaultClientChatColor[client], sizeof(g_sDefaultClientChatColor[]), "");
 }
 
-stock void ResetClient(int client)
+void ResetClient(int client)
 {
 	Format(g_sReceivedChatInput[client], sizeof(g_sReceivedChatInput[]), "");
 	Format(g_sInputType[client], sizeof(g_sInputType[]), "");
@@ -4615,9 +4615,9 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 	char sTagColorKey[32];
 
 	Format(sAuthorTag, sizeof(sAuthorTag), "%s", g_sClientTag[g_msgAuthor]);
-	bool bNameFound = GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_NameColor), sNameColorKey, sizeof(sNameColorKey));
-	bool bChatFound = GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_ChatColor), sChatColorKey, sizeof(sChatColorKey));
-	bool bTagFound = GetColorKey(g_msgAuthor, view_as<CCC_ColorType>(CCC_TagColor), sTagColorKey, sizeof(sTagColorKey));
+	bool bNameFound = GetColorKey(g_msgAuthor, CCC_NameColor, sNameColorKey, sizeof(sNameColorKey));
+	bool bChatFound = GetColorKey(g_msgAuthor, CCC_ChatColor, sChatColorKey, sizeof(sChatColorKey));
+	bool bTagFound = GetColorKey(g_msgAuthor, CCC_TagColor, sTagColorKey, sizeof(sTagColorKey));
 
 	// Require the trailing space so a bare "/me" or "/meword" is not treated as an action
 	if (!strncmp(g_msgText, "/me ", 4, false))
@@ -4881,7 +4881,7 @@ public void MenuHandler_CookieMenu(int client, CookieMenuAction action, any info
 //  888   Y8888  d8888888888     888       888      Y888P    888       Y88b  d88P
 //  888    Y888 d88P     888     888     8888888     Y8P     8888888888 "Y8888P"
 
-stock bool ConfigForward(int client)
+bool ConfigForward(int client)
 {
 	Action myresult = Plugin_Continue;
 
@@ -4895,7 +4895,7 @@ stock bool ConfigForward(int client)
 	return true;
 }
 
-stock bool GetColorKey(int client, CCC_ColorType colorType, char[] key, int size, bool skipChecks = false)
+bool GetColorKey(int client, CCC_ColorType colorType, char[] key, int size, bool skipChecks = false)
 {
 	if (!skipChecks && (!client || client > MaxClients || !IsClientInGame(client)))
 		return false;
@@ -4996,7 +4996,7 @@ public int Native_GetColorKey(Handle plugin, int numParams)
 	return bFound;
 }
 
-stock bool GetColor(char key[32], char[] value, int size)
+bool GetColor(char key[32], char[] value, int size)
 {
 	if (IsSource2009() && IsValidHex(key))
 	{
