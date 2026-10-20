@@ -106,6 +106,7 @@ int g_iSequence = 0;
 int g_iConnEpoch = 0;  // Identifies the live connection (the connect request that produced it), 0 when there is none
 int g_iProbeEpoch = 0; // Connection a probe is already running on
 int g_iProbeFailures = 0; // Consecutive failed probes on the live connection
+ArrayList g_alRetryPacks = null; // DataPacks owned by a pending retry timer
 
 int g_msgAuthor;
 bool g_msgIsChat;
@@ -395,6 +396,8 @@ public void OnMapEnd()
 		g_hDatabase = null;
 	}
 
+	SQL_ClearPendingRetries();
+
 	g_iConnEpoch = 0;
 	g_DatabaseState = DatabaseState_Disconnected;
 	g_iConnectLock = 0;
@@ -626,12 +629,47 @@ stock bool CanQueueReplaceInsert(const char[] sTrigger)
 /// SQL ///
 ///////////
 
-// A request that does not come from a retry timer starts with its full retry budget. The counter can be stale
-// when the previous request was abandoned (database still down when its retry timer fired), when its timer was
-// killed by a map change, or when the client left in the middle of a retry.
-stock void ResetRetryBudget(Handle timer, int[] iRetryCounters, int client)
+// Hands the DataPack of a failed request to a retry timer. The timer is killed by a map change and then never
+// gives the pack back, so pending packs are tracked and freed on map end (see SQL_ClearPendingRetries).
+stock void SQL_ScheduleRetry(Timer callback, DataPack pack)
 {
-	if (timer == INVALID_HANDLE && client)
+	if (g_alRetryPacks == null)
+		g_alRetryPacks = new ArrayList();
+
+	g_alRetryPacks.Push(pack);
+	CreateTimer(g_cvar_SQLRetryTime.FloatValue, callback, pack, TIMER_FLAG_NO_MAPCHANGE);
+}
+
+stock void SQL_ClearPendingRetries()
+{
+	if (g_alRetryPacks == null)
+		return;
+
+	for (int i = 0; i < g_alRetryPacks.Length; i++)
+	{
+		DataPack pack = view_as<DataPack>(g_alRetryPacks.Get(i));
+		delete pack;
+	}
+
+	g_alRetryPacks.Clear();
+}
+
+// First call of every request entry point. A retry timer hands its pack back to the request; any other call is a
+// new request and starts with its full retry budget. The counter can be stale when the previous request was
+// abandoned (database still down when its retry timer fired), when its timer was killed by a map change, or when
+// the client left in the middle of a retry.
+stock void SQL_BeginRequest(Handle timer, DataPack pack, int[] iRetryCounters, int client)
+{
+	if (timer != INVALID_HANDLE)
+	{
+		int index = (g_alRetryPacks != null) ? g_alRetryPacks.FindValue(pack) : -1;
+		if (index != -1)
+			g_alRetryPacks.Erase(index);
+
+		return;
+	}
+
+	if (client)
 		iRetryCounters[client] = 0;
 }
 
@@ -885,7 +923,7 @@ stock Action SQLSelect_Ban(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
-	ResetRetryBudget(timer, g_iSQLSelectBanRetry, GetClientOfUserId(pack.ReadCell()));
+	SQL_BeginRequest(timer, pack, g_iSQLSelectBanRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -908,7 +946,7 @@ stock Action SQLSelect_TagGroup(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
-	ResetRetryBudget(timer, g_iSQLSelectTagGroupRetry, GetClientOfUserId(pack.ReadCell()));
+	SQL_BeginRequest(timer, pack, g_iSQLSelectTagGroupRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -989,7 +1027,7 @@ stock Action SQLSelect_Tag(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
-	ResetRetryBudget(timer, g_iSQLSelectTagRetry, GetClientOfUserId(pack.ReadCell()));
+	SQL_BeginRequest(timer, pack, g_iSQLSelectTagRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -1025,7 +1063,7 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 	bool bPendingTracked = view_as<bool>(pack.ReadCell());
 	bool bCountsTowardsLimit = view_as<bool>(pack.ReadCell());
 
-	ResetRetryBudget(timer, g_iSQLInsertReplaceRetry, GetClientOfUserId(userid));
+	SQL_BeginRequest(timer, pack, g_iSQLInsertReplaceRetry, GetClientOfUserId(userid));
 
 	if (!DB_Connect())
 	{
@@ -1098,7 +1136,7 @@ stock Action SQLDelete_Replace(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
-	ResetRetryBudget(timer, g_iSQLDeleteReplaceRetry, GetClientOfUserId(pack.ReadCell()));
+	SQL_BeginRequest(timer, pack, g_iSQLDeleteReplaceRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -1147,7 +1185,7 @@ stock Action SQLInsert_Tag(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
-	ResetRetryBudget(timer, g_iSQLInsertTagRetry, GetClientOfUserId(pack.ReadCell()));
+	SQL_BeginRequest(timer, pack, g_iSQLInsertTagRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -1229,7 +1267,7 @@ stock Action SQLUpdate_Tag(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
-	ResetRetryBudget(timer, g_iSQLUpdateTagRetry, GetClientOfUserId(pack.ReadCell()));
+	SQL_BeginRequest(timer, pack, g_iSQLUpdateTagRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -1272,7 +1310,7 @@ stock Action SQLDelete_Tag(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
-	ResetRetryBudget(timer, g_iSQLDeleteTagRetry, GetClientOfUserId(pack.ReadCell()));
+	SQL_BeginRequest(timer, pack, g_iSQLDeleteTagRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -1333,7 +1371,7 @@ public void OnSQLDelete_Tag(Database db, DBResultSet results, const char[] err, 
 		if (g_iSQLDeleteTagRetry[client] < g_cvar_SQLMaxRetries.IntValue)
 		{
 			g_iSQLDeleteTagRetry[client]++;
-			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLDelete_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
+			SQL_ScheduleRetry(SQLDelete_Tag, pack);
 			return;
 		}
 	}
@@ -1348,7 +1386,7 @@ stock Action SQLInsert_Ban(Handle timer, any data)
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 	pack.ReadCell();
-	ResetRetryBudget(timer, g_iSQLInsertBanRetry, GetClientOfUserId(pack.ReadCell()));
+	SQL_BeginRequest(timer, pack, g_iSQLInsertBanRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -1428,7 +1466,7 @@ stock Action SQLDelete_Ban(Handle timer, any data)
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 	pack.ReadCell();
-	ResetRetryBudget(timer, g_iSQLDeleteBanRetry, GetClientOfUserId(pack.ReadCell()));
+	SQL_BeginRequest(timer, pack, g_iSQLDeleteBanRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -1565,7 +1603,7 @@ public void OnSQLSelect_Ban(Database db, DBResultSet results, const char[] err, 
 		if (g_iSQLSelectBanRetry[client] < g_cvar_SQLMaxRetries.IntValue)
 		{
 			g_iSQLSelectBanRetry[client]++;
-			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLSelect_Ban, data, TIMER_FLAG_NO_MAPCHANGE);
+			SQL_ScheduleRetry(SQLSelect_Ban, pack);
 			return;
 		}
 	}
@@ -1604,7 +1642,7 @@ stock void OnSQLSelect_TagGroup(Database db, DBResultSet results, const char[] e
 		if (g_iSQLSelectTagGroupRetry[client] < g_cvar_SQLMaxRetries.IntValue)
 		{
 			g_iSQLSelectTagGroupRetry[client]++;
-			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLSelect_TagGroup, data, TIMER_FLAG_NO_MAPCHANGE);
+			SQL_ScheduleRetry(SQLSelect_TagGroup, pack);
 			return;
 		}
 	}
@@ -1659,7 +1697,7 @@ public void OnSQLSelect_Tag(Database db, DBResultSet results, const char[] err, 
 		if (g_iSQLSelectTagRetry[client] < g_cvar_SQLMaxRetries.IntValue)
 		{
 			g_iSQLSelectTagRetry[client]++;
-			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLSelect_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
+			SQL_ScheduleRetry(SQLSelect_Tag, pack);
 			return;
 		}
 	}
@@ -1723,7 +1761,7 @@ public void OnSQLUpdate_Tag(Database db, DBResultSet results, const char[] err, 
 		if (g_iSQLUpdateTagRetry[client] < g_cvar_SQLMaxRetries.IntValue)
 		{
 			g_iSQLUpdateTagRetry[client]++;
-			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLUpdate_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
+			SQL_ScheduleRetry(SQLUpdate_Tag, pack);
 			return;
 		}
 	}
@@ -1776,7 +1814,7 @@ public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] e
 		if (g_iSQLInsertReplaceRetry[client] < g_cvar_SQLMaxRetries.IntValue)
 		{
 			g_iSQLInsertReplaceRetry[client]++;
-			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLInsert_Replace, data, TIMER_FLAG_NO_MAPCHANGE);
+			SQL_ScheduleRetry(SQLInsert_Replace, pack);
 			return;
 		}
 	}
@@ -1829,7 +1867,7 @@ public void OnSQLDelete_Replace(Database db, DBResultSet results, const char[] e
 		if (g_iSQLDeleteReplaceRetry[client] < g_cvar_SQLMaxRetries.IntValue)
 		{
 			g_iSQLDeleteReplaceRetry[client]++;
-			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLDelete_Replace, data, TIMER_FLAG_NO_MAPCHANGE);
+			SQL_ScheduleRetry(SQLDelete_Replace, pack);
 			return;
 		}
 	}
@@ -1885,7 +1923,7 @@ public void OnSQLInsert_Tag(Database db, DBResultSet results, const char[] err, 
 		if (g_iSQLInsertTagRetry[client] < g_cvar_SQLMaxRetries.IntValue)
 		{
 			g_iSQLInsertTagRetry[client]++;
-			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLInsert_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
+			SQL_ScheduleRetry(SQLInsert_Tag, pack);
 			return;
 		}
 	}
@@ -1916,7 +1954,7 @@ public void OnSQLInsert_Ban(Database db, DBResultSet results, const char[] err, 
 		if (g_iSQLInsertBanRetry[target] < g_cvar_SQLMaxRetries.IntValue)
 		{
 			g_iSQLInsertBanRetry[target]++;
-			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLInsert_Ban, data, TIMER_FLAG_NO_MAPCHANGE);
+			SQL_ScheduleRetry(SQLInsert_Ban, pack);
 			return;
 		}
 	}
@@ -1962,7 +2000,7 @@ public void OnSQLDelete_Ban(Database db, DBResultSet results, const char[] err, 
 		if (g_iSQLDeleteBanRetry[target] < g_cvar_SQLMaxRetries.IntValue)
 		{
 			g_iSQLDeleteBanRetry[target]++;
-			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLDelete_Ban, data, TIMER_FLAG_NO_MAPCHANGE);
+			SQL_ScheduleRetry(SQLDelete_Ban, pack);
 			return;
 		}
 	}
