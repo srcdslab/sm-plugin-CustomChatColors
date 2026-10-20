@@ -105,6 +105,7 @@ int g_iConnectLock = 0;
 int g_iSequence = 0;
 int g_iConnEpoch = 0;  // Identifies the live connection (the connect request that produced it), 0 when there is none
 int g_iProbeEpoch = 0; // Connection a probe is already running on
+int g_iProbeFailures = 0; // Consecutive failed probes on the live connection
 
 int g_msgAuthor;
 bool g_msgIsChat;
@@ -690,6 +691,7 @@ stock void OnSQLConnected(Database db, const char[] err, any data)
 
 	g_iConnectLock = 0;
 	g_iConnEpoch = data;
+	g_iProbeFailures = 0;
 	g_DatabaseState = DatabaseState_Connected;
 	g_hDatabase = db;
 
@@ -710,18 +712,19 @@ stock void OnSQLConnected(Database db, const char[] err, any data)
 	SQLTableCreation_Replace(INVALID_HANDLE);
 }
 
-// Errors that can only mean the connection itself is gone: MySQL client errors 2002-2006, 2013 and 2055,
-// server shutdown and killed connections. There is no error code in a threaded query callback, only the text.
+// Errors that can only mean the connection itself is gone: MySQL client errors 2002, 2003, 2005, 2006, 2013 and 2055,
+// server shutdown and killed connections. There is no error code in a threaded query callback, only the text, so
+// only the start of the message is compared: the rest can contain data (a duplicate key value, a constraint name).
 stock bool SQL_IsConnectionError(const char[] err)
 {
 	static const char sSignatures[][] = {
-		"gone away", "Lost connection", "Can't connect", "Unknown MySQL server host", "Server shutdown",
-		"Connection was killed", "Connection refused", "Connection reset", "Broken pipe"
+		"MySQL server has gone away", "Lost connection to", "Can't connect to", "Unknown MySQL server host",
+		"Server shutdown in progress", "Connection was killed"
 	};
 
 	for (int i = 0; i < sizeof(sSignatures); i++)
 	{
-		if (StrContains(err, sSignatures[i], false) != -1)
+		if (strncmp(err, sSignatures[i], strlen(sSignatures[i]), false) == 0)
 			return true;
 	}
 
@@ -747,8 +750,11 @@ stock void SQL_DropConnection(const char[] err)
 	}
 
 	g_iConnEpoch = 0;
+	g_iProbeFailures = 0;
 	SQL_ScheduleReconnect();
 }
+
+#define PROBE_MAX_FAILURES 3
 
 // The error text does not always tell a dead connection from a failed query: check the connection itself.
 stock void SQL_ProbeConnection()
@@ -768,7 +774,15 @@ public void OnSQLConnProbe(Database db, DBResultSet results, const char[] err, a
 
 	g_iProbeEpoch = 0;
 
-	if (results == null)
+	if (results != null)
+	{
+		g_iProbeFailures = 0;
+		return;
+	}
+
+	// A failing SELECT 1 does not always mean a dead connection (an exceeded account resource limit, for example, fails
+	// it too): drop the connection when the error says so, or when the probes keep failing whatever the error is.
+	if (err[0] == '\0' || SQL_IsConnectionError(err) || ++g_iProbeFailures >= PROBE_MAX_FAILURES)
 		SQL_DropConnection(err[0] ? err : "connection check failed");
 }
 
