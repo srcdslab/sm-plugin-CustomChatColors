@@ -114,19 +114,19 @@ bool g_msgIsTeammate;
 
 bool g_Ignored[MAXPLAYERS + 1][MAXPLAYERS + 1];
 
-int g_bSQLSelectReplaceRetry = 0;
-int g_bSQLInsertReplaceRetry[MAXPLAYERS + 1] = { 0, ... };
-int g_bSQLDeleteReplaceRetry[MAXPLAYERS + 1] = { 0, ... };
+int g_iSQLSelectReplaceRetry = 0;
+int g_iSQLInsertReplaceRetry[MAXPLAYERS + 1] = { 0, ... };
+int g_iSQLDeleteReplaceRetry[MAXPLAYERS + 1] = { 0, ... };
 
-int g_bSQLSelectBanRetry[MAXPLAYERS + 1] = { 0, ... };
-int g_bSQLInsertBanRetry[MAXPLAYERS + 1] = { 0, ... };
-int g_bSQLDeleteBanRetry[MAXPLAYERS + 1] = { 0, ... };
+int g_iSQLSelectBanRetry[MAXPLAYERS + 1] = { 0, ... };
+int g_iSQLInsertBanRetry[MAXPLAYERS + 1] = { 0, ... };
+int g_iSQLDeleteBanRetry[MAXPLAYERS + 1] = { 0, ... };
 
-int g_bSQLSelectTagGroupRetry[MAXPLAYERS + 1] = { 0, ... };
-int g_bSQLSelectTagRetry[MAXPLAYERS + 1] = { 0, ... };
-int g_bSQLUpdateTagRetry[MAXPLAYERS + 1] = { 0, ... };
-int g_bSQLInsertTagRetry[MAXPLAYERS + 1] = { 0, ... };
-int g_bSQLDeleteTagRetry[MAXPLAYERS + 1] = { 0, ... };
+int g_iSQLSelectTagGroupRetry[MAXPLAYERS + 1] = { 0, ... };
+int g_iSQLSelectTagRetry[MAXPLAYERS + 1] = { 0, ... };
+int g_iSQLUpdateTagRetry[MAXPLAYERS + 1] = { 0, ... };
+int g_iSQLInsertTagRetry[MAXPLAYERS + 1] = { 0, ... };
+int g_iSQLDeleteTagRetry[MAXPLAYERS + 1] = { 0, ... };
 
 char g_ColorNames[13][10] = {"White", "Red", "Green", "Blue", "Yellow", "Purple", "Cyan", "Orange", "Pink", "Olive", "Lime", "Violet", "Lightblue"};
 int g_Colors[13][3] = {{255,255,255},{255,0,0},{0,255,0},{0,0,255},{255,255,0},{255,0,255},{0,255,255},{255,128,0},{255,0,128},{128,255,0},{0,255,128},{128,0,255},{0,128,255}};
@@ -523,7 +523,8 @@ stock void LoadColorArray()
 
 	CInitColors();
 	
-	g_sColorsArray = new ArrayList(sizeof(g_sColorKeys));
+	// Block size is the length of one key, not the number of slots of the MultiColors hash table
+	g_sColorsArray = new ArrayList(ByteCountToCells(sizeof(g_sColorKeys[])));
 
 	for (int i = 0; i < sizeof(g_sColorKeys); i++)
 	{
@@ -541,27 +542,7 @@ stock void SortColors()
 	if (g_sColorsArray == null)
 		return;
 
-	char temp[64];
-
-	// Sorting strings using bubble sort
-	for (int j = 0; j < g_sColorsArray.Length - 1; j++)
-	{
-		for (int i = j + 1; i < g_sColorsArray.Length; i++)
-		{
-			char keyJ[64];
-			char keyI[64];
-			g_sColorsArray.GetString(j, keyJ, sizeof(keyJ));
-			g_sColorsArray.GetString(i, keyI, sizeof(keyI));
-			if (strcmp(keyJ, keyI) > 0)
-			{
-				Format(temp, sizeof(temp), "%s", keyJ);
-				Format(keyJ, sizeof(keyJ), "%s", keyI);
-				Format(keyI, sizeof(keyI), "%s", temp);
-				g_sColorsArray.SetString(j, keyJ);
-				g_sColorsArray.SetString(i, keyI);
-			}
-		}
-	}
+	g_sColorsArray.Sort(Sort_Ascending, Sort_String);
 }
 
 // Empties the cached replace list only, reservations of pending inserts are left untouched
@@ -807,7 +788,7 @@ stock Action SQLTableCreation_Replace(Handle timer)
 stock Action SQLSelect_Replace(Handle timer)
 {
 	if (timer == INVALID_HANDLE)
-		g_bSQLSelectReplaceRetry = 0;
+		g_iSQLSelectReplaceRetry = 0;
 
 	if (!DB_Connect())
 		return Plugin_Stop;
@@ -823,7 +804,7 @@ stock Action SQLSelect_Ban(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
-	ResetRetryBudget(timer, g_bSQLSelectBanRetry, GetClientOfUserId(pack.ReadCell()));
+	ResetRetryBudget(timer, g_iSQLSelectBanRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -846,7 +827,7 @@ stock Action SQLSelect_TagGroup(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
-	ResetRetryBudget(timer, g_bSQLSelectTagGroupRetry, GetClientOfUserId(pack.ReadCell()));
+	ResetRetryBudget(timer, g_iSQLSelectTagGroupRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -927,7 +908,7 @@ stock Action SQLSelect_Tag(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
-	ResetRetryBudget(timer, g_bSQLSelectTagRetry, GetClientOfUserId(pack.ReadCell()));
+	ResetRetryBudget(timer, g_iSQLSelectTagRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -972,7 +953,7 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 
 		int iRetryClient = GetClientOfUserId(userid);
 		if (iRetryClient)
-			g_bSQLInsertReplaceRetry[iRetryClient] = 0;
+			g_iSQLInsertReplaceRetry[iRetryClient] = 0;
 
 		delete pack;
 		return Plugin_Stop;
@@ -1038,7 +1019,7 @@ stock Action SQLDelete_Replace(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
-	ResetRetryBudget(timer, g_bSQLDeleteReplaceRetry, GetClientOfUserId(pack.ReadCell()));
+	ResetRetryBudget(timer, g_iSQLDeleteReplaceRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -1087,7 +1068,7 @@ stock Action SQLInsert_Tag(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
-	ResetRetryBudget(timer, g_bSQLInsertTagRetry, GetClientOfUserId(pack.ReadCell()));
+	ResetRetryBudget(timer, g_iSQLInsertTagRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -1169,7 +1150,7 @@ stock Action SQLUpdate_Tag(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
-	ResetRetryBudget(timer, g_bSQLUpdateTagRetry, GetClientOfUserId(pack.ReadCell()));
+	ResetRetryBudget(timer, g_iSQLUpdateTagRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -1212,7 +1193,7 @@ stock Action SQLDelete_Tag(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
-	ResetRetryBudget(timer, g_bSQLDeleteTagRetry, GetClientOfUserId(pack.ReadCell()));
+	ResetRetryBudget(timer, g_iSQLDeleteTagRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -1244,8 +1225,8 @@ stock void OnSqlSetNames(Database db, DBResultSet results, const char[] err, Dat
 {
 	if (SQL_Conn_Lost(results))
 	{
-		LogError("Database error while setting names as utf8, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
-		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSetNames, _, TIMER_FLAG_NO_MAPCHANGE);
+		LogError("Database error while setting names as utf8, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
+		CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLSetNames, _, TIMER_FLAG_NO_MAPCHANGE);
 
 		return;
 	}
@@ -1268,15 +1249,15 @@ public void OnSQLDelete_Tag(Database db, DBResultSet results, const char[] err, 
 
 	if (SQL_Conn_Lost(results))
 	{
-		if (g_bSQLDeleteTagRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_iSQLDeleteTagRetry[client] < g_cvar_SQLMaxRetries.IntValue)
 		{
-			g_bSQLDeleteTagRetry[client]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLDelete_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
+			g_iSQLDeleteTagRetry[client]++;
+			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLDelete_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
 
-	g_bSQLDeleteTagRetry[client] = 0;
+	g_iSQLDeleteTagRetry[client] = 0;
 
 	delete pack;
 }
@@ -1286,7 +1267,7 @@ stock Action SQLInsert_Ban(Handle timer, any data)
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 	pack.ReadCell();
-	ResetRetryBudget(timer, g_bSQLInsertBanRetry, GetClientOfUserId(pack.ReadCell()));
+	ResetRetryBudget(timer, g_iSQLInsertBanRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -1366,7 +1347,7 @@ stock Action SQLDelete_Ban(Handle timer, any data)
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 	pack.ReadCell();
-	ResetRetryBudget(timer, g_bSQLDeleteBanRetry, GetClientOfUserId(pack.ReadCell()));
+	ResetRetryBudget(timer, g_iSQLDeleteBanRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -1398,8 +1379,8 @@ public void OnSQLTableCreated_Tag(Database db, DBResultSet results, const char[]
 {
 	if (SQL_Conn_Lost(results))
 	{
-		LogError("Database error while creating/checking for \"ccc_tag\" table, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
-		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLTableCreation_Tag, _, TIMER_FLAG_NO_MAPCHANGE);
+		LogError("Database error while creating/checking for \"ccc_tag\" table, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
+		CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLTableCreation_Tag, _, TIMER_FLAG_NO_MAPCHANGE);
 
 		return;
 	}
@@ -1412,8 +1393,8 @@ public void OnSQLTableCreated_Ban(Database db, DBResultSet results, const char[]
 {
 	if (SQL_Conn_Lost(results))
 	{
-		LogError("Database error while creating/checking for \"ccc_ban\" table, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
-		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLTableCreation_Ban, _, TIMER_FLAG_NO_MAPCHANGE);
+		LogError("Database error while creating/checking for \"ccc_ban\" table, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
+		CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLTableCreation_Ban, _, TIMER_FLAG_NO_MAPCHANGE);
 
 		return;
 	}
@@ -1426,8 +1407,8 @@ public void OnSQLTableCreated_Replace(Database db, DBResultSet results, const ch
 {
 	if (SQL_Conn_Lost(results))
 	{
-		LogError("Database error while creating/checking for \"ccc_replace\" table, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
-		CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLTableCreation_Replace, _, TIMER_FLAG_NO_MAPCHANGE);
+		LogError("Database error while creating/checking for \"ccc_replace\" table, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
+		CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLTableCreation_Replace, _, TIMER_FLAG_NO_MAPCHANGE);
 
 		return;
 	}
@@ -1440,12 +1421,12 @@ public void OnSQLSelect_Replace(Database db, DBResultSet results, const char[] e
 {
 	if (SQL_Conn_Lost(results))
 	{
-		LogError("An error occurred while querying the database for the replace list, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
+		LogError("An error occurred while querying the database for the replace list, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
 
-		if (g_bSQLSelectReplaceRetry < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_iSQLSelectReplaceRetry < g_cvar_SQLMaxRetries.IntValue)
 		{
-			g_bSQLSelectReplaceRetry++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_Replace, client, TIMER_FLAG_NO_MAPCHANGE);
+			g_iSQLSelectReplaceRetry++;
+			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLSelect_Replace, client, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1478,7 +1459,7 @@ public void OnSQLSelect_Replace(Database db, DBResultSet results, const char[] e
 		}
 	}
 
-	g_bSQLSelectReplaceRetry = 0;
+	g_iSQLSelectReplaceRetry = 0;
 }
 
 public void OnSQLSelect_Ban(Database db, DBResultSet results, const char[] err, any data)
@@ -1498,12 +1479,12 @@ public void OnSQLSelect_Ban(Database db, DBResultSet results, const char[] err, 
 
 	if (SQL_Conn_Lost(results))
 	{
-		LogError("An error occurred while querying the database for the user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
+		LogError("An error occurred while querying the database for the user tag, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
 
-		if (g_bSQLSelectBanRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_iSQLSelectBanRetry[client] < g_cvar_SQLMaxRetries.IntValue)
 		{
-			g_bSQLSelectBanRetry[client]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_Ban, data, TIMER_FLAG_NO_MAPCHANGE);
+			g_iSQLSelectBanRetry[client]++;
+			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLSelect_Ban, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1516,7 +1497,7 @@ public void OnSQLSelect_Ban(Database db, DBResultSet results, const char[] err, 
 		g_iClientBanned[client] = -1;
 	}
 
-	g_bSQLSelectBanRetry[client] = 0;
+	g_iSQLSelectBanRetry[client] = 0;
 
 	delete pack;
 }
@@ -1537,12 +1518,12 @@ stock void OnSQLSelect_TagGroup(Database db, DBResultSet results, const char[] e
 
 	if (SQL_Conn_Lost(results))
 	{
-		LogError("An error occurred while querying the database for the user group tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
+		LogError("An error occurred while querying the database for the user group tag, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
 
-		if (g_bSQLSelectTagGroupRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_iSQLSelectTagGroupRetry[client] < g_cvar_SQLMaxRetries.IntValue)
 		{
-			g_bSQLSelectTagGroupRetry[client]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_TagGroup, data, TIMER_FLAG_NO_MAPCHANGE);
+			g_iSQLSelectTagGroupRetry[client]++;
+			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLSelect_TagGroup, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1571,7 +1552,7 @@ stock void OnSQLSelect_TagGroup(Database db, DBResultSet results, const char[] e
 		g_bClientDataLoaded[client] = true;
 	}
 
-	g_bSQLSelectTagGroupRetry[client] = 0;
+	g_iSQLSelectTagGroupRetry[client] = 0;
 
 	delete pack;
 }
@@ -1592,12 +1573,12 @@ public void OnSQLSelect_Tag(Database db, DBResultSet results, const char[] err, 
 
 	if (SQL_Conn_Lost(results))
 	{
-		LogError("An error occurred while querying the database for the user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
+		LogError("An error occurred while querying the database for the user tag, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
 
-		if (g_bSQLSelectTagRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_iSQLSelectTagRetry[client] < g_cvar_SQLMaxRetries.IntValue)
 		{
-			g_bSQLSelectTagRetry[client]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLSelect_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
+			g_iSQLSelectTagRetry[client]++;
+			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLSelect_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1632,12 +1613,12 @@ public void OnSQLSelect_Tag(Database db, DBResultSet results, const char[] err, 
 	}
 	else
 	{
-		g_bSQLSelectTagRetry[client] = 0;
+		g_iSQLSelectTagRetry[client] = 0;
 		SQLSelect_TagGroup(INVALID_HANDLE, data);
 		return;
 	}
 
-	g_bSQLSelectTagRetry[client] = 0;
+	g_iSQLSelectTagRetry[client] = 0;
 
 	delete pack;
 }
@@ -1656,12 +1637,12 @@ public void OnSQLUpdate_Tag(Database db, DBResultSet results, const char[] err, 
 
 	if (SQL_Conn_Lost(results))
 	{
-		LogError("An error occurred while updating an user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
+		LogError("An error occurred while updating an user tag, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
 
-		if (g_bSQLUpdateTagRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_iSQLUpdateTagRetry[client] < g_cvar_SQLMaxRetries.IntValue)
 		{
-			g_bSQLUpdateTagRetry[client]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLUpdate_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
+			g_iSQLUpdateTagRetry[client]++;
+			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLUpdate_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1682,7 +1663,7 @@ public void OnSQLUpdate_Tag(Database db, DBResultSet results, const char[] err, 
 	strcopy(g_sDefaultClientNameColor[client], sizeof(g_sDefaultClientNameColor[]), g_sClientNameColor[client]);
 	strcopy(g_sDefaultClientChatColor[client], sizeof(g_sDefaultClientChatColor[]), g_sClientChatColor[client]);
 	g_bClientDataLoaded[client] = true;
-	g_bSQLUpdateTagRetry[client] = 0;
+	g_iSQLUpdateTagRetry[client] = 0;
 
 	delete pack;
 }
@@ -1710,11 +1691,11 @@ public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] e
 
 	if (SQL_Conn_Lost(results))
 	{
-		LogError("An error occurred while inserting a chat trigger, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
-		if (g_bSQLInsertReplaceRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
+		LogError("An error occurred while inserting a chat trigger, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
+		if (g_iSQLInsertReplaceRetry[client] < g_cvar_SQLMaxRetries.IntValue)
 		{
-			g_bSQLInsertReplaceRetry[client]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLInsert_Replace, data, TIMER_FLAG_NO_MAPCHANGE);
+			g_iSQLInsertReplaceRetry[client]++;
+			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLInsert_Replace, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1741,7 +1722,7 @@ public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] e
 		}
 	}
 
-	g_bSQLInsertReplaceRetry[client] = 0;
+	g_iSQLInsertReplaceRetry[client] = 0;
 	if (bCountsTowardsLimit)
 		UnmarkReplaceTriggerPending(sTrigger);
 
@@ -1762,10 +1743,10 @@ public void OnSQLDelete_Replace(Database db, DBResultSet results, const char[] e
 
 	if (SQL_Conn_Lost(results))
 	{
-		if (g_bSQLDeleteReplaceRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_iSQLDeleteReplaceRetry[client] < g_cvar_SQLMaxRetries.IntValue)
 		{
-			g_bSQLDeleteReplaceRetry[client]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLDelete_Replace, data, TIMER_FLAG_NO_MAPCHANGE);
+			g_iSQLDeleteReplaceRetry[client]++;
+			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLDelete_Replace, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1798,7 +1779,7 @@ public void OnSQLDelete_Replace(Database db, DBResultSet results, const char[] e
 		}
 	}
 
-	g_bSQLDeleteReplaceRetry[client] = 0;
+	g_iSQLDeleteReplaceRetry[client] = 0;
 
 	delete pack;
 }
@@ -1817,16 +1798,16 @@ public void OnSQLInsert_Tag(Database db, DBResultSet results, const char[] err, 
 
 	if (SQL_Conn_Lost(results))
 	{
-		LogError("An error occurred while inserting an user tag, retrying in %d seconds. (%s)", GetConVarInt(g_cvar_SQLRetryTime), err);
-		if (g_bSQLInsertTagRetry[client] < GetConVarInt(g_cvar_SQLMaxRetries))
+		LogError("An error occurred while inserting an user tag, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
+		if (g_iSQLInsertTagRetry[client] < g_cvar_SQLMaxRetries.IntValue)
 		{
-			g_bSQLInsertTagRetry[client]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLInsert_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
+			g_iSQLInsertTagRetry[client]++;
+			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLInsert_Tag, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
 
-	g_bSQLInsertTagRetry[client] = 0;
+	g_iSQLInsertTagRetry[client] = 0;
 
 	delete pack;
 }
@@ -1847,10 +1828,10 @@ public void OnSQLInsert_Ban(Database db, DBResultSet results, const char[] err, 
 
 	if (SQL_Conn_Lost(results))
 	{
-		if (g_bSQLInsertBanRetry[target] < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_iSQLInsertBanRetry[target] < g_cvar_SQLMaxRetries.IntValue)
 		{
-			g_bSQLInsertBanRetry[target]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLInsert_Ban, data, TIMER_FLAG_NO_MAPCHANGE);
+			g_iSQLInsertBanRetry[target]++;
+			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLInsert_Ban, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1870,7 +1851,7 @@ public void OnSQLInsert_Ban(Database db, DBResultSet results, const char[] err, 
 		g_iClientBanned[target] = time;
 	}
 
-	g_bSQLInsertBanRetry[target] = 0;
+	g_iSQLInsertBanRetry[target] = 0;
 
 	delete pack;
 }
@@ -1891,10 +1872,10 @@ public void OnSQLDelete_Ban(Database db, DBResultSet results, const char[] err, 
 
 	if (SQL_Conn_Lost(results))
 	{
-		if (g_bSQLDeleteBanRetry[target] < GetConVarInt(g_cvar_SQLMaxRetries))
+		if (g_iSQLDeleteBanRetry[target] < g_cvar_SQLMaxRetries.IntValue)
 		{
-			g_bSQLDeleteBanRetry[target]++;
-			CreateTimer(GetConVarFloat(g_cvar_SQLRetryTime), SQLDelete_Ban, data, TIMER_FLAG_NO_MAPCHANGE);
+			g_iSQLDeleteBanRetry[target]++;
+			CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLDelete_Ban, data, TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 	}
@@ -1903,7 +1884,7 @@ public void OnSQLDelete_Ban(Database db, DBResultSet results, const char[] err, 
 		g_iClientBanned[target] = -1;
 	}
 
-	g_bSQLDeleteBanRetry[target] = 0;
+	g_iSQLDeleteBanRetry[target] = 0;
 
 	delete pack;
 }
@@ -4510,7 +4491,7 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		bIsAction = true;
 	}
 
-	if (GetConVarInt(g_cvar_ReplaceText) > 0)
+	if (g_cvar_ReplaceText.IntValue > 0)
 	{
 		char sPart[MAX_CHAT_LENGTH];
 		char sBuff[MAX_CHAT_LENGTH];
@@ -4552,7 +4533,7 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		if (strlen(sAuthorTag) > 0)
 			Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s%s", GetColor(sTagColorKey, sValue, sizeof(sValue)) ? "#" : "", bTagFound ? sTagColorKey : "default", sAuthorTag, g_msgSender);
 
-		if (g_msgText[0] == '>' && GetConVarInt(g_cvar_GreenText) > 0 && CGetColor("green", sValue, sizeof(sValue)))
+		if (g_msgText[0] == '>' && g_cvar_GreenText.IntValue > 0 && CGetColor("green", sValue, sizeof(sValue)))
 			Format(g_msgText, sizeof(g_msgText), "{green}%s", g_msgText);
 
 		if (bChatFound)
