@@ -399,6 +399,21 @@ public void OnMapEnd()
 
 public void OnClientDisconnect(int client)
 {
+	UnloadClientData(client);
+
+	// Client slots are reused: a player must not inherit the previous occupant's ban or ignore list.
+	// Kept out of UnloadClientData() so CCC_UnLoadClient() does not wipe state set via CCC_SetIgnored().
+	g_iClientBanned[client] = -1;
+
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		g_Ignored[client][i] = false;
+		g_Ignored[i][client] = false;
+	}
+}
+
+void UnloadClientData(int client)
+{
 	g_bClientDataLoaded[client] = false;
 	g_iClientPsayCooldown[client] = 0;
 	g_iClientFastReply[client] = -1;
@@ -1442,6 +1457,10 @@ public void OnSQLSelect_Ban(Database db, DBResultSet results, const char[] err, 
 	else if (SQL_FetchRow(results))
 	{
 		g_iClientBanned[client] = SQL_FetchInt(results, 0);
+	}
+	else
+	{
+		g_iClientBanned[client] = -1;
 	}
 
 	g_bSQLSelectBanRetry[client] = 0;
@@ -4970,7 +4989,7 @@ public int Native_UnLoadClient(Handle plugin, int numParams)
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid client or client is not in game");
 		return 0;
 	}
-	OnClientDisconnect(client);
+	UnloadClientData(client);
 	return 1;
 }
 
