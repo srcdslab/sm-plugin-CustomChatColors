@@ -11,7 +11,7 @@
 
 #define CCC_V_MAJOR   "8"
 #define CCC_V_MINOR   "0"
-#define CCC_V_PATCH   "7"
+#define CCC_V_PATCH   "15"
 
 #define CCC_VERSION            CCC_V_MAJOR..."."...CCC_V_MINOR..."."...CCC_V_PATCH
 
@@ -29,39 +29,40 @@ enum CCC_ColorType {
 #define COLOR_NORMAL	-6
 
 /**
- * Gets a client's color as a hexadecimal integer.
+ * Resolves a color key to the color string used in chat.
+ * A valid hexadecimal key (Source 2009 engines only) is copied as is, any other key is
+ * looked up as a MultiColors color name.
  *
- * @param client		Client index
- * @param type			Color type to retreive
- * @param color			Color string buffer
- * @param size			Size of color string buffer
- * @return				Is the color an hex value
- *
- * On error/errors:		Invalid client index or client is not in game
+ * @param key			Color key: a hexadecimal value or a MultiColors color name
+ * @param color			Buffer to store the resolved color in
+ * @param size			Size of the color buffer
+ * @return				True if the key was a hexadecimal value, false if it was resolved as a color name
  */
 native bool CCC_GetColor(char key[32], char[] color, int size);
 
 /**
- * Gets a client's color as a hexadecimal integer.
+ * Gets the color key currently set for a client: a hexadecimal value or a MultiColors
+ * color name (for example "green", "olive" or "teamcolor").
  *
  * @param client		Client index
- * @param type			Color type to retreive
- * @param color			Color string buffer
- * @param size			Size of color string buffer
- * @return				Is a key set for this client
+ * @param type			Color type to retrieve
+ * @param color			Buffer to store the color key in
+ * @param size			Size of the color buffer
+ * @return				True if a valid color key is set for this client and type, false otherwise
  *
  * On error/errors:		Invalid client index or client is not in game
  */
 native bool CCC_GetColorKey(int client, CCC_ColorType type, char[] color, int size);
 
 /**
- * Sets a client's color as a hexadecimal integer.
+ * Sets a client's color in memory, without issuing a database write.
+ * A later tag or color change for this client saves all of their current values, so it can persist this one.
  *
  * @param client		Client index
  * @param type			Color type to set
- * @param color			Integer representation of the color (use StringToInt(input, 16) to convert a hexadecimal string) or one of the color defines
- * @param alpha			Are you specifying a color with alpha?
- * @return				True if the color is updated successfully, false otherwise
+ * @param color			Integer representation of the color (use StringToInt(input, 16) to convert a hexadecimal string) or one of the COLOR_* defines
+ * @param alpha			Is the color specified with an alpha channel (RRGGBBAA)?
+ * @return				1 if the color was updated, 0 otherwise
  *
  * On error/errors:		Invalid client index or client is not in game
  */
@@ -73,14 +74,16 @@ native int CCC_SetColor(int client, CCC_ColorType type, int color, bool alpha);
  * @param client		Client index
  * @param buffer		Buffer to store the tag in
  * @param maxlen		Maximum buffer length
- * @noreturn
+ * @return				1 on success
  *
  * On error/errors:		Invalid client index or client is not in game
  */
 native int CCC_GetTag(int client, char[] buffer, int maxlen);
 
 /**
- * Sets a client's tag
+ * Sets a client's tag in memory, without issuing a database write.
+ * A later tag or color change for this client saves all of their current values, so it can persist this one.
+ * Tags longer than 31 characters are truncated.
  *
  * @param client		Client index
  * @param tag			String containing the new tag
@@ -91,28 +94,31 @@ native int CCC_GetTag(int client, char[] buffer, int maxlen);
 native void CCC_SetTag(int client, const char[] tag);
 
 /**
- * Resets a client's color to the value in the config file.
+ * Resets a client's color to the value that was loaded for them from the database.
  *
  * @param client		Client index
  * @param type			Color type to restore
- * @noreturn
+ * @return				1 on success
  *
  * On error/errors:		Invalid client index or client is not in game
  */
 native int CCC_ResetColor(int client, CCC_ColorType type);
 
 /**
- * Resets a client's tag to the value in the config file.
+ * Resets a client's tag to the value that was loaded for them from the database.
  *
  * @param client		Client index
- * @noreturn
+ * @return				1 on success
  *
  * On error/errors:		Invalid client index or client is not in game
  */
 native int CCC_ResetTag(int client);
 
 /**
- * Sets a client's tag
+ * Starts loading a client's tag and colors from the database. The load is asynchronous: the values
+ * are applied, and CCC_OnUserConfigLoaded is called, once the queries return.
+ * Does nothing if the client's data is already loaded or the database is not connected,
+ * call CCC_UnLoadClient first to force a reload.
  *
  * @param client		Client index
  * @noreturn
@@ -122,7 +128,8 @@ native int CCC_ResetTag(int client);
 native void CCC_LoadClient(int client);
 
 /**
- * Unsets a client's tag
+ * Marks a client's data as unloaded so that a following CCC_LoadClient reloads it
+ * from the database.
  *
  * @param client		Client index
  * @noreturn
@@ -141,7 +148,8 @@ native void CCC_UnLoadClient(int client);
 native void CCC_ReloadConfig();
 
 /**
- * Checks if client has ccc enabled
+ * Checks if client has ccc enabled (requires the Generic or Custom1 admin flag and the
+ * feature to be toggled on for this client)
  *
  * @param client        Client Index
  * @return   true if client has, false otherwise
@@ -250,10 +258,12 @@ public SharedPlugin __pl_ccc =
 public __pl_ccc_SetNTVOptional() {
 	MarkNativeAsOptional("CCC_UnLoadClient");
 	MarkNativeAsOptional("CCC_LoadClient");
+	MarkNativeAsOptional("CCC_ReloadConfig");
 	MarkNativeAsOptional("CCC_GetColor");
+	MarkNativeAsOptional("CCC_GetColorKey");
 	MarkNativeAsOptional("CCC_SetColor");
 	MarkNativeAsOptional("CCC_GetTag");
-	MarkNativeAsOptional("CCC_ResetTag");
+	MarkNativeAsOptional("CCC_SetTag");
 	MarkNativeAsOptional("CCC_ResetColor");
 	MarkNativeAsOptional("CCC_ResetTag");
 	MarkNativeAsOptional("CCC_SetIgnored");
