@@ -944,16 +944,14 @@ stock Action SQLInsert_Replace(Handle timer, any data)
 	bool bPendingTracked = view_as<bool>(pack.ReadCell());
 	bool bCountsTowardsLimit = view_as<bool>(pack.ReadCell());
 
+	ResetRetryBudget(timer, g_iSQLInsertReplaceRetry, GetClientOfUserId(userid));
+
 	if (!DB_Connect())
 	{
 		// When called from a retry timer the insert already owns a reservation: release it, the callback that
 		// normally does so will never run for an abandoned request
 		if (bPendingTracked && bCountsTowardsLimit)
 			UnmarkReplaceTriggerPending(sTrigger);
-
-		int iRetryClient = GetClientOfUserId(userid);
-		if (iRetryClient)
-			g_iSQLInsertReplaceRetry[iRetryClient] = 0;
 
 		delete pack;
 		return Plugin_Stop;
