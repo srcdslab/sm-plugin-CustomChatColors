@@ -103,6 +103,8 @@ Handle g_hReconnectTimer = null;
 Database g_hDatabase;
 int g_iConnectLock = 0;
 int g_iSequence = 0;
+int g_iConnEpoch = 0;  // Identifies the live connection (the connect request that produced it), 0 when there is none
+int g_iProbeEpoch = 0; // Connection a probe is already running on
 
 int g_msgAuthor;
 bool g_msgIsChat;
@@ -392,6 +394,7 @@ public void OnMapEnd()
 		g_hDatabase = null;
 	}
 
+	g_iConnEpoch = 0;
 	g_DatabaseState = DatabaseState_Disconnected;
 	g_iConnectLock = 0;
 	g_bDBConnectDelayActive = false;
@@ -664,6 +667,14 @@ stock void OnSQLConnected(Database db, const char[] err, any data)
 	if (db == null)
 	{
 		LogError("Connecting to database \"%s\" failed: %s", DATABASE_NAME, err);
+
+		// Try again later, otherwise the state stays "connecting" and nothing reconnects until the next map change
+		if (data == g_iConnectLock)
+		{
+			g_iConnectLock = 0;
+			SQL_ScheduleReconnect();
+		}
+
 		return;
 	}
 
@@ -678,6 +689,7 @@ stock void OnSQLConnected(Database db, const char[] err, any data)
 	}
 
 	g_iConnectLock = 0;
+	g_iConnEpoch = data;
 	g_DatabaseState = DatabaseState_Connected;
 	g_hDatabase = db;
 
@@ -698,27 +710,82 @@ stock void OnSQLConnected(Database db, const char[] err, any data)
 	SQLTableCreation_Replace(INVALID_HANDLE);
 }
 
-stock bool SQL_Conn_Lost(DBResultSet db)
+// Errors that can only mean the connection itself is gone: MySQL client errors 2002-2006, 2013 and 2055,
+// server shutdown and killed connections. There is no error code in a threaded query callback, only the text.
+stock bool SQL_IsConnectionError(const char[] err)
 {
-	if (db == null)
+	static const char sSignatures[][] = {
+		"gone away", "Lost connection", "Can't connect", "Unknown MySQL server host", "Server shutdown",
+		"Connection was killed", "Connection refused", "Connection reset", "Broken pipe"
+	};
+
+	for (int i = 0; i < sizeof(sSignatures); i++)
 	{
-		if (g_hDatabase != null)
-		{
-			LogError("Lost connection to DB. Reconnect after delay.");
-			delete g_hDatabase;
-			g_hDatabase = null;
-		}
-
-		if (g_DatabaseState != DatabaseState_Wait && g_hReconnectTimer == null)
-		{
-			g_DatabaseState = DatabaseState_Wait;
-			g_hReconnectTimer = CreateTimer(9.0, SQLReconnect, _, TIMER_FLAG_NO_MAPCHANGE);
-		}
-
-		return true;
+		if (StrContains(err, sSignatures[i], false) != -1)
+			return true;
 	}
 
 	return false;
+}
+
+stock void SQL_ScheduleReconnect()
+{
+	if (g_DatabaseState != DatabaseState_Wait && g_hReconnectTimer == null)
+	{
+		g_DatabaseState = DatabaseState_Wait;
+		g_hReconnectTimer = CreateTimer(9.0, SQLReconnect, _, TIMER_FLAG_NO_MAPCHANGE);
+	}
+}
+
+stock void SQL_DropConnection(const char[] err)
+{
+	if (g_hDatabase != null)
+	{
+		LogError("Lost connection to DB (%s). Reconnect after delay.", err);
+		delete g_hDatabase;
+		g_hDatabase = null;
+	}
+
+	g_iConnEpoch = 0;
+	SQL_ScheduleReconnect();
+}
+
+// The error text does not always tell a dead connection from a failed query: check the connection itself.
+stock void SQL_ProbeConnection()
+{
+	if (g_hDatabase == null || g_DatabaseState != DatabaseState_Connected || g_iConnEpoch == 0 || g_iProbeEpoch == g_iConnEpoch)
+		return;
+
+	g_iProbeEpoch = g_iConnEpoch;
+	g_hDatabase.Query(OnSQLConnProbe, "SELECT 1", g_iConnEpoch, DBPrio_High);
+}
+
+public void OnSQLConnProbe(Database db, DBResultSet results, const char[] err, any epoch)
+{
+	// The connection this probe was started on is already gone or replaced
+	if (epoch != g_iConnEpoch)
+		return;
+
+	g_iProbeEpoch = 0;
+
+	if (results == null)
+		SQL_DropConnection(err[0] ? err : "connection check failed");
+}
+
+// Returns true when a query failed (results == null), so the caller runs its failure path (retry or give up).
+// The connection is only dropped when it is really gone: an ordinary query error (syntax, constraint, deadlock...)
+// must not tear down a healthy connection and trigger a reconnect.
+stock bool SQL_QueryFailed(DBResultSet results, const char[] err)
+{
+	if (results != null)
+		return false;
+
+	if (err[0] == '\0' || SQL_IsConnectionError(err))
+		SQL_DropConnection(err[0] ? err : "unknown error");
+	else
+		SQL_ProbeConnection();
+
+	return true;
 }
 
 stock Action SQLReconnect(Handle hTimer)
@@ -1221,7 +1288,7 @@ stock Action SQLDelete_Tag(Handle timer, any data)
 
 stock void OnSqlSetNames(Database db, DBResultSet results, const char[] err, DataPack data)
 {
-	if (SQL_Conn_Lost(results))
+	if (SQL_QueryFailed(results, err))
 	{
 		LogError("Database error while setting names as utf8, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
 		CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLSetNames, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -1245,8 +1312,10 @@ public void OnSQLDelete_Tag(Database db, DBResultSet results, const char[] err, 
 		return;
 	}
 
-	if (SQL_Conn_Lost(results))
+	if (SQL_QueryFailed(results, err))
 	{
+		LogError("An error occurred while deleting a tag. (%s)", err);
+
 		if (g_iSQLDeleteTagRetry[client] < g_cvar_SQLMaxRetries.IntValue)
 		{
 			g_iSQLDeleteTagRetry[client]++;
@@ -1375,7 +1444,7 @@ stock Action SQLDelete_Ban(Handle timer, any data)
 
 public void OnSQLTableCreated_Tag(Database db, DBResultSet results, const char[] err, DataPack data)
 {
-	if (SQL_Conn_Lost(results))
+	if (SQL_QueryFailed(results, err))
 	{
 		LogError("Database error while creating/checking for \"ccc_tag\" table, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
 		CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLTableCreation_Tag, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -1389,7 +1458,7 @@ public void OnSQLTableCreated_Tag(Database db, DBResultSet results, const char[]
 
 public void OnSQLTableCreated_Ban(Database db, DBResultSet results, const char[] err, DataPack data)
 {
-	if (SQL_Conn_Lost(results))
+	if (SQL_QueryFailed(results, err))
 	{
 		LogError("Database error while creating/checking for \"ccc_ban\" table, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
 		CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLTableCreation_Ban, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -1403,7 +1472,7 @@ public void OnSQLTableCreated_Ban(Database db, DBResultSet results, const char[]
 
 public void OnSQLTableCreated_Replace(Database db, DBResultSet results, const char[] err, DataPack data)
 {
-	if (SQL_Conn_Lost(results))
+	if (SQL_QueryFailed(results, err))
 	{
 		LogError("Database error while creating/checking for \"ccc_replace\" table, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
 		CreateTimer(g_cvar_SQLRetryTime.FloatValue, SQLTableCreation_Replace, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -1417,7 +1486,7 @@ public void OnSQLTableCreated_Replace(Database db, DBResultSet results, const ch
 
 public void OnSQLSelect_Replace(Database db, DBResultSet results, const char[] err, any client)
 {
-	if (SQL_Conn_Lost(results))
+	if (SQL_QueryFailed(results, err))
 	{
 		LogError("An error occurred while querying the database for the replace list, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
 
@@ -1475,7 +1544,7 @@ public void OnSQLSelect_Ban(Database db, DBResultSet results, const char[] err, 
 		return;
 	}
 
-	if (SQL_Conn_Lost(results))
+	if (SQL_QueryFailed(results, err))
 	{
 		LogError("An error occurred while querying the database for the user tag, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
 
@@ -1514,7 +1583,7 @@ stock void OnSQLSelect_TagGroup(Database db, DBResultSet results, const char[] e
 
 	g_sClientSID[client] = "";
 
-	if (SQL_Conn_Lost(results))
+	if (SQL_QueryFailed(results, err))
 	{
 		LogError("An error occurred while querying the database for the user group tag, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
 
@@ -1569,7 +1638,7 @@ public void OnSQLSelect_Tag(Database db, DBResultSet results, const char[] err, 
 
 	g_sClientSID[client] = "";
 
-	if (SQL_Conn_Lost(results))
+	if (SQL_QueryFailed(results, err))
 	{
 		LogError("An error occurred while querying the database for the user tag, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
 
@@ -1633,7 +1702,7 @@ public void OnSQLUpdate_Tag(Database db, DBResultSet results, const char[] err, 
 		return;
 	}
 
-	if (SQL_Conn_Lost(results))
+	if (SQL_QueryFailed(results, err))
 	{
 		LogError("An error occurred while updating an user tag, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
 
@@ -1687,7 +1756,7 @@ public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] e
 		return;
 	}
 
-	if (SQL_Conn_Lost(results))
+	if (SQL_QueryFailed(results, err))
 	{
 		LogError("An error occurred while inserting a chat trigger, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
 		if (g_iSQLInsertReplaceRetry[client] < g_cvar_SQLMaxRetries.IntValue)
@@ -1739,8 +1808,10 @@ public void OnSQLDelete_Replace(Database db, DBResultSet results, const char[] e
 		return;
 	}
 
-	if (SQL_Conn_Lost(results))
+	if (SQL_QueryFailed(results, err))
 	{
+		LogError("An error occurred while deleting a chat trigger. (%s)", err);
+
 		if (g_iSQLDeleteReplaceRetry[client] < g_cvar_SQLMaxRetries.IntValue)
 		{
 			g_iSQLDeleteReplaceRetry[client]++;
@@ -1794,7 +1865,7 @@ public void OnSQLInsert_Tag(Database db, DBResultSet results, const char[] err, 
 		return;
 	}
 
-	if (SQL_Conn_Lost(results))
+	if (SQL_QueryFailed(results, err))
 	{
 		LogError("An error occurred while inserting an user tag, retrying in %d seconds. (%s)", g_cvar_SQLRetryTime.IntValue, err);
 		if (g_iSQLInsertTagRetry[client] < g_cvar_SQLMaxRetries.IntValue)
@@ -1824,8 +1895,10 @@ public void OnSQLInsert_Ban(Database db, DBResultSet results, const char[] err, 
 		return;
 	}
 
-	if (SQL_Conn_Lost(results))
+	if (SQL_QueryFailed(results, err))
 	{
+		LogError("An error occurred while banning a client. (%s)", err);
+
 		if (g_iSQLInsertBanRetry[target] < g_cvar_SQLMaxRetries.IntValue)
 		{
 			g_iSQLInsertBanRetry[target]++;
@@ -1868,8 +1941,10 @@ public void OnSQLDelete_Ban(Database db, DBResultSet results, const char[] err, 
 		return;
 	}
 
-	if (SQL_Conn_Lost(results))
+	if (SQL_QueryFailed(results, err))
 	{
+		LogError("An error occurred while unbanning a client. (%s)", err);
+
 		if (g_iSQLDeleteBanRetry[target] < g_cvar_SQLMaxRetries.IntValue)
 		{
 			g_iSQLDeleteBanRetry[target]++;
