@@ -397,6 +397,7 @@ public void OnMapEnd()
 	}
 
 	SQL_ClearPendingRetries();
+	ClearReplaceReservations();
 
 	g_iConnEpoch = 0;
 	g_DatabaseState = DatabaseState_Disconnected;
@@ -612,6 +613,16 @@ stock void UnmarkReplaceTriggerPending(const char[] sTrigger)
 
 	if (g_smReplacePendingTriggers.Remove(sTrigger) && g_iReplacePendingInserts > 0)
 		g_iReplacePendingInserts--;
+}
+
+// Drops every reservation of a pending insert. Used when the inserts holding them can never report back (their
+// retry timer died with the map): the callback of an insert still in flight only decrements for a reservation it finds.
+stock void ClearReplaceReservations()
+{
+	if (g_smReplacePendingTriggers != null)
+		g_smReplacePendingTriggers.Clear();
+
+	g_iReplacePendingInserts = 0;
 }
 
 stock bool CanQueueReplaceInsert(const char[] sTrigger)
