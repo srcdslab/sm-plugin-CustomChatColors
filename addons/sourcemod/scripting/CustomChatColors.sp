@@ -641,6 +641,15 @@ stock bool CanQueueReplaceInsert(const char[] sTrigger)
 /// SQL ///
 ///////////
 
+// A request that does not come from a retry timer starts with its full retry budget. The counter can be stale
+// when the previous request was abandoned (database still down when its retry timer fired), when its timer was
+// killed by a map change, or when the client left in the middle of a retry.
+stock void ResetRetryBudget(Handle timer, int[] iRetryCounters, int client)
+{
+	if (timer == INVALID_HANDLE && client)
+		iRetryCounters[client] = 0;
+}
+
 stock bool DB_Connect()
 {
 	if (g_bDBConnectDelayActive)
@@ -797,6 +806,9 @@ stock Action SQLTableCreation_Replace(Handle timer)
 
 stock Action SQLSelect_Replace(Handle timer)
 {
+	if (timer == INVALID_HANDLE)
+		g_bSQLSelectReplaceRetry = 0;
+
 	if (!DB_Connect())
 		return Plugin_Stop;
 
@@ -810,6 +822,8 @@ stock Action SQLSelect_Replace(Handle timer)
 stock Action SQLSelect_Ban(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
+	pack.Reset();
+	ResetRetryBudget(timer, g_bSQLSelectBanRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -831,6 +845,8 @@ stock Action SQLSelect_Ban(Handle timer, any data)
 stock Action SQLSelect_TagGroup(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
+	pack.Reset();
+	ResetRetryBudget(timer, g_bSQLSelectTagGroupRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -910,6 +926,8 @@ stock Action SQLSelect_TagClient(int userid)
 stock Action SQLSelect_Tag(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
+	pack.Reset();
+	ResetRetryBudget(timer, g_bSQLSelectTagRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -1020,6 +1038,8 @@ stock Action SQLDelete_Replace(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
+	ResetRetryBudget(timer, g_bSQLDeleteReplaceRetry, GetClientOfUserId(pack.ReadCell()));
+	pack.Reset();
 
 	if (!DB_Connect())
 	{
@@ -1066,6 +1086,8 @@ stock Action SQLInsert_TagClient(int userid)
 stock Action SQLInsert_Tag(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
+	pack.Reset();
+	ResetRetryBudget(timer, g_bSQLInsertTagRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -1147,6 +1169,8 @@ stock Action SQLUpdate_Tag(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
+	ResetRetryBudget(timer, g_bSQLUpdateTagRetry, GetClientOfUserId(pack.ReadCell()));
+	pack.Reset();
 
 	if (!DB_Connect())
 	{
@@ -1187,6 +1211,8 @@ stock Action SQLUpdate_Tag(Handle timer, any data)
 stock Action SQLDelete_Tag(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
+	pack.Reset();
+	ResetRetryBudget(timer, g_bSQLDeleteTagRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -1258,6 +1284,9 @@ public void OnSQLDelete_Tag(Database db, DBResultSet results, const char[] err, 
 stock Action SQLInsert_Ban(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
+	pack.Reset();
+	pack.ReadCell();
+	ResetRetryBudget(timer, g_bSQLInsertBanRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
@@ -1335,6 +1364,9 @@ stock Action SQLInsert_Ban(Handle timer, any data)
 stock Action SQLDelete_Ban(Handle timer, any data)
 {
 	DataPack pack = view_as<DataPack>(data);
+	pack.Reset();
+	pack.ReadCell();
+	ResetRetryBudget(timer, g_bSQLDeleteBanRetry, GetClientOfUserId(pack.ReadCell()));
 	pack.Reset();
 
 	if (!DB_Connect())
