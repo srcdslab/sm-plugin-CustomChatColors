@@ -35,9 +35,9 @@ public Plugin myinfo =
 	url         = "http://www.doctormckay.com"
 };
 
-Handle preLoadedForward;
-Handle loadedForward;
-Handle configReloadedForward;
+GlobalForward preLoadedForward;
+GlobalForward loadedForward;
+GlobalForward configReloadedForward;
 
 ConVar g_cvar_GreenText;
 ConVar g_cvar_ReplaceText;
@@ -145,7 +145,7 @@ bool g_bSourceCommsNative = false;
 
 bool g_bProto;
 
-Handle g_hCookie_DisablePsay;
+Cookie g_hCookie_DisablePsay;
 int g_iClientPsayCooldown[MAXPLAYERS + 1] = { 0, ... };
 int g_iClientFastReply[MAXPLAYERS + 1] = { 0, ... };
 bool g_bDisablePsay[MAXPLAYERS + 1];
@@ -230,7 +230,7 @@ public void OnPluginStart()
 	AddCommandListener(Command_Say, "say");
 	AddCommandListener(Command_Say, "say_team");
 
-	g_hCookie_DisablePsay = RegClientCookie("disable_psay", "", CookieAccess_Private);
+	g_hCookie_DisablePsay = new Cookie("disable_psay", "", CookieAccess_Private);
 	RegConsoleCmd("sm_enablepsay", OnToggleCCCSettings);
 	RegConsoleCmd("sm_disablepsay", OnToggleCCCSettings);
 	SetCookieMenuItem(MenuHandler_CookieMenu, 0, "CustomChatColors");
@@ -267,9 +267,9 @@ public void OnPluginStart()
 	g_cvPsayPrivacy = CreateConVar("sm_ccc_psay_privacy", "1", "Hide to admins all usage of sm_psay", FCVAR_PROTECTED);
 	g_cvHUDChannel = CreateConVar("sm_ccc_hud_channel", "0", "The channel for the hud if using DynamicChannels", _, true, 0.0, true, 5.0);
 
-	preLoadedForward = CreateGlobalForward("CCC_OnUserConfigPreLoaded", ET_Event, Param_Cell);
-	loadedForward = CreateGlobalForward("CCC_OnUserConfigLoaded", ET_Ignore, Param_Cell);
-	configReloadedForward = CreateGlobalForward("CCC_OnConfigReloaded", ET_Ignore);
+	preLoadedForward = new GlobalForward("CCC_OnUserConfigPreLoaded", ET_Event, Param_Cell);
+	loadedForward = new GlobalForward("CCC_OnUserConfigLoaded", ET_Ignore, Param_Cell);
+	configReloadedForward = new GlobalForward("CCC_OnConfigReloaded", ET_Ignore);
 
 	g_bProto = CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "GetUserMessageType") == FeatureStatus_Available && GetUserMessageType() == UM_Protobuf;
 
@@ -387,13 +387,11 @@ public void OnMapEnd()
 	if (g_hReconnectTimer != null)
 	{
 		delete g_hReconnectTimer;
-		g_hReconnectTimer = null;
 	}
 
 	if (g_hDatabase != null)
 	{
 		delete g_hDatabase;
-		g_hDatabase = null;
 	}
 
 	SQL_ClearPendingRetries();
@@ -450,7 +448,7 @@ public void OnClientPostAdminCheck(int client)
 		DataPack banPack = new DataPack();
 		banPack.WriteCell(GetClientUserId(client));
 		banPack.WriteString(g_sSteamIDs[client]);
-		SQLSelect_Ban(INVALID_HANDLE, banPack);
+		SQLSelect_Ban(null, banPack);
 	}
 	else if (HasFlag(client, Admin_Generic))
 	{
@@ -462,7 +460,7 @@ public void OnClientPostAdminCheck(int client)
 		pack.WriteString(g_sSteamIDs[client]);
 		pack.WriteString(sClientFlagString);
 
-		SQLSelect_TagGroup(INVALID_HANDLE, pack);
+		SQLSelect_TagGroup(null, pack);
 	}
 }
 
@@ -472,7 +470,7 @@ public void OnClientCookiesCached(int client)
 		return;
 
 	char sBuffer[16];
-	GetClientCookie(client, g_hCookie_DisablePsay, sBuffer, sizeof(sBuffer));
+	g_hCookie_DisablePsay.Get(client, sBuffer, sizeof(sBuffer));
 	g_bDisablePsay[client] = StringToInt(sBuffer) != 0;
 }
 
@@ -480,7 +478,7 @@ void ReloadConfig()
 {
 	ResetReplace();
 
-	SQLSelect_Replace(INVALID_HANDLE);
+	SQLSelect_Replace(null);
 	LateLoadClientsOnly();
 }
 
@@ -520,7 +518,7 @@ void TryFinalizeSQLStartup()
 
 	g_bSQLStartupReady = true;
 
-	SQLSelect_Replace(INVALID_HANDLE);
+	SQLSelect_Replace(null);
 	LateLoadClientsOnly();
 }
 
@@ -671,7 +669,7 @@ void SQL_ClearPendingRetries()
 // the client left in the middle of a retry.
 void SQL_BeginRequest(Handle timer, DataPack pack, int[] iRetryCounters, int client)
 {
-	if (timer != INVALID_HANDLE)
+	if (timer != null)
 	{
 		int index = (g_alRetryPacks != null) ? g_alRetryPacks.FindValue(pack) : -1;
 		if (index != -1)
@@ -745,7 +743,7 @@ void OnSQLConnected(Database db, const char[] err, any data)
 	g_hDatabase = db;
 
 	char sDriver[16];
-	SQL_GetDriverIdent(SQL_ReadDriver(g_hDatabase), sDriver, sizeof(sDriver));
+	g_hDatabase.Driver.GetIdentifier(sDriver, sizeof(sDriver));
 
 	if (!strncmp(sDriver, "my", 2, false))
 		g_bSQLite = false;
@@ -754,11 +752,11 @@ void OnSQLConnected(Database db, const char[] err, any data)
 
 	ResetSQLStartupGate();
 
-	SQLSetNames(INVALID_HANDLE);
+	SQLSetNames(null);
 
-	SQLTableCreation_Tag(INVALID_HANDLE);
-	SQLTableCreation_Ban(INVALID_HANDLE);
-	SQLTableCreation_Replace(INVALID_HANDLE);
+	SQLTableCreation_Tag(null);
+	SQLTableCreation_Ban(null);
+	SQLTableCreation_Replace(null);
 }
 
 // Errors that can only mean the connection itself is gone: MySQL client errors 2002, 2003, 2005, 2006, 2013 and 2055,
@@ -795,7 +793,6 @@ void SQL_DropConnection(const char[] err)
 	{
 		LogError("Lost connection to DB (%s). Reconnect after delay.", err);
 		delete g_hDatabase;
-		g_hDatabase = null;
 	}
 
 	g_iConnEpoch = 0;
@@ -869,7 +866,7 @@ Action SQLSetNames(Handle timer)
 
 	if (!g_bSQLite)
 	{
-		SQL_TQuery(g_hDatabase, OnSqlSetNames, "SET NAMES \"UTF8MB4\"");
+		g_hDatabase.Query(OnSqlSetNames, "SET NAMES \"UTF8MB4\"");
 	}
 	else
 	{
@@ -885,9 +882,9 @@ Action SQLTableCreation_Tag(Handle timer)
 		return Plugin_Stop;
 
 	if (g_bSQLite)
-		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Tag, "CREATE TABLE IF NOT EXISTS `ccc_tag` (`steamid` TEXT NOT NULL, `enable` INTEGER NOT NULL DEFAULT 1, `name` TEXT NOT NULL, `flag` VARCHAR(32), `tag` TEXT, `tag_color` TEXT, `name_color` TEXT, `chat_color` TEXT, PRIMARY KEY(`steamid`));");
+		g_hDatabase.Query(OnSQLTableCreated_Tag, "CREATE TABLE IF NOT EXISTS `ccc_tag` (`steamid` TEXT NOT NULL, `enable` INTEGER NOT NULL DEFAULT 1, `name` TEXT NOT NULL, `flag` VARCHAR(32), `tag` TEXT, `tag_color` TEXT, `name_color` TEXT, `chat_color` TEXT, PRIMARY KEY(`steamid`));");
 	else
-		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Tag, "CREATE TABLE IF NOT EXISTS `ccc_tag` (`steamid` VARCHAR(32) NOT NULL, `enable` INT NOT NULL DEFAULT 1, `name` VARCHAR(32) NOT NULL, `flag` VARCHAR(32), `tag` VARCHAR(32), `tag_color` VARCHAR(32), `name_color` VARCHAR(32), `chat_color` VARCHAR(32), PRIMARY KEY(`steamid`)) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;");
+		g_hDatabase.Query(OnSQLTableCreated_Tag, "CREATE TABLE IF NOT EXISTS `ccc_tag` (`steamid` VARCHAR(32) NOT NULL, `enable` INT NOT NULL DEFAULT 1, `name` VARCHAR(32) NOT NULL, `flag` VARCHAR(32), `tag` VARCHAR(32), `tag_color` VARCHAR(32), `name_color` VARCHAR(32), `chat_color` VARCHAR(32), PRIMARY KEY(`steamid`)) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;");
 	return Plugin_Stop;
 }
 
@@ -897,9 +894,9 @@ Action SQLTableCreation_Ban(Handle timer)
 		return Plugin_Stop;
 
 	if (g_bSQLite)
-		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Ban, "CREATE TABLE IF NOT EXISTS `ccc_ban` (`steamid` TEXT NOT NULL, `name` TEXT NOT NULL, `issuer_steamid` TEXT NOT NULL, `issuer_name` TEXT NOT NULL, `length` INTEGER NOT NULL, PRIMARY KEY(`steamid`));");
+		g_hDatabase.Query(OnSQLTableCreated_Ban, "CREATE TABLE IF NOT EXISTS `ccc_ban` (`steamid` TEXT NOT NULL, `name` TEXT NOT NULL, `issuer_steamid` TEXT NOT NULL, `issuer_name` TEXT NOT NULL, `length` INTEGER NOT NULL, PRIMARY KEY(`steamid`));");
 	else
-		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Ban, "CREATE TABLE IF NOT EXISTS `ccc_ban` (`steamid` VARCHAR(32) NOT NULL, `name` VARCHAR(32) NOT NULL, `issuer_steamid` VARCHAR(32) NOT NULL, `issuer_name` VARCHAR(32) NOT NULL, `length` INT NOT NULL, PRIMARY KEY(`steamid`)) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;");
+		g_hDatabase.Query(OnSQLTableCreated_Ban, "CREATE TABLE IF NOT EXISTS `ccc_ban` (`steamid` VARCHAR(32) NOT NULL, `name` VARCHAR(32) NOT NULL, `issuer_steamid` VARCHAR(32) NOT NULL, `issuer_name` VARCHAR(32) NOT NULL, `length` INT NOT NULL, PRIMARY KEY(`steamid`)) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;");
 	return Plugin_Stop;
 }
 
@@ -909,15 +906,15 @@ Action SQLTableCreation_Replace(Handle timer)
 		return Plugin_Stop;
 
 	if (g_bSQLite)
-		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Replace, "CREATE TABLE IF NOT EXISTS `ccc_replace` (`trigger` TEXT NOT NULL, `value` TEXT NOT NULL, PRIMARY KEY(`trigger`));");
+		g_hDatabase.Query(OnSQLTableCreated_Replace, "CREATE TABLE IF NOT EXISTS `ccc_replace` (`trigger` TEXT NOT NULL, `value` TEXT NOT NULL, PRIMARY KEY(`trigger`));");
 	else
-		SQL_TQuery(g_hDatabase, OnSQLTableCreated_Replace, "CREATE TABLE IF NOT EXISTS `ccc_replace` (`trigger` VARCHAR(32) NOT NULL, `value` VARCHAR(255) NOT NULL, PRIMARY KEY(`trigger`)) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;");
+		g_hDatabase.Query(OnSQLTableCreated_Replace, "CREATE TABLE IF NOT EXISTS `ccc_replace` (`trigger` VARCHAR(32) NOT NULL, `value` VARCHAR(255) NOT NULL, PRIMARY KEY(`trigger`)) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;");
 	return Plugin_Stop;
 }
 
 Action SQLSelect_Replace(Handle timer)
 {
-	if (timer == INVALID_HANDLE)
+	if (timer == null)
 		g_iSQLSelectReplaceRetry = 0;
 
 	if (!DB_Connect())
@@ -926,7 +923,7 @@ Action SQLSelect_Replace(Handle timer)
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
 	g_hDatabase.Format(sQuery, sizeof(sQuery), "SELECT `trigger`, `value` FROM `ccc_replace`;");
-	SQL_TQuery(g_hDatabase, OnSQLSelect_Replace, sQuery, 0, DBPrio_High);
+	g_hDatabase.Query(OnSQLSelect_Replace, sQuery, 0, DBPrio_High);
 	return Plugin_Stop;
 }
 
@@ -949,7 +946,7 @@ Action SQLSelect_Ban(Handle timer, any data)
 
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 	g_hDatabase.Format(sQuery, sizeof(sQuery), "SELECT `length` FROM `ccc_ban` WHERE `steamid` = '%s';", steamId);
-	SQL_TQuery(g_hDatabase, OnSQLSelect_Ban, sQuery, data, DBPrio_Low);
+	g_hDatabase.Query(OnSQLSelect_Ban, sQuery, data, DBPrio_Low);
 	return Plugin_Stop;
 }
 
@@ -977,7 +974,7 @@ Action SQLSelect_TagGroup(Handle timer, any data)
 	// sFlagList is built by GetClientFlagString() from admin flag letters only and already carries its own
 	// quotes ("a","b"): it must stay on FormatEx, Database.Format would escape those quotes and break the IN (...).
 	FormatEx(sQuery, sizeof(sQuery), "SELECT `steamid`, `enable`, `tag`, `tag_color`, `name_color`, `chat_color`, `flag` FROM `ccc_tag` WHERE `steamid` NOT LIKE 'STEAM_%' and `flag` IS NOT NULL and `flag` != '' and `flag` IN (%s) ORDER BY `flag` DESC;", sFlagList);
-	SQL_TQuery(g_hDatabase, OnSQLSelect_TagGroup, sQuery, data, DBPrio_Low);
+	g_hDatabase.Query(OnSQLSelect_TagGroup, sQuery, data, DBPrio_Low);
 	return Plugin_Stop;
 }
 
@@ -1029,7 +1026,7 @@ Action SQLSelect_TagClient(int userid)
 	pack.WriteString(g_sSteamIDs[client]);
 	pack.WriteString(sClientFlagString);
 
-	SQLSelect_Tag(INVALID_HANDLE, pack);
+	SQLSelect_Tag(null, pack);
 
 	return Plugin_Stop;
 }
@@ -1055,7 +1052,7 @@ Action SQLSelect_Tag(Handle timer, any data)
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
 	g_hDatabase.Format(sQuery, sizeof(sQuery), "SELECT `steamid`, `enable`, `tag`, `tag_color`, `name_color`, `chat_color` FROM `ccc_tag` WHERE `steamid` = '%s';", sClientSteamID);
-	SQL_TQuery(g_hDatabase, OnSQLSelect_Tag, sQuery, data, DBPrio_Low);
+	g_hDatabase.Query(OnSQLSelect_Tag, sQuery, data, DBPrio_Low);
 	return Plugin_Stop;
 }
 
@@ -1139,7 +1136,7 @@ Action SQLInsert_Replace(Handle timer, any data)
 		);
 	}
 
-	SQL_TQuery(g_hDatabase, OnSQLInsert_Replace, sQuery, data);
+	g_hDatabase.Query(OnSQLInsert_Replace, sQuery, data);
 	return Plugin_Stop;
 }
 
@@ -1163,7 +1160,7 @@ Action SQLDelete_Replace(Handle timer, any data)
 	pack.ReadString(sTrigger, sizeof(sTrigger));
 
 	g_hDatabase.Format(sQuery, sizeof(sQuery), "DELETE FROM `ccc_replace` WHERE `trigger` = '%s';", sTrigger);
-	SQL_TQuery(g_hDatabase, OnSQLDelete_Replace, sQuery, data);
+	g_hDatabase.Query(OnSQLDelete_Replace, sQuery, data);
 	return Plugin_Stop;
 }
 
@@ -1187,7 +1184,7 @@ Action SQLInsert_TagClient(int userid)
 	pack.WriteString(g_sClientNameColor[client]);
 	pack.WriteString(g_sClientChatColor[client]);
 
-	SQLInsert_Tag(INVALID_HANDLE, pack);
+	SQLInsert_Tag(null, pack);
 
 	return Plugin_Stop;
 }
@@ -1245,7 +1242,7 @@ Action SQLInsert_Tag(Handle timer, any data)
 			sSteamID, sName, iEnable, sFlag, sTag, sTagColor, sNameColor, sChatColor
 		);
 	}
-	SQL_TQuery(g_hDatabase, OnSQLInsert_Tag, sQuery, data);
+	g_hDatabase.Query(OnSQLInsert_Tag, sQuery, data);
 	return Plugin_Stop;
 }
 
@@ -1269,7 +1266,7 @@ Action SQLUpdate_TagClient(int userid)
 	pack.WriteString(g_sClientNameColor[client]);
 	pack.WriteString(g_sClientChatColor[client]);
 
-	SQLUpdate_Tag(INVALID_HANDLE, pack);
+	SQLUpdate_Tag(null, pack);
 
 	return Plugin_Stop;
 }
@@ -1313,7 +1310,7 @@ Action SQLUpdate_Tag(Handle timer, any data)
 		"UPDATE `ccc_tag` SET `name` = '%s', `enable` = '%d', `flag` = '%s', `tag` = '%s', `tag_color` = '%s', `name_color` = '%s', `chat_color` = '%s' WHERE `steamid` = '%s';",
 		sName, iEnable, sFlag, sTag, sTagColor, sNameColor, sChatColor, sSteamID
 	);
-	SQL_TQuery(g_hDatabase, OnSQLUpdate_Tag, sQuery, data);
+	g_hDatabase.Query(OnSQLUpdate_Tag, sQuery, data);
 	return Plugin_Stop;
 }
 
@@ -1344,7 +1341,7 @@ Action SQLDelete_Tag(Handle timer, any data)
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
 	g_hDatabase.Format(sQuery, sizeof(sQuery), "DELETE FROM `ccc_tag` WHERE `steamid` = '%s';", sSteamID);
-	SQL_TQuery(g_hDatabase, OnSQLDelete_Tag, sQuery, data);
+	g_hDatabase.Query(OnSQLDelete_Tag, sQuery, data);
 
 	return Plugin_Stop;
 }
@@ -1467,7 +1464,7 @@ Action SQLInsert_Ban(Handle timer, any data)
 			targetSid[0] ? targetSid : g_sSteamIDs[target], sTargetName, clientSid[0] ? clientSid : g_sSteamIDs[client], sClientName, time
 		);
 	}
-	SQL_TQuery(g_hDatabase, OnSQLInsert_Ban, sQuery, data);
+	g_hDatabase.Query(OnSQLInsert_Ban, sQuery, data);
 
 	return Plugin_Stop;
 }
@@ -1500,7 +1497,7 @@ Action SQLDelete_Ban(Handle timer, any data)
 	char sQuery[MAX_SQL_QUERY_LENGTH];
 
 	g_hDatabase.Format(sQuery, sizeof(sQuery), "DELETE FROM `ccc_ban` WHERE `steamid` = '%s';", targetSid[0] ? targetSid : g_sSteamIDs[target]);
-	SQL_TQuery(g_hDatabase, OnSQLDelete_Ban, sQuery, data);
+	g_hDatabase.Query(OnSQLDelete_Ban, sQuery, data);
 
 	return Plugin_Stop;
 }
@@ -1568,7 +1565,7 @@ public void OnSQLSelect_Replace(Database db, DBResultSet results, const char[] e
 		// A retry timer or a reload can run after another successful SELECT: rebuild the cache instead of appending to it
 		ResetReplaceList();
 
-		while (SQL_FetchRow(results))
+		while (results.FetchRow())
 		{
 			iTotalRows++;
 			if (g_iReplaceListSize >= REPLACE_LIST_MAX_LENGTH)
@@ -1577,8 +1574,8 @@ public void OnSQLSelect_Replace(Database db, DBResultSet results, const char[] e
 				continue;
 			}
 
-			SQL_FetchString(results, 0, g_sReplaceList[g_iReplaceListSize][0], sizeof(g_sReplaceList[][]));
-			SQL_FetchString(results, 1, g_sReplaceList[g_iReplaceListSize][1], sizeof(g_sReplaceList[][]));
+			results.FetchString(0, g_sReplaceList[g_iReplaceListSize][0], sizeof(g_sReplaceList[][]));
+			results.FetchString(1, g_sReplaceList[g_iReplaceListSize][1], sizeof(g_sReplaceList[][]));
 			ReplaceString(g_sReplaceList[g_iReplaceListSize][1], sizeof(g_sReplaceList[][]), "\r\n", "\n");
 			g_iReplaceListSize++;
 		}
@@ -1618,9 +1615,9 @@ public void OnSQLSelect_Ban(Database db, DBResultSet results, const char[] err, 
 			return;
 		}
 	}
-	else if (SQL_FetchRow(results))
+	else if (results.FetchRow())
 	{
-		g_iClientBanned[client] = SQL_FetchInt(results, 0);
+		g_iClientBanned[client] = results.FetchInt(0);
 	}
 	else
 	{
@@ -1657,13 +1654,13 @@ void OnSQLSelect_TagGroup(Database db, DBResultSet results, const char[] err, Da
 			return;
 		}
 	}
-	else if (SQL_FetchRow(results))
+	else if (results.FetchRow())
 	{
-		g_iClientEnable[client] = SQL_FetchInt(results, 1);
-		SQL_FetchString(results, 2, g_sClientTag[client], sizeof(g_sClientTag[]));
-		SQL_FetchString(results, 3, g_sClientTagColor[client], sizeof(g_sClientTagColor[]));
-		SQL_FetchString(results, 4, g_sClientNameColor[client], sizeof(g_sClientNameColor[]));
-		SQL_FetchString(results, 5, g_sClientChatColor[client], sizeof(g_sClientChatColor[]));
+		g_iClientEnable[client] = results.FetchInt(1);
+		results.FetchString(2, g_sClientTag[client], sizeof(g_sClientTag[]));
+		results.FetchString(3, g_sClientTagColor[client], sizeof(g_sClientTagColor[]));
+		results.FetchString(4, g_sClientNameColor[client], sizeof(g_sClientNameColor[]));
+		results.FetchString(5, g_sClientChatColor[client], sizeof(g_sClientChatColor[]));
 
 		g_iDefaultClientEnable[client] = g_iClientEnable[client];
 		if (strlen(g_sClientTag[client]) > 31)
@@ -1712,14 +1709,14 @@ public void OnSQLSelect_Tag(Database db, DBResultSet results, const char[] err, 
 			return;
 		}
 	}
-	else if (SQL_FetchRow(results))
+	else if (results.FetchRow())
 	{
-		SQL_FetchString(results, 0, g_sClientSID[client], sizeof(g_sClientSID[]));
-		g_iClientEnable[client] = SQL_FetchInt(results, 1);
-		SQL_FetchString(results, 2, g_sClientTag[client], sizeof(g_sClientTag[]));
-		SQL_FetchString(results, 3, g_sClientTagColor[client], sizeof(g_sClientTagColor[]));
-		SQL_FetchString(results, 4, g_sClientNameColor[client], sizeof(g_sClientNameColor[]));
-		SQL_FetchString(results, 5, g_sClientChatColor[client], sizeof(g_sClientChatColor[]));
+		results.FetchString(0, g_sClientSID[client], sizeof(g_sClientSID[]));
+		g_iClientEnable[client] = results.FetchInt(1);
+		results.FetchString(2, g_sClientTag[client], sizeof(g_sClientTag[]));
+		results.FetchString(3, g_sClientTagColor[client], sizeof(g_sClientTagColor[]));
+		results.FetchString(4, g_sClientNameColor[client], sizeof(g_sClientNameColor[]));
+		results.FetchString(5, g_sClientChatColor[client], sizeof(g_sClientChatColor[]));
 
 		g_iDefaultClientEnable[client] = g_iClientEnable[client];
 		if (strlen(g_sClientTag[client]) > 31)
@@ -1744,7 +1741,7 @@ public void OnSQLSelect_Tag(Database db, DBResultSet results, const char[] err, 
 	else
 	{
 		g_iSQLSelectTagRetry[client] = 0;
-		SQLSelect_TagGroup(INVALID_HANDLE, data);
+		SQLSelect_TagGroup(null, data);
 		return;
 	}
 
@@ -2386,7 +2383,7 @@ void BanCCC(int client, int target, char Time[128])
 	pack.WriteString(sTargetName);
 	pack.WriteString(sClientName);
 
-	SQLInsert_Ban(INVALID_HANDLE, pack);
+	SQLInsert_Ban(null, pack);
 }
 
 void UnBanCCC(int client, int target)
@@ -2396,7 +2393,7 @@ void UnBanCCC(int client, int target)
 	pack.WriteCell(GetClientUserId(target));
 	pack.WriteString(g_sSteamIDs[target]);
 
-	SQLDelete_Ban(INVALID_HANDLE, pack);
+	SQLDelete_Ban(null, pack);
 }
 
 void ToggleCCC(int client)
@@ -2618,7 +2615,7 @@ public Action Command_CCCImportReplaceFile(int client, int argc)
 		pack.WriteCell(0);
 		pack.WriteCell(0);
 
-		SQLInsert_Replace(INVALID_HANDLE, pack);
+		SQLInsert_Replace(null, pack);
 		iQueued++;
 
 	} while (kv.GotoNextKey(false));
@@ -2716,7 +2713,7 @@ public Action Command_CCCAddTag(int client, int argc)
 		pack.WriteString(sNameColor);
 		pack.WriteString(sChatColor);
 
-		SQLInsert_Tag(INVALID_HANDLE, pack);
+		SQLInsert_Tag(null, pack);
 	}
 	else
 	{
@@ -2744,7 +2741,7 @@ public Action Command_CCCDeleteTag(int client, int argc)
 		pack.WriteCell(GetClientUserId(client));
 		pack.WriteString(sSteamID);
 
-		SQLDelete_Tag(INVALID_HANDLE, pack);
+		SQLDelete_Tag(null, pack);
 	}
 	else
 	{
@@ -2793,7 +2790,7 @@ public Action Command_CCCAddTrigger(int client, int argc)
 	pack.WriteCell(0);
 	pack.WriteCell(0);
 
-	SQLInsert_Replace(INVALID_HANDLE, pack);
+	SQLInsert_Replace(null, pack);
 
 	return Plugin_Handled;
 }
@@ -2820,7 +2817,7 @@ public Action Command_CCCDeleteTrigger(int client, int argc)
 	pack.WriteCell(GetClientUserId(client));
 	pack.WriteString(sTrigger);
 
-	SQLDelete_Replace(INVALID_HANDLE, pack);
+	SQLDelete_Replace(null, pack);
 
 	return Plugin_Handled;
 }
@@ -4579,19 +4576,21 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 
 	if (g_bProto)
 	{
-		g_msgAuthor = PbReadInt(bf, "ent_idx");
-		g_msgIsChat = PbReadBool(bf, "chat");
-		PbReadString(bf, "msg_name", g_msgName, sizeof(g_msgName));
-		PbReadString(bf, "params", g_msgSender, sizeof(g_msgSender), 0);
-		PbReadString(bf, "params", g_msgText, sizeof(g_msgText), 1);
+		Protobuf pb = UserMessageToProtobuf(bf);
+		g_msgAuthor = pb.ReadInt("ent_idx");
+		g_msgIsChat = pb.ReadBool("chat");
+		pb.ReadString("msg_name", g_msgName, sizeof(g_msgName));
+		pb.ReadString("params", g_msgSender, sizeof(g_msgSender), 0);
+		pb.ReadString("params", g_msgText, sizeof(g_msgText), 1);
 	}
 	else
 	{
-		g_msgAuthor = BfReadByte(bf);
-		g_msgIsChat = view_as<bool>(BfReadByte(bf));
-		BfReadString(bf, g_msgName, sizeof(g_msgName), false);
-		BfReadString(bf, g_msgSender, sizeof(g_msgSender), false);
-		BfReadString(bf, g_msgText, sizeof(g_msgText), false);
+		BfRead bfRead = UserMessageToBfRead(bf);
+		g_msgAuthor = bfRead.ReadByte();
+		g_msgIsChat = view_as<bool>(bfRead.ReadByte());
+		bfRead.ReadString(g_msgName, sizeof(g_msgName), false);
+		bfRead.ReadString(g_msgSender, sizeof(g_msgSender), false);
+		bfRead.ReadString(g_msgText, sizeof(g_msgText), false);
 	}
 
 	if (g_msgAuthor < 0 || g_msgAuthor > MaxClients)
@@ -4698,9 +4697,9 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 	return Plugin_Handled;
 }
 
-public Action Event_PlayerSay(Handle event, const char[] name, bool dontBroadcast)
+public Action Event_PlayerSay(Event event, const char[] name, bool dontBroadcast)
 {
-	if (g_msgAuthor == -1 || GetClientOfUserId(GetEventInt(event, "userid")) != g_msgAuthor)
+	if (g_msgAuthor == -1 || GetClientOfUserId(event.GetInt("userid")) != g_msgAuthor)
 		return Plugin_Continue;
 
 	if (strlen(g_msgText) == 0)
@@ -4744,19 +4743,21 @@ public Action Event_PlayerSay(Handle event, const char[] name, bool dontBroadcas
 
 	if (g_bProto)
 	{
-		PbSetInt(SayText2, "ent_idx", g_msgAuthor);
-		PbSetBool(SayText2, "chat", g_msgIsChat);
-		PbSetString(SayText2, "msg_name", g_msgFinal);
-		PbAddString(SayText2, "params", "");
-		PbAddString(SayText2, "params", "");
-		PbAddString(SayText2, "params", "");
-		PbAddString(SayText2, "params", "");
+		Protobuf pb = UserMessageToProtobuf(SayText2);
+		pb.SetInt("ent_idx", g_msgAuthor);
+		pb.SetBool("chat", g_msgIsChat);
+		pb.SetString("msg_name", g_msgFinal);
+		pb.AddString("params", "");
+		pb.AddString("params", "");
+		pb.AddString("params", "");
+		pb.AddString("params", "");
 	}
 	else
 	{
-		BfWriteByte(SayText2, g_msgAuthor);
-		BfWriteByte(SayText2, g_msgIsChat);
-		BfWriteString(SayText2, g_msgFinal);
+		BfWrite bfWrite = UserMessageToBfWrite(SayText2);
+		bfWrite.WriteByte(g_msgAuthor);
+		bfWrite.WriteByte(g_msgIsChat);
+		bfWrite.WriteString(g_msgFinal);
 	}
 
 	EndMessage();
@@ -4783,7 +4784,7 @@ public void ToggleCCCSettings(int client)
 	}
 
 	g_bDisablePsay[client] = !g_bDisablePsay[client];
-	SetClientCookie(client, g_hCookie_DisablePsay, g_bDisablePsay[client] ? "1" : "");
+	g_hCookie_DisablePsay.Set(client, g_bDisablePsay[client] ? "1" : "");
 
 	CPrintToChat(client, "{green}[CCC]{default} Private messages has been %s.", g_bDisablePsay[client] ? "{red}disabled" : "{green}enabled");
 }
