@@ -116,6 +116,19 @@ char g_msgText[MAX_CHAT_LENGTH];
 char g_msgFinal[255];
 bool g_msgIsTeammate;
 
+// The game sends SayText2 to each recipient of a chat message separately. The formatted
+// message only depends on what the hook reads, so it is built once and reused for the copies.
+bool g_bMsgCacheValid = false;
+int g_iMsgCacheTick;
+int g_iMsgCacheAuthor;
+bool g_bMsgCacheIsChat;
+char g_sMsgCacheInName[128];
+char g_sMsgCacheInSender[128];
+char g_sMsgCacheInText[MAX_CHAT_LENGTH];
+char g_sMsgCacheName[128];
+char g_sMsgCacheSender[128];
+char g_sMsgCacheText[MAX_CHAT_LENGTH];
+
 bool g_Ignored[MAXPLAYERS + 1][MAXPLAYERS + 1];
 
 int g_iSQLSelectReplaceRetry = 0;
@@ -4607,6 +4620,24 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 	if (strlen(g_msgText) == 0)
 		return Plugin_Handled;
 
+	// Same message as the previous call of this tick: g_msgFinal already holds the result.
+	int iTick = GetGameTickCount();
+	if (g_bMsgCacheValid && g_iMsgCacheTick == iTick && g_iMsgCacheAuthor == g_msgAuthor && g_bMsgCacheIsChat == g_msgIsChat
+		&& !strcmp(g_sMsgCacheInText, g_msgText) && !strcmp(g_sMsgCacheInSender, g_msgSender) && !strcmp(g_sMsgCacheInName, g_msgName))
+	{
+		strcopy(g_msgName, sizeof(g_msgName), g_sMsgCacheName);
+		strcopy(g_msgSender, sizeof(g_msgSender), g_sMsgCacheSender);
+		strcopy(g_msgText, sizeof(g_msgText), g_sMsgCacheText);
+		return Plugin_Handled;
+	}
+
+	g_bMsgCacheValid = false;
+	g_iMsgCacheTick = iTick;
+	g_iMsgCacheAuthor = g_msgAuthor;
+	g_bMsgCacheIsChat = g_msgIsChat;
+	strcopy(g_sMsgCacheInName, sizeof(g_sMsgCacheInName), g_msgName);
+	strcopy(g_sMsgCacheInSender, sizeof(g_sMsgCacheInSender), g_msgSender);
+	strcopy(g_sMsgCacheInText, sizeof(g_sMsgCacheInText), g_msgText);
 
 	bool bIsAction;
 	char sNameColorKey[32];
@@ -4694,11 +4725,19 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		}
 	}
 
+	strcopy(g_sMsgCacheName, sizeof(g_sMsgCacheName), g_msgName);
+	strcopy(g_sMsgCacheSender, sizeof(g_sMsgCacheSender), g_msgSender);
+	strcopy(g_sMsgCacheText, sizeof(g_sMsgCacheText), g_msgText);
+	g_bMsgCacheValid = true;
+
 	return Plugin_Handled;
 }
 
 public Action Event_PlayerSay(Event event, const char[] name, bool dontBroadcast)
 {
+	// End of this chat message: the next one is formatted again, even if it has the same text.
+	g_bMsgCacheValid = false;
+
 	if (g_msgAuthor == -1 || GetClientOfUserId(event.GetInt("userid")) != g_msgAuthor)
 		return Plugin_Continue;
 
