@@ -170,6 +170,7 @@ bool g_bSQLTagTableReady = false;
 bool g_bSQLBanTableReady = false;
 bool g_bSQLReplaceTableReady = false;
 bool g_bSQLNamesReady = false;
+bool g_bSQLCharsetSet = false;
 bool g_bSQLStartupReady = false;
 
 EngineVersion g_evEngineVersion;
@@ -378,7 +379,13 @@ void VerifyNative_DynamicChannel()
 public void OnConfigsExecuted()
 {
 	float fDelay = g_cvar_DBConnectDelay.FloatValue;
-	if (fDelay > 0.0)
+	if (g_hDatabase != null && g_DatabaseState == DatabaseState_Connected)
+	{
+		// Connection kept from the previous map. Its replace list retry timer (if any) died with the map: run it again
+		if (g_iSQLSelectReplaceRetry > 0)
+			SQLSelect_Replace(null);
+	}
+	else if (fDelay > 0.0)
 	{
 		g_bDBConnectDelayActive = true;
 		CreateTimer(fDelay, Timer_DelayedDBConnectCCC, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -396,24 +403,30 @@ public void OnConfigsExecuted()
 
 public void OnMapEnd()
 {
-	// Clean up on map end just so we can start a fresh connection when we need it later.
+	// Timers created with TIMER_FLAG_NO_MAPCHANGE die with the map: drop what they own.
 	if (g_hReconnectTimer != null)
 	{
 		delete g_hReconnectTimer;
 	}
+
+	SQL_ClearPendingRetries();
+	ClearReplaceReservations();
+
+	g_bDBConnectDelayActive = false;
+
+	// The plugin and its connection survive the map change (the MySQL driver reconnects by itself): keep a connection
+	// that is fully set up. Start over with a fresh one otherwise, its startup retry timers died with the map.
+	if (g_hDatabase != null && g_DatabaseState == DatabaseState_Connected && g_bSQLStartupReady)
+		return;
 
 	if (g_hDatabase != null)
 	{
 		delete g_hDatabase;
 	}
 
-	SQL_ClearPendingRetries();
-	ClearReplaceReservations();
-
 	g_iConnEpoch = 0;
 	g_DatabaseState = DatabaseState_Disconnected;
 	g_iConnectLock = 0;
-	g_bDBConnectDelayActive = false;
 }
 
 public void OnClientDisconnect(int client)
@@ -763,6 +776,9 @@ void OnSQLConnected(Database db, const char[] err, any data)
 	else
 		g_bSQLite = true;
 
+	// Once per connection, before any query is queued. Unlike SET NAMES, it survives the driver's auto-reconnect.
+	g_bSQLCharsetSet = !g_bSQLite && db.SetCharset("utf8mb4");
+
 	ResetSQLStartupGate();
 
 	SQLSetNames(null);
@@ -877,8 +893,9 @@ Action SQLSetNames(Handle timer)
 	if (!DB_Connect())
 		return Plugin_Stop;
 
-	if (!g_bSQLite)
+	if (!g_bSQLite && !g_bSQLCharsetSet)
 	{
+		// Fallback when SetCharset() failed
 		g_hDatabase.Query(OnSqlSetNames, "SET NAMES \"UTF8MB4\"");
 	}
 	else
@@ -1128,11 +1145,19 @@ Action SQLInsert_Replace(Handle timer, any data)
 		pack.WriteCell(view_as<int>(bCountsTowardsLimit));
 	}
 
+	SQL_FormatInsertReplace(sQuery, sizeof(sQuery), sTrigger, sValue);
+
+	g_hDatabase.Query(OnSQLInsert_Replace, sQuery, data);
+	return Plugin_Stop;
+}
+
+void SQL_FormatInsertReplace(char[] sQuery, int maxlength, const char[] sTrigger, const char[] sValue)
+{
 	if (g_bSQLite)
 	{
 		g_hDatabase.Format(
 			sQuery,
-			sizeof(sQuery),
+			maxlength,
 			"REPLACE INTO `ccc_replace` (`trigger`, `value`) VALUES ('%s', '%s');",
 			sTrigger, sValue
 		);
@@ -1141,16 +1166,12 @@ Action SQLInsert_Replace(Handle timer, any data)
 	{
 		g_hDatabase.Format(
 			sQuery,
-			sizeof(sQuery),
+			maxlength,
 			"INSERT INTO `ccc_replace` (`trigger`, `value`) VALUES ('%s', '%s') \
-			ON DUPLICATE KEY UPDATE `trigger` = '%s', `value` = '%s';",
-			sTrigger, sValue,
+			ON DUPLICATE KEY UPDATE `value` = VALUES(`value`);",
 			sTrigger, sValue
 		);
 	}
-
-	g_hDatabase.Query(OnSQLInsert_Replace, sQuery, data);
-	return Plugin_Stop;
 }
 
 Action SQLDelete_Replace(Handle timer, any data)
@@ -1250,8 +1271,7 @@ Action SQLInsert_Tag(Handle timer, any data)
 			sQuery,
 			sizeof(sQuery),
 			"INSERT INTO `ccc_tag` (`steamid`, `name`, `enable`, `flag`, `tag`, `tag_color`, `name_color`, `chat_color`) VALUES ('%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s') \
-			ON DUPLICATE KEY UPDATE `steamid` = '%s', `name` = '%s', `enable` = '%d', `flag` = '%s', `tag` = '%s', `tag_color` = '%s', `name_color` = '%s', `chat_color` = '%s';",
-			sSteamID, sName, iEnable, sFlag, sTag, sTagColor, sNameColor, sChatColor,
+			ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `enable` = VALUES(`enable`), `flag` = VALUES(`flag`), `tag` = VALUES(`tag`), `tag_color` = VALUES(`tag_color`), `name_color` = VALUES(`name_color`), `chat_color` = VALUES(`chat_color`);",
 			sSteamID, sName, iEnable, sFlag, sTag, sTagColor, sNameColor, sChatColor
 		);
 	}
@@ -1472,8 +1492,7 @@ Action SQLInsert_Ban(Handle timer, any data)
 			sQuery,
 			sizeof(sQuery),
 			"INSERT INTO `ccc_ban` (`steamid`, `name`, `issuer_steamid`, `issuer_name`, `length`) VALUES ('%s', '%s', '%s', '%s', '%d') \
-			ON DUPLICATE KEY UPDATE `steamid` = '%s', `name` = '%s', `issuer_steamid` = '%s', `issuer_name` = '%s', `length` = '%d';",
-			targetSid[0] ? targetSid : g_sSteamIDs[target], sTargetName, clientSid[0] ? clientSid : g_sSteamIDs[client], sClientName, time,
+			ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `issuer_steamid` = VALUES(`issuer_steamid`), `issuer_name` = VALUES(`issuer_name`), `length` = VALUES(`length`);",
 			targetSid[0] ? targetSid : g_sSteamIDs[target], sTargetName, clientSid[0] ? clientSid : g_sSteamIDs[client], sClientName, time
 		);
 	}
@@ -1867,6 +1886,67 @@ public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] e
 		UnmarkReplaceTriggerPending(sTrigger);
 
 	delete pack;
+}
+
+public void OnSQLImport_Replace(Database db, DataPack pack, int numQueries, DBResultSet[] results, any[] queryData)
+{
+	pack.Reset();
+	pack.ReadCell();
+
+	char sTrigger[MAX_CHAT_TRIGGER_LENGTH];
+	char sValue[MAX_CHAT_LENGTH];
+	for (int i = 0; i < numQueries; i++)
+	{
+		pack.ReadString(sTrigger, sizeof(sTrigger));
+		pack.ReadString(sValue, sizeof(sValue));
+		bool bCountsTowardsLimit = view_as<bool>(pack.ReadCell());
+
+		int iReplaceIndex = FindReplaceTriggerIndex(sTrigger);
+		if (iReplaceIndex != -1)
+		{
+			g_sReplaceList[iReplaceIndex][1] = sValue;
+		}
+		else if (g_iReplaceListSize >= REPLACE_LIST_MAX_LENGTH)
+		{
+			LogMessage("Replace list cache is full (%d). Trigger '%s' was inserted in DB but skipped in memory; will apply on next reload.", REPLACE_LIST_MAX_LENGTH, sTrigger);
+		}
+		else
+		{
+			g_sReplaceList[g_iReplaceListSize][0] = sTrigger;
+			g_sReplaceList[g_iReplaceListSize][1] = sValue;
+			g_iReplaceListSize++;
+		}
+
+		if (bCountsTowardsLimit)
+			UnmarkReplaceTriggerPending(sTrigger);
+	}
+
+	delete pack;
+}
+
+public void OnSQLImportError_Replace(Database db, DataPack pack, int numQueries, const char[] error, int failIndex, any[] queryData)
+{
+	// Same connection handling as a failed query
+	SQL_QueryFailed(null, error);
+	LogError("An error occurred while importing the chat triggers, nothing was imported. (%s)", error);
+
+	pack.Reset();
+	int client = GetClientOfUserId(pack.ReadCell());
+
+	char sTrigger[MAX_CHAT_TRIGGER_LENGTH];
+	char sValue[MAX_CHAT_LENGTH];
+	for (int i = 0; i < numQueries; i++)
+	{
+		pack.ReadString(sTrigger, sizeof(sTrigger));
+		pack.ReadString(sValue, sizeof(sValue));
+		if (view_as<bool>(pack.ReadCell()))
+			UnmarkReplaceTriggerPending(sTrigger);
+	}
+
+	delete pack;
+
+	if (client)
+		CPrintToChat(client, "{green}[CCC]{default} Import of the chat triggers failed, nothing was imported.");
 }
 
 public void OnSQLDelete_Replace(Database db, DBResultSet results, const char[] err, DataPack data)
@@ -2606,6 +2686,19 @@ public Action Command_CCCImportReplaceFile(int client, int argc)
 		return Plugin_Handled;
 	}
 
+	if (!DB_Connect())
+	{
+		CReplyToCommand(client, "{green}[CCC]{default} Database is not connected, try again later.");
+		delete kv;
+		return Plugin_Handled;
+	}
+
+	// All the entries go in one transaction, the pack keeps what the callbacks need to update the cache
+	Transaction tx = new Transaction();
+	DataPack pack = new DataPack();
+	pack.WriteCell(client ? GetClientUserId(client) : 0);
+
+	char sQuery[MAX_SQL_QUERY_LENGTH];
 	char sTrigger[MAX_CHAT_TRIGGER_LENGTH];
 	char sValue[MAX_CHAT_LENGTH];
 	int iQueued = 0;
@@ -2621,19 +2714,35 @@ public Action Command_CCCImportReplaceFile(int client, int argc)
 			continue;
 		}
 
-		DataPack pack = new DataPack();
-		pack.WriteCell(GetClientUserId(client));
+		// Same reservation as SQLInsert_Replace(): a new trigger counts towards the limit until its insert reports back
+		bool bCountsTowardsLimit = false;
+		if (FindReplaceTriggerIndex(sTrigger) == -1 && !IsReplaceTriggerPending(sTrigger))
+		{
+			MarkReplaceTriggerPending(sTrigger);
+			bCountsTowardsLimit = true;
+		}
+
+		SQL_FormatInsertReplace(sQuery, sizeof(sQuery), sTrigger, sValue);
+		tx.AddQuery(sQuery);
+
 		pack.WriteString(sTrigger);
 		pack.WriteString(sValue);
-		pack.WriteCell(0);
-		pack.WriteCell(0);
-
-		SQLInsert_Replace(null, pack);
+		pack.WriteCell(view_as<int>(bCountsTowardsLimit));
 		iQueued++;
 
 	} while (kv.GotoNextKey(false));
 
 	delete kv;
+
+	if (iQueued > 0)
+	{
+		g_hDatabase.Execute(tx, OnSQLImport_Replace, OnSQLImportError_Replace, pack);
+	}
+	else
+	{
+		delete tx;
+		delete pack;
+	}
 
 	if (iSkipped > 0)
 	{
