@@ -10,8 +10,8 @@
 #define _ccc_included
 
 #define CCC_V_MAJOR   "8"
-#define CCC_V_MINOR   "0"
-#define CCC_V_PATCH   "24"
+#define CCC_V_MINOR   "1"
+#define CCC_V_PATCH   "0"
 
 #define CCC_VERSION            CCC_V_MAJOR..."."...CCC_V_MINOR..."."...CCC_V_PATCH
 
