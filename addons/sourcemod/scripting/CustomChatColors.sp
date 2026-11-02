@@ -2289,7 +2289,8 @@ bool ChangeSingleColor(int client, int iTarget, char Key[64], char sCol[64], boo
 		if (sCol[0] != '#')
 			Format(sCol, sizeof(sCol), "#%s", sCol);
 
-		SetColor(Key, sCol, iTarget, bAdmin);
+		if (!SetColor(Key, sCol, iTarget, bAdmin))
+			return false;
 
 		char sColDisplay[128];
 		Format(sColDisplay, sizeof(sColDisplay), "\x07%s%s", sCol[0], sCol[0]);
@@ -2310,7 +2311,8 @@ bool ChangeSingleColor(int client, int iTarget, char Key[64], char sCol[64], boo
 			return false;
 		}
 
-		SetColor(Key, sCol, iTarget, bAdmin);
+		if (!SetColor(Key, sCol, iTarget, bAdmin))
+			return false;
 
 		char sColDisplay[128];
 		Format(sColDisplay, sizeof(sColDisplay), "{%s}%s", sCol[0], sCol[0]);
@@ -2724,6 +2726,7 @@ public Action Command_CCCImportReplaceFile(int client, int argc)
 	if (!kv.ImportFromFile(sFilepath))
 	{
 		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_FileMissing", sFilepath);
+		delete kv;
 		return Plugin_Handled;
 	}
 
@@ -3703,7 +3706,7 @@ public Action Command_SetNameColor(int client, int args)
 {
 	if (!client)
 	{
-		PrintToServer("[CCC] Cannot use command from server console");
+		ReplyToCommand(client, "[CCC] %t", "CCC_NoConsole");
 		return Plugin_Handled;
 	}
 
@@ -3727,7 +3730,7 @@ public Action Command_ClearNameColor(int client, int args)
 {
 	if (!client)
 	{
-		PrintToServer("[CCC] Cannot use command from server console");
+		ReplyToCommand(client, "[CCC] %t", "CCC_NoConsole");
 		return Plugin_Handled;
 	}
 
@@ -3744,7 +3747,7 @@ public Action Command_SetTextColor(int client, int args)
 {
 	if (!client)
 	{
-		PrintToServer("[CCC] Cannot use command from server console");
+		ReplyToCommand(client, "[CCC] %t", "CCC_NoConsole");
 		return Plugin_Handled;
 	}
 
@@ -3768,7 +3771,7 @@ public Action Command_ClearTextColor(int client, int args)
 {
 	if (!client)
 	{
-		PrintToServer("[CCC] Cannot use command from server console");
+		ReplyToCommand(client, "[CCC] %t", "CCC_NoConsole");
 		return Plugin_Handled;
 	}
 
@@ -3781,7 +3784,7 @@ public Action Command_ToggleTag(int client, int args)
 {
 	if (!client)
 	{
-		PrintToServer("[CCC] Cannot use command from server console");
+		ReplyToCommand(client, "[CCC] %t", "CCC_NoConsole");
 		return Plugin_Handled;
 	}
 
@@ -3868,9 +3871,7 @@ public int MenuHandler_AdminUnBan(Menu MenuAUnBan, MenuAction action, int param1
 
 		if (!target)
 		{
-			CReplyToCommand(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_PlayerGone");
-
-			Menu_Admin(param1);
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_PlayerGone");
 		}
 		else
 		{
@@ -4123,7 +4124,6 @@ public int MenuHandler_Admin(Menu MenuAdmin, MenuAction action, int param1, int 
 		{
 			g_bWaitingForChatInput[param1] = false;
 			g_sInputType[param1] = "";
-			Menu_Admin(param1);
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_InputCancelled");
 		}
 		else
@@ -4162,8 +4162,6 @@ public int MenuHandler_AdminReset(Menu MenuAReset, MenuAction action, int param1
 		if (!target)
 		{
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_PlayerGone");
-
-			Menu_Admin(param1);
 		}
 		else
 		{
@@ -4278,10 +4276,10 @@ public void Menu_Input(Menu MenuAF, int param1, int param2, char Key[32])
 	int userid = StringToInt(Selected);
 	int target = GetClientOfUserId(userid);
 
+	// The caller opens the admin menu again
 	if (!target)
 	{
 		CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_PlayerGone");
-		Menu_Admin(param1);
 	}
 	else
 	{
@@ -4988,10 +4986,10 @@ public void ToggleCCCSettings(int client)
 public Action Command_PsayStatus(int client, int args)
 {
 	if (args > 1)
-		CPrintToChat(client, "{green}[CCC]{default} %t", "CCC_Usage", "sm_pstatus <name or #userid>");
+		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_Usage", "sm_pstatus <name or #userid>");
 
 	if (args == 0)
-		CPrintToChat(client, "{green}[CCC]{default} %t", g_bDisablePsay[client] ? "CCC_PM_YoursDisabled" : "CCC_PM_YoursEnabled");
+		CReplyToCommand(client,"{green}[CCC]{default} %t", g_bDisablePsay[client] ? "CCC_PM_YoursDisabled" : "CCC_PM_YoursEnabled");
 
 	if (args == 1)
 	{
@@ -5001,7 +4999,7 @@ public Action Command_PsayStatus(int client, int args)
 		if (target == -1)
 			return Plugin_Handled;
 
-		CPrintToChat(client, "{green}[CCC]{default} %t", g_bDisablePsay[target] ? "CCC_PM_TargetDisabled" : "CCC_PM_TargetEnabled", target);
+		CReplyToCommand(client, "{green}[CCC]{default} %t", g_bDisablePsay[target] ?"CCC_PM_TargetDisabled" : "CCC_PM_TargetEnabled", target);
 	}
 
 	return Plugin_Handled;
