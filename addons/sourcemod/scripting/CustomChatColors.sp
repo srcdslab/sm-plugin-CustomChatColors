@@ -2691,6 +2691,7 @@ public Action Command_CCCImportReplaceFile(int client, int argc)
 	if (!kv.ImportFromFile(sFilepath))
 	{
 		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_FileMissing", sFilepath);
+		delete kv;
 		return Plugin_Handled;
 	}
 
