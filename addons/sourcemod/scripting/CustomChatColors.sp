@@ -2389,13 +2389,27 @@ bool IsClientBanned(int client, const char Key[64] = "")
 	if (!IsClientCCCBanned(client))
 		return false;
 
+	// One phrase per setting, the key is an internal name
+	char sSetting[16];
+	if (strcmp(Key, "tagcolor", false) == 0)
+		strcopy(sSetting, sizeof(sSetting), "TagColor");
+	else if (strcmp(Key, "namecolor", false) == 0)
+		strcopy(sSetting, sizeof(sSetting), "NameColor");
+	else if (strcmp(Key, "textcolor", false) == 0)
+		strcopy(sSetting, sizeof(sSetting), "TextColor");
+	else
+		strcopy(sSetting, sizeof(sSetting), "Tag");
+
+	char sPhrase[32];
+
 	if (g_iClientBanned[client] == 0)
 	{
-		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_BannedPerm", Key);
+		FormatEx(sPhrase, sizeof(sPhrase), "CCC_BannedPerm_%s", sSetting);
+		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} %t", sPhrase);
 		return true;
 	}
 
-	char TimeBuffer[64];
+	char TimeBuffer[128];
 	int tstamp = g_iClientBanned[client];
 	tstamp = (tstamp - GetTime());
 
@@ -2421,7 +2435,8 @@ bool IsClientBanned(int client, const char Key[64] = "")
 		Format(TimeBuffer, sizeof(TimeBuffer), "%d %T", sec, SingularOrMultiple(sec) ? "CCC_Unit_Seconds" : "CCC_Unit_Second", client);
 	}
 
-	CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_BannedTemp", Key, TimeBuffer);
+	FormatEx(sPhrase, sizeof(sPhrase), "CCC_BannedTemp_%s", sSetting);
+	CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} %t", sPhrase, TimeBuffer);
 	return true;
 }
 
@@ -3355,23 +3370,27 @@ void SendPanelToAll(int from, char[] message)
 
 	ReplaceString(message, 192, "\\n", "\n");
 
-	Panel mSayPanel = new Panel();
-	mSayPanel.SetTitle(title);
-	mSayPanel.DrawItem("", ITEMDRAW_SPACER);
-	mSayPanel.DrawText(message);
-	mSayPanel.DrawItem("", ITEMDRAW_SPACER);
-	mSayPanel.CurrentKey = GetMaxPageItems(mSayPanel.Style);
-	mSayPanel.DrawItem("Exit", ITEMDRAW_CONTROL);
+	char sExit[64];
 
+	// One panel per player, for the "Exit" item in the player's language
 	for(int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && !IsFakeClient(i))
 		{
+			Panel mSayPanel = new Panel();
+			mSayPanel.SetTitle(title);
+			mSayPanel.DrawItem("", ITEMDRAW_SPACER);
+			mSayPanel.DrawText(message);
+			mSayPanel.DrawItem("", ITEMDRAW_SPACER);
+			mSayPanel.CurrentKey = GetMaxPageItems(mSayPanel.Style);
+			Format(sExit, sizeof(sExit), "%T", "Exit", i);
+			mSayPanel.DrawItem(sExit, ITEMDRAW_CONTROL);
+
 			mSayPanel.Send(i, Handler_DoNothing, 10);
+
+			delete mSayPanel;
 		}
 	}
-
-	delete mSayPanel;
 }
 
 public int Handler_DoNothing(Menu menu, MenuAction action, int param1, int param2)
@@ -3815,7 +3834,7 @@ public void AdminMenu_UnBanList(int client)
 	{
 		if (IsClientInGame(i) && IsClientCCCBanned(i))
 		{
-			char info[64];
+			char info[128];
 			char id[32];
 			int remaining;
 			remaining = ((g_iClientBanned[i] - GetTime()) / 60);
