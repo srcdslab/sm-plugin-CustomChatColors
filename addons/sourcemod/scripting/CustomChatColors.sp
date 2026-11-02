@@ -203,6 +203,7 @@ public void OnPluginStart()
 {
 	LoadTranslations("common.phrases");
 	LoadTranslations("allchat.phrases");
+	LoadTranslations("ccc.phrases");
 
 	UserMsg SayText2 = GetUserMessageId("SayText2");
 
@@ -1118,7 +1119,7 @@ Action SQLInsert_Replace(Handle timer, any data)
 	{
 		int client = GetClientOfUserId(userid);
 		if (client)
-			CReplyToCommand(client, "{green}[CCC]{default} Replace list is full ({olive}%d{default} entries). Trigger was not inserted.", REPLACE_LIST_MAX_LENGTH);
+			CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_ReplaceListFull", REPLACE_LIST_MAX_LENGTH);
 		delete pack;
 		return Plugin_Stop;
 	}
@@ -1946,7 +1947,7 @@ public void OnSQLImportError_Replace(Database db, DataPack pack, int numQueries,
 	delete pack;
 
 	if (client)
-		CPrintToChat(client, "{green}[CCC]{default} Import of the chat triggers failed, nothing was imported.");
+		CPrintToChat(client, "{green}[CCC]{default} %t", "CCC_ImportFailed");
 }
 
 public void OnSQLDelete_Replace(Database db, DBResultSet results, const char[] err, DataPack data)
@@ -2172,6 +2173,13 @@ bool SingularOrMultiple(int num)
 	return false;
 }
 
+void AddMenuItemTranslated(Menu menu, const char[] sInfo, int client, const char[] sPhrase, int iStyle = ITEMDRAW_DEFAULT)
+{
+	char sDisplay[128];
+	FormatEx(sDisplay, sizeof(sDisplay), "%T", sPhrase, client);
+	menu.AddItem(sInfo, sDisplay, iStyle);
+}
+
 bool HasFlag(int client, AdminFlag ADMFLAG)
 {
 	AdminId Admin = GetUserAdmin(client);
@@ -2189,7 +2197,7 @@ bool ChangeSingleTag(int client, int iTarget, char sTag[64], bool bAdmin)
 
 	if (SetTag(sTag, iTarget, bAdmin))
 	{
-		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} tag to: {green}%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sTag);
+		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetTag", iTarget, sTag);
 		return true;
 	}
 	return false;
@@ -2219,7 +2227,7 @@ bool ChangeTag(int client, bool bAdmin)
 
 	if (strlen(sTag) > 31)
 	{
-		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Tag is too long (32 characters max).");
+		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_TagTooLong");
 		return false;
 	}
 
@@ -2250,34 +2258,40 @@ bool ChangeSingleColor(int client, int iTarget, char Key[64], char sCol[64], boo
 
 		SetColor(Key, sCol, iTarget, bAdmin);
 
+		char sColDisplay[128];
+		Format(sColDisplay, sizeof(sColDisplay), "\x07%s%s", sCol[0], sCol[0]);
+
 		if (!strcmp(Key, "namecolor"))
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} name color to: \x07%s%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sCol[0], sCol[0]);
+			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetNameColor", iTarget, sColDisplay);
 		else if (!strcmp(Key, "tagcolor"))
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} tag color to: \x07%s%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sCol[0], sCol[0]);
+			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetTagColor", iTarget, sColDisplay);
 		else
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} text color to: \x07%s%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sCol[0], sCol[0]);
+			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetTextColor", iTarget, sColDisplay);
 	}
 	else if ((IsSource2009() && !IsValidHex(sCol)) || !IsSource2009())
 	{
 		char value[32];
 		if (!CGetColor(sCol, value, sizeof(value)))
 		{
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid color name given.");
+			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_InvalidColorName");
 			return false;
 		}
 
 		SetColor(Key, sCol, iTarget, bAdmin);
 
+		char sColDisplay[128];
+		Format(sColDisplay, sizeof(sColDisplay), "{%s}%s", sCol[0], sCol[0]);
+
 		if (!strcmp(Key, "namecolor"))
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} name color to: {%s}%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sCol[0], sCol[0]);
+			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetNameColor", iTarget, sColDisplay);
 		else if (!strcmp(Key, "tagcolor"))
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} tag color to: {%s}%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sCol[0], sCol[0]);
+			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetTagColor", iTarget, sColDisplay);
 		else
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} Successfully set {green}%N's{default} text color to: {%s}%s{default}!", bAdmin ? "-ADMIN" : "", iTarget, sCol[0], sCol[0]);
+			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetTextColor", iTarget, sColDisplay);
 	}
 	else
 	{
-		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Invalid HEX|RGB|name color code given.");
+		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_InvalidColorCode");
 		return false;
 	}
 	return true;
@@ -2342,7 +2356,7 @@ bool IsClientBanned(int client, const char Key[64] = "")
 
 	if (g_iClientBanned[client] == 0)
 	{
-		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} You are currently {red}permanently banned{default} from changing your {green}%s{default}.", Key);
+		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_BannedPerm", Key);
 		return true;
 	}
 
@@ -2357,22 +2371,22 @@ bool IsClientBanned(int client, const char Key[64] = "")
 
 	if (tstamp > 86400)
 	{
-		Format(TimeBuffer, sizeof(TimeBuffer), "%d %s, %d %s, %d %s, %d %s", days, SingularOrMultiple(days) ? "Days" : "Day", hrs, SingularOrMultiple(hrs) ? "Hours" : "Hour", mins, SingularOrMultiple(mins) ? "Minutes" : "Minute", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
+		Format(TimeBuffer, sizeof(TimeBuffer), "%d %T, %d %T, %d %T, %d %T", days, SingularOrMultiple(days) ? "CCC_Unit_Days" : "CCC_Unit_Day", client, hrs, SingularOrMultiple(hrs) ? "CCC_Unit_Hours" : "CCC_Unit_Hour", client, mins, SingularOrMultiple(mins) ? "CCC_Unit_Minutes" : "CCC_Unit_Minute", client, sec, SingularOrMultiple(sec) ? "CCC_Unit_Seconds" : "CCC_Unit_Second", client);
 	}
 	else if (tstamp > 3600)
 	{
-		Format(TimeBuffer, sizeof(TimeBuffer), "%d %s, %d %s, %d %s", hrs, SingularOrMultiple(hrs) ? "Hours" : "Hour", mins, SingularOrMultiple(mins) ? "Minutes" : "Minute", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
+		Format(TimeBuffer, sizeof(TimeBuffer), "%d %T, %d %T, %d %T", hrs, SingularOrMultiple(hrs) ? "CCC_Unit_Hours" : "CCC_Unit_Hour", client, mins, SingularOrMultiple(mins) ? "CCC_Unit_Minutes" : "CCC_Unit_Minute", client, sec, SingularOrMultiple(sec) ? "CCC_Unit_Seconds" : "CCC_Unit_Second", client);
 	}
 	else if (tstamp > 60)
 	{
-		Format(TimeBuffer, sizeof(TimeBuffer), "%d %s, %d %s", mins, SingularOrMultiple(mins) ? "Minutes" : "Minute", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
+		Format(TimeBuffer, sizeof(TimeBuffer), "%d %T, %d %T", mins, SingularOrMultiple(mins) ? "CCC_Unit_Minutes" : "CCC_Unit_Minute", client, sec, SingularOrMultiple(sec) ? "CCC_Unit_Seconds" : "CCC_Unit_Second", client);
 	}
 	else
 	{
-		Format(TimeBuffer, sizeof(TimeBuffer), "%d %s", sec, SingularOrMultiple(sec) ? "Seconds" : "Second");
+		Format(TimeBuffer, sizeof(TimeBuffer), "%d %T", sec, SingularOrMultiple(sec) ? "CCC_Unit_Seconds" : "CCC_Unit_Second", client);
 	}
 
-	CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} You are currently {red}banned{default} from changing your {green}%s{default}. (Time remaining: {green}%s{default})", Key, TimeBuffer);
+	CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_BannedTemp", Key, TimeBuffer);
 	return true;
 }
 
@@ -2507,7 +2521,7 @@ void SendChatToAdmins(int from, const char[] message)
 	{
 		if (IsClientInGame(i) && (from == i || CheckCommandAccess(i, "sm_chat", ADMFLAG_CHAT)))
 		{
-			CPrintToChat(i, "%s(%sADMINS) %s%N{default} : %s%s", g_sSmCategoryColor, fromAdmin ? "" : "TO ",
+			CPrintToChat(i, "%t", fromAdmin ? "CCC_Chat_Admins" : "CCC_Chat_ToAdmins", g_sSmCategoryColor,
 				g_sSmNameColor, from, g_sSmChatColor, message);
 		}
 	}
@@ -2517,14 +2531,14 @@ void SendPrivateChat(int client, int target, const char[] message)
 {
 	if (g_bDisablePsay[client])
 	{
-		CPrintToChat(client, "{green}[SM]{default} Enabling private messaging is necessary to send private messages.");
+		CPrintToChat(client, "{green}[SM]{default} %t", "CCC_PM_MustEnable");
 		ShowSettingsMenu(client);
 		return;
 	}
 
 	if (client && (IsClientInGame(client) && BaseComm_IsClientGagged(client)))
 	{
-		CPrintToChat(client, "{green}[SM]{default} You are {red}not allowed {default}to use this command {red}since you are gagged{default}.");
+		CPrintToChat(client, "{green}[SM]{default} %t", "CCC_PM_Gagged");
 		return;
 	}
 
@@ -2534,7 +2548,7 @@ void SendPrivateChat(int client, int target, const char[] message)
 		int IsGagged = SourceComms_GetClientGagType(client);
 		if (IsGagged > 0)
 		{
-			CPrintToChat(client, "{green}[SM]{default} You are {red}not allowed {default}to use this command {red}since you are gagged{default}.");
+			CPrintToChat(client, "{green}[SM]{default} %t", "CCC_PM_Gagged");
 			return;
 		}
 	}
@@ -2543,19 +2557,19 @@ void SendPrivateChat(int client, int target, const char[] message)
 	int iTime = GetTime();
 	if (g_iClientPsayCooldown[client] > iTime)
 	{
-		CPrintToChat(client, "{green}[SM]{default} You are on cooldown, wait {olive}%d {default}seconds to use this command again.", (g_iClientPsayCooldown[client] - iTime));
+		CPrintToChat(client, "{green}[SM]{default} %t", "CCC_PM_Cooldown", (g_iClientPsayCooldown[client] - iTime));
 		return;
 	}
 
 	if (!target || !IsClientInGame(target))
 	{
-		CPrintToChat(client, "{green}[SM]{default} The receiver is not in the game.");
+		CPrintToChat(client, "{green}[SM]{default} %t", "CCC_PM_ReceiverGone");
 		return;
 	}
 
 	if (g_bDisablePsay[target])
 	{
-		CPrintToChat(client, "{green}[SM]{olive} %N{default} has{red} disabled{default} private messages.", target);
+		CPrintToChat(client, "{green}[SM]{olive} %t", "CCC_PM_TargetDisabledPM", target);
 		return;
 	}
 
@@ -2590,7 +2604,7 @@ void SendPrivateChat(int client, int target, const char[] message)
 	}
 	else if (target != client)
 	{
-		CPrintToChat(client, "%s(Private to %s%N%s) %s%N {default}: %s%s",
+		CPrintToChat(client, "%t", "CCC_PM_PrivateTo",
 			g_sSmCategoryColor,
 			g_sSmNameColor, target, g_sSmCategoryColor,
 			g_sSmNameColor, client,
@@ -2600,7 +2614,7 @@ void SendPrivateChat(int client, int target, const char[] message)
 		{
 			for (int i = 0; i < adminsCount; i++)
 			{
-				CPrintToChat(admins[i], "%s(Private from %s%N%s to %s%N%s){default}: %s%s",
+				CPrintToChat(admins[i], "%t", "CCC_PM_PrivateFromTo",
 					g_sSmCategoryColor,
 					g_sSmNameColor, client, g_sSmCategoryColor,
 					g_sSmNameColor, target, g_sSmCategoryColor,
@@ -2611,13 +2625,13 @@ void SendPrivateChat(int client, int target, const char[] message)
 
 #if defined _SelfMute_V2_included
 	if (!g_bSelfMuteNative || !SelfMute_GetTextSelfMute(target, client) || CheckCommandAccess(client, "sm_kick", ADMFLAG_KICK, true))
-		CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s",
+		CPrintToChat(target, "%t", "CCC_PM_PrivateTo",
 			g_sSmCategoryColor,
 			g_sSmNameColor, target, g_sSmCategoryColor,
 			g_sSmNameColor, client,
 			g_sSmChatColor, text);
 #else
-	CPrintToChat(target, "%s(Private to %s%N%s) %s%N {default}: %s%s",
+	CPrintToChat(target, "%t", "CCC_PM_PrivateTo",
 		g_sSmCategoryColor,
 		g_sSmNameColor, target, g_sSmCategoryColor,
 		g_sSmNameColor, client,
@@ -2625,7 +2639,7 @@ void SendPrivateChat(int client, int target, const char[] message)
 #endif
 
 	g_iClientPsayCooldown[client] = iTime + g_cvPsayCooldown.IntValue;
-	CPrintToChat(target, "{green}[SM] {default}Use /r <message> to reply.");
+	CPrintToChat(target, "{green}[SM] {default}%t", "CCC_PM_ReplyHint");
 	LogAction(client, target, "\"%L\" triggered sm_psay to \"%L\" (text %s)", client, target, text);
 }
 
@@ -2644,7 +2658,7 @@ void SendChatToAll(int client, const char[] message)
 		}
 		FormatActivitySource(client, i, nameBuf, sizeof(nameBuf));
 
-		CPrintToChat(i, "%s(ALL) %s%s {default}: %s%s", g_sSmCategoryColor, g_sSmNameColor, nameBuf, g_sSmChatColor, message);
+		CPrintToChat(i, "%t", "CCC_Chat_All", g_sSmCategoryColor, g_sSmNameColor, nameBuf, g_sSmChatColor, message);
 	}
 }
 
@@ -2662,7 +2676,7 @@ public Action Command_CCCImportReplaceFile(int client, int argc)
 {
 	if (argc != 1)
 	{
-		CReplyToCommand(client, "{green}[CCC]{default} Usage: sm_cccimportreplacefile filename");
+		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_Usage", "sm_cccimportreplacefile filename");
 		return Plugin_Handled;
 	}
 
@@ -2676,7 +2690,7 @@ public Action Command_CCCImportReplaceFile(int client, int argc)
 
 	if (!kv.ImportFromFile(sFilepath))
 	{
-		CReplyToCommand(client, "{green}[CCC]{default} File missing, please make sure \"%s\" is in the \"sourcemod/configs\" folder.", sFilepath);
+		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_FileMissing", sFilepath);
 		return Plugin_Handled;
 	}
 
@@ -2688,7 +2702,7 @@ public Action Command_CCCImportReplaceFile(int client, int argc)
 
 	if (!DB_Connect())
 	{
-		CReplyToCommand(client, "{green}[CCC]{default} Database is not connected, try again later.");
+		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_DBNotConnected");
 		delete kv;
 		return Plugin_Handled;
 	}
@@ -2746,11 +2760,11 @@ public Action Command_CCCImportReplaceFile(int client, int argc)
 
 	if (iSkipped > 0)
 	{
-		CReplyToCommand(client, "{green}[CCC]{default} Imported with limit: queued {olive}%d{default}, skipped {olive}%d{default} (max {olive}%d{default} entries).", iQueued, iSkipped, REPLACE_LIST_MAX_LENGTH);
+		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_ImportedLimit", iQueued, iSkipped, REPLACE_LIST_MAX_LENGTH);
 	}
 	else
 	{
-		CReplyToCommand(client, "{green}[CCC]{default} Imported {olive}%d{default} trigger(s).", iQueued);
+		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_Imported", iQueued);
 	}
 
 	return Plugin_Handled;
@@ -2793,7 +2807,7 @@ public Action Command_CCCAddTag(int client, int argc)
 {
 	if (argc != 8)
 	{
-		CReplyToCommand(client, "{green}[CCC]{default} Usage: sm_cccaddtag steamid enable name flag tag tag_color name_color chat_color");
+		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_Usage", "sm_cccaddtag steamid enable name flag tag tag_color name_color chat_color");
 		return Plugin_Handled;
 	}
 
@@ -2817,7 +2831,7 @@ public Action Command_CCCAddTag(int client, int argc)
 
 	if (strlen(sTag) > 31)
 	{
-		CReplyToCommand(client, "{green}[CCC]{default} Tag is too long (32 characters max).");
+		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_TagTooLong");
 		return Plugin_Handled;
 	}
 
@@ -2839,7 +2853,7 @@ public Action Command_CCCAddTag(int client, int argc)
 	}
 	else
 	{
-		CReplyToCommand(client, "{green}[CCC]{default} Wrong parameters.");
+		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_WrongParameters");
 	}
 
 	return Plugin_Handled;
@@ -2849,7 +2863,7 @@ public Action Command_CCCDeleteTag(int client, int argc)
 {
 	if (argc != 1)
 	{
-		CReplyToCommand(client, "{green}[CCC]{default} Usage: sm_cccdeletetag steamid");
+		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_Usage", "sm_cccdeletetag steamid");
 		return Plugin_Handled;
 	}
 
@@ -2867,7 +2881,7 @@ public Action Command_CCCDeleteTag(int client, int argc)
 	}
 	else
 	{
-		CReplyToCommand(client, "{green}[CCC]{default} Wrong parameter.");
+		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_WrongParameter");
 	}
 
 	return Plugin_Handled;
@@ -2877,7 +2891,7 @@ public Action Command_CCCAddTrigger(int client, int argc)
 {
 	if (argc != 2)
 	{
-		CReplyToCommand(client, "{green}[CCC]{default} Usage: sm_cccaddtrigger trigger value");
+		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_Usage", "sm_cccaddtrigger trigger value");
 		return Plugin_Handled;
 	}
 
@@ -2889,19 +2903,19 @@ public Action Command_CCCAddTrigger(int client, int argc)
 
 	if (sTrigger[0] == '\0')
 	{
-		CReplyToCommand(client, "{green}[CCC]{default} Trigger must be non empty");
+		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_TriggerEmpty");
 		return Plugin_Handled;
 	}
 
 	if (sValue[0] == '\0')
 	{
-		CReplyToCommand(client, "{green}[CCC]{default} Value must be non empty");
+		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_ValueEmpty");
 		return Plugin_Handled;
 	}
 
 	if (!CanQueueReplaceInsert(sTrigger))
 	{
-		CReplyToCommand(client, "{green}[CCC]{default} Replace list is full ({olive}%d{default} entries). Trigger was not inserted.", REPLACE_LIST_MAX_LENGTH);
+		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_ReplaceListFull", REPLACE_LIST_MAX_LENGTH);
 		return Plugin_Handled;
 	}
 
@@ -2921,7 +2935,7 @@ public Action Command_CCCDeleteTrigger(int client, int argc)
 {
 	if (argc != 1)
 	{
-		CReplyToCommand(client, "{green}[CCC]{default} Usage: sm_cccdeletetrigger trigger");
+		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_Usage", "sm_cccdeletetrigger trigger");
 		return Plugin_Handled;
 	}
 
@@ -2931,7 +2945,7 @@ public Action Command_CCCDeleteTrigger(int client, int argc)
 
 	if (sTrigger[0] == '\0')
 	{
-		CReplyToCommand(client, "{green}[CCC]{default} Trigger must be non empty");
+		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_TriggerEmpty");
 		return Plugin_Handled;
 	}
 
@@ -2949,7 +2963,7 @@ public Action Command_ReloadConfig(int client, int args)
 	ReloadConfig();
 
 	LogAction(client, -1, "\"%L\" Reloaded Custom Chat Colors config file", client);
-	CReplyToCommand(client, "{green}[CCC] {default}Reloaded ccc.");
+	CReplyToCommand(client, "{green}[CCC] {default}%t", "CCC_Reloaded");
 	Call_StartForward(configReloadedForward);
 	Call_Finish();
 	return Plugin_Handled;
@@ -2959,7 +2973,7 @@ public Action Command_TagMenu(int client, int args)
 {
 	if (!client)
 	{
-		ReplyToCommand(client, "[CCC] Cannot use command from server console");
+		ReplyToCommand(client, "[CCC] %t", "CCC_NoConsole");
 		return Plugin_Handled;
 	}
 
@@ -2971,7 +2985,7 @@ public Action Command_SmSay(int client, int args)
 {
 	if (args < 1)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_say <message>");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_Usage", "sm_say <message>");
 		return Plugin_Handled;
 	}
 
@@ -2988,7 +3002,7 @@ public Action Command_SmCsay(int client, int args)
 {
 	if (args < 1)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_csay <message>");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_Usage", "sm_csay <message>");
 		return Plugin_Handled;
 	}
 
@@ -3006,7 +3020,7 @@ public Action Command_SmChat(int client, int args)
 {
 	if (args < 1)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_chat <message>");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_Usage", "sm_chat <message>");
 		return Plugin_Handled;
 	}
 
@@ -3022,13 +3036,13 @@ public Action Command_SmPsay(int client, int args)
 {
 	if (!client)
 	{
-		ReplyToCommand(client, "[SM] Cannot use this command from server console");
+		ReplyToCommand(client, "[SM] %t", "CCC_NoConsole2");
 		return Plugin_Handled;
 	}
 
 	if (args < 2)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_psay <name or #userid> <message>");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_Usage", "sm_psay <name or #userid> <message>");
 		return Plugin_Handled;
 	}
 
@@ -3057,19 +3071,19 @@ public Action Command_SmPsayReply(int client, int args)
 {
 	if (args < 1)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_r <message>");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_Usage", "sm_r <message>");
 		return Plugin_Handled;
 	}
 
 	if (g_iClientFastReply[client] == 0)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}You cannot reply to anything since you haven't sent or received a private message.");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_PM_NothingToReply");
 		return Plugin_Handled;
 	}
 
 	if (g_iClientFastReply[client] == -1)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}You cannot send a private message to a disconnected player.");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_PM_Disconnected");
 		return Plugin_Handled;
 	}
 
@@ -3080,7 +3094,7 @@ public Action Command_SmPsayReply(int client, int args)
 	int target = GetClientOfUserId(g_iClientFastReply[client]);
 	if (!target)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}You cannot send a private message to a disconnected player.");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_PM_Disconnected");
 		return Plugin_Handled;
 	}
 
@@ -3092,7 +3106,7 @@ public Action Command_SmHsay(int client, int args)
 {
 	if (args < 1)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_hsay <message>");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_Usage", "sm_hsay <message>");
 		return Plugin_Handled;
 	}
 
@@ -3120,7 +3134,7 @@ public Action Command_SmDsay(int client, int args)
 {
 	if (args < 1)
 	{
-		ReplyToCommand(client, "[SM] Usage: sm_dsay <message>");
+		ReplyToCommand(client, "[SM] %t", "CCC_Usage", "sm_dsay <message>");
 		return Plugin_Handled;
 	}
 
@@ -3159,7 +3173,7 @@ public Action Command_SmTsay(int client, int args)
 {
 	if (args < 1)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_tsay <message>");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_Usage", "sm_tsay <message>");
 		return Plugin_Handled;
 	}
 
@@ -3196,13 +3210,13 @@ public Action Command_SmMsay(int client, int args)
 {
 	if (IsVoteInProgress())
 	{
-		CReplyToCommand(client, "{green}[SM] {default}A vote is in progress, please try again after the vote.");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_VoteInProgress");
 		return Plugin_Handled;
 	}
 
 	if (args < 1)
 	{
-		CReplyToCommand(client, "{green}[SM] {default} Usage: sm_msay <message>");
+		CReplyToCommand(client, "{green}[SM] {default} %t", "CCC_Usage", "sm_msay <message>");
 		return Plugin_Handled;
 	}
 
@@ -3370,7 +3384,7 @@ public Action Command_Say(int client, const char[] command, int argc)
 			{
 				if (strlen(text[1]) > 31)
 				{
-					CPrintToChat(client, "{green}[CCC]{default} Tag is too long (32 characters max).");
+					CPrintToChat(client, "{green}[CCC]{default} %t", "CCC_TagTooLong");
 					return Plugin_Handled;
 				}
 			}
@@ -3408,7 +3422,7 @@ public Action Command_Say(int client, const char[] command, int argc)
 	}
 
 	if (client != 0 && g_bTagTruncated[client])
-		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} Your tag is longer than 32 characters and has been truncated for display. {red}Please update it");
+		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_TagTruncated");
 
 	return Plugin_Continue;
 }
@@ -3421,7 +3435,7 @@ public Action Command_ForceTag(int client, int args)
 {
 	if (args < 2)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_forcetag <name|#userid|@filter> <tag text>");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_Usage", "sm_forcetag <name|#userid|@filter> <tag text>");
 		return Plugin_Handled;
 	}
 
@@ -3438,7 +3452,7 @@ public Action Command_ForceTagColor(int client, int args)
 {
 	if (args < 2)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_forcetagcolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_Usage", "sm_forcetagcolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		return Plugin_Handled;
 	}
 
@@ -3455,7 +3469,7 @@ public Action Command_ForceNameColor(int client, int args)
 {
 	if (args < 2)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_forcenamecolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_Usage", "sm_forcenamecolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		return Plugin_Handled;
 	}
 
@@ -3472,7 +3486,7 @@ public Action Command_ForceTextColor(int client, int args)
 {
 	if (args < 2)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_forcetextcolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_Usage", "sm_forcetextcolor <name|#userid|@filter> <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		return Plugin_Handled;
 	}
 
@@ -3489,7 +3503,7 @@ public Action Command_CCCReset(int client, int args)
 {
 	if (args < 1)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_cccreset <name|#userid|@filter>");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_Usage", "sm_cccreset <name|#userid|@filter>");
 		return Plugin_Handled;
 	}
 
@@ -3502,7 +3516,7 @@ public Action Command_CCCReset(int client, int args)
 		return Plugin_Handled;
 	}
 
-	CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Cleared {green}%N's tag {default}&{green} colors{default}.", iTarget);
+	CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_Admin_Cleared", iTarget);
 	RemoveCCC(iTarget);
 
 	return Plugin_Handled;
@@ -3516,7 +3530,7 @@ public Action Command_CCCBan(int client, int args)
 {
 	if (args < 1)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_cccban <name|#userid|@filter> <optional:time>");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_Usage", "sm_cccban <name|#userid|@filter> <optional:time>");
 		return Plugin_Handled;
 	}
 
@@ -3548,7 +3562,7 @@ public Action Command_CCCUnban(int client, int args)
 {
 	if (args < 1)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_cccunban <name|#userid|@filter>");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_Usage", "sm_cccunban <name|#userid|@filter>");
 		return Plugin_Handled;
 	}
 
@@ -3574,13 +3588,13 @@ public Action Command_SetTag(int client, int args)
 {
 	if (!client)
 	{
-		ReplyToCommand(client, "[CCC] Cannot use command from server console");
+		ReplyToCommand(client, "[CCC] %t", "CCC_NoConsole");
 		return Plugin_Handled;
 	}
 
 	if (args < 1)
 	{
-		CReplyToCommand(client, "{green}[SM] {default}Usage: sm_tag <tag text>");
+		CReplyToCommand(client, "{green}[SM] {default}%t", "CCC_Usage", "sm_tag <tag text>");
 		Menu_Main(client);
 		return Plugin_Handled;
 	}
@@ -3598,7 +3612,7 @@ public Action Command_ClearTag(int client, int args)
 {
 	if (!client)
 	{
-		ReplyToCommand(client, "[CCC] Cannot use command from server console");
+		ReplyToCommand(client, "[CCC] %t", "CCC_NoConsole");
 		return Plugin_Handled;
 	}
 
@@ -3615,13 +3629,13 @@ public Action Command_SetTagColor(int client, int args)
 {
 	if (!client)
 	{
-		ReplyToCommand(client, "[CCC] Cannot use command from server console");
+		ReplyToCommand(client, "[CCC] %t", "CCC_NoConsole");
 		return Plugin_Handled;
 	}
 
 	if (args < 1)
 	{
-		CPrintToChat(client, "{green}[SM] {default}Usage: sm_tagcolor <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
+		CPrintToChat(client, "{green}[SM] {default}%t", "CCC_Usage", "sm_tagcolor <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		Menu_TagPrefs(client);
 		return Plugin_Handled;
 	}
@@ -3639,7 +3653,7 @@ public Action Command_ClearTagColor(int client, int args)
 {
 	if (!client)
 	{
-		ReplyToCommand(client, "[CCC] Cannot use command from server console");
+		ReplyToCommand(client, "[CCC] %t", "CCC_NoConsole");
 		return Plugin_Handled;
 	}
 
@@ -3662,7 +3676,7 @@ public Action Command_SetNameColor(int client, int args)
 
 	if (args < 1)
 	{
-		CPrintToChat(client, "{green}[SM] {default}Usage: sm_namecolor <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
+		CPrintToChat(client, "{green}[SM] {default}%t", "CCC_Usage", "sm_namecolor <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		Menu_NameColor(client);
 		return Plugin_Handled;
 	}
@@ -3703,7 +3717,7 @@ public Action Command_SetTextColor(int client, int args)
 
 	if (args < 1)
 	{
-		CPrintToChat(client, "{green}[SM] {default}Usage: sm_textcolor <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
+		CPrintToChat(client, "{green}[SM] {default}%t", "CCC_Usage", "sm_textcolor <RRGGBB HEX|0-255 0-255 0-255 RGB|Name CODE>");
 		Menu_ChatColor(client);
 		return Plugin_Handled;
 	}
@@ -3739,7 +3753,7 @@ public Action Command_ToggleTag(int client, int args)
 	}
 
 	ToggleCCC(client);
-	CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} {green}Tag and color{default} displaying %s", g_iClientEnable[client] ? "{red}enabled{default}." : "{green}disabled{default}.");
+	CReplyToCommand(client, "{green}[{red}C{green}C{blue}C{green}]{default} %t", g_iClientEnable[client] ? "CCC_DisplayEnabled" : "CCC_DisplayDisabled");
 
 	return Plugin_Handled;
 }
@@ -3756,7 +3770,7 @@ public Action Command_ToggleTag(int client, int args)
 public void AdminMenu_UnBanList(int client)
 {
 	Menu MenuAUnBan = new Menu(MenuHandler_AdminUnBan);
-	MenuAUnBan.SetTitle("Select a Target (Unban from Tag/Colors)");
+	MenuAUnBan.SetTitle("%T", "CCC_Menu_UnbanTitle", client);
 	MenuAUnBan.ExitBackButton = true;
 
 	int clients = 0;
@@ -3772,11 +3786,11 @@ public void AdminMenu_UnBanList(int client)
 
 			if (g_iClientBanned[i] == 0)
 			{
-				Format(info, sizeof(info), "%N (Permanent)", i);
+				Format(info, sizeof(info), "%N (%T)", i, "CCC_Permanent", client);
 			}
 			else
 			{
-				Format(info, sizeof(info), "%N (%d minutes remaining)", i, remaining);
+				Format(info, sizeof(info), "%N (%T)", i, "CCC_MinutesRemaining", client, remaining);
 			}
 
 			Format(id, sizeof(id), "%i", GetClientUserId(i));
@@ -3790,7 +3804,7 @@ public void AdminMenu_UnBanList(int client)
 	if (!clients)
 	{
 		char sBuffer[64];
-		Format(sBuffer, sizeof(sBuffer), "No banned clients");
+		Format(sBuffer, sizeof(sBuffer), "%T", "CCC_Menu_NoBanned", client);
 		MenuAUnBan.AddItem("0", sBuffer, ITEMDRAW_DISABLED);
 	}
 
@@ -3821,7 +3835,7 @@ public int MenuHandler_AdminUnBan(Menu MenuAUnBan, MenuAction action, int param1
 
 		if (!target)
 		{
-			CReplyToCommand(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Player no longer available.");
+			CReplyToCommand(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_PlayerGone");
 
 			Menu_Admin(param1);
 		}
@@ -3842,26 +3856,27 @@ public void Menu_Main(int client)
 		return;
 
 	Menu MenuMain = new Menu(MenuHandler_Main);
-	MenuMain.SetTitle("Chat Tags & Colors");
+	MenuMain.SetTitle("%T", "CCC_Menu_MainTitle", client);
 
-	MenuMain.AddItem("Current", "View Current Settings");
-	MenuMain.AddItem("Tag", "Tag Options");
-	MenuMain.AddItem("Name", "Name Options");
-	MenuMain.AddItem("Chat", "Chat Options");
+	AddMenuItemTranslated(MenuMain, "Current", client, "CCC_Menu_ViewCurrent");
+	AddMenuItemTranslated(MenuMain, "Tag", client, "CCC_Menu_TagOptions");
+	AddMenuItemTranslated(MenuMain, "Name", client, "CCC_Menu_NameOptions");
+	AddMenuItemTranslated(MenuMain, "Chat", client, "CCC_Menu_ChatOptions");
 
-	char sBuffer[128];
-	Format(sBuffer, sizeof(sBuffer), "Colors and tag: %s", g_iClientEnable[client] ? "Enabled" : "Disabled");
+	char sBuffer[128], sState[64];
+	Format(sState, sizeof(sState), "%T", g_iClientEnable[client] ? "CCC_Enabled" : "CCC_Disabled", client);
+	Format(sBuffer, sizeof(sBuffer), "%T", "CCC_Menu_ColorsAndTag", client, sState);
 	MenuMain.AddItem("CCC", sBuffer);
 
 	if (g_bWaitingForChatInput[client])
 	{
-		MenuMain.AddItem("CancelCInput", "Cancel Chat Input");
+		AddMenuItemTranslated(MenuMain, "CancelCInput", client, "CCC_Menu_CancelInput");
 	}
 
 	if (HasFlag(client, Admin_Slay) || HasFlag(client, Admin_Cheats))
 	{
 		MenuMain.AddItem("", "", ITEMDRAW_SPACER);
-		MenuMain.AddItem("Admin", "Administrative Options");
+		AddMenuItemTranslated(MenuMain, "Admin", client, "CCC_Menu_AdminOptions");
 	}
 
 	MenuMain.Display(client, MENU_TIME_FOREVER);
@@ -3906,23 +3921,23 @@ public int MenuHandler_Main(Menu MenuMain, MenuAction action, int param1, int pa
 			g_bWaitingForChatInput[param1] = false;
 			g_sInputType[param1] = "";
 			Menu_Main(param1);
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Cancelled chat input.");
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_InputCancelled");
 		}
 		else if (strcmp(Selected, "Current", false) == 0)
 		{
-			char sTagF[32];
-			char sTagColorF[64];
-			char sNameColorF[64];
-			char sChatColorF[64];
+			char sTagF[128];
+			char sTagColorF[128];
+			char sNameColorF[128];
+			char sChatColorF[128];
 
 			Menu hMenuCurrent = new Menu(MenuHandler_Current);
-			hMenuCurrent.SetTitle("Current Settings:");
+			hMenuCurrent.SetTitle("%T", "CCC_Menu_CurrentTitle", param1);
 			hMenuCurrent.ExitBackButton = true;
 
-			Format(sTagF, sizeof(sTagF), "Current Tag: %s", g_sClientTag[param1]);
-			Format(sTagColorF, sizeof(sTagColorF), "Current Tag Color: %s", g_sClientTagColor[param1]);
-			Format(sNameColorF, sizeof(sNameColorF), "Current Name Color: %s", g_sClientNameColor[param1]);
-			Format(sChatColorF, sizeof(sChatColorF), "Current Chat Color: %s", g_sClientChatColor[param1]);
+			Format(sTagF, sizeof(sTagF), "%T", "CCC_Current_Tag", param1, g_sClientTag[param1]);
+			Format(sTagColorF, sizeof(sTagColorF), "%T", "CCC_Current_TagColor", param1, g_sClientTagColor[param1]);
+			Format(sNameColorF, sizeof(sNameColorF), "%T", "CCC_Current_NameColor", param1, g_sClientNameColor[param1]);
+			Format(sChatColorF, sizeof(sChatColorF), "%T", "CCC_Current_ChatColor", param1, g_sClientChatColor[param1]);
 
 			hMenuCurrent.AddItem("sTag", sTagF, ITEMDRAW_DISABLED);
 			hMenuCurrent.AddItem("sTagColor", sTagColorF, ITEMDRAW_DISABLED);
@@ -3933,7 +3948,7 @@ public int MenuHandler_Main(Menu MenuMain, MenuAction action, int param1, int pa
 		}
 		else
 		{
-			PrintToChat(param1, "congrats you broke it");
+			PrintToChat(param1, "%t", "CCC_Broken");
 		}
 	}
 
@@ -3963,19 +3978,19 @@ public void Menu_Admin(int client)
 		return;
 
 	Menu MenuAdmin = new Menu(MenuHandler_Admin);
-	MenuAdmin.SetTitle("Chat Tags & Colors Admin");
+	MenuAdmin.SetTitle("%T", "CCC_Menu_AdminTitle", client);
 	MenuAdmin.ExitBackButton = true;
 
-	MenuAdmin.AddItem("Reset", "Reset a client's Tag & Colors");
-	MenuAdmin.AddItem("Ban", "Ban a client from the Tag & Colors system");
-	MenuAdmin.AddItem("Unban", "Unban a client from the Tag & Colors system");
+	AddMenuItemTranslated(MenuAdmin, "Reset", client, "CCC_Menu_AdminReset");
+	AddMenuItemTranslated(MenuAdmin, "Ban", client, "CCC_Menu_AdminBan");
+	AddMenuItemTranslated(MenuAdmin, "Unban", client, "CCC_Menu_AdminUnban");
 
 	if (HasFlag(client, Admin_Cheats))
 	{
-		MenuAdmin.AddItem("ForceTag", "Forcefully change a client's Tag");
-		MenuAdmin.AddItem("ForceTagColor", "Forcefully change a client's Tag Color");
-		MenuAdmin.AddItem("ForceNameColor", "Forcefully change a client's Name Color");
-		MenuAdmin.AddItem("ForceTextColor", "Forcefully change a client's Chat Color");
+		AddMenuItemTranslated(MenuAdmin, "ForceTag", client, "CCC_Menu_AdminForceTag");
+		AddMenuItemTranslated(MenuAdmin, "ForceTagColor", client, "CCC_Menu_AdminForceTagColor");
+		AddMenuItemTranslated(MenuAdmin, "ForceNameColor", client, "CCC_Menu_AdminForceNameColor");
+		AddMenuItemTranslated(MenuAdmin, "ForceTextColor", client, "CCC_Menu_AdminForceTextColor");
 	}
 
 	MenuAdmin.Display(client, MENU_TIME_FOREVER);
@@ -4003,7 +4018,7 @@ public int MenuHandler_Admin(Menu MenuAdmin, MenuAction action, int param1, int 
 		if (strcmp(Selected, "Reset", false) == 0)
 		{
 			Menu MenuAReset = new Menu(MenuHandler_AdminReset);
-			MenuAReset.SetTitle("Select a Target (Reset Tag/Colors)");
+			MenuAReset.SetTitle("%T", "CCC_Menu_ResetTitle", param1);
 			MenuAReset.ExitBackButton = true;
 
 			AddTargetsToMenu2(MenuAReset, 0, COMMAND_FILTER_NO_BOTS|COMMAND_FILTER_CONNECTED);
@@ -4014,7 +4029,7 @@ public int MenuHandler_Admin(Menu MenuAdmin, MenuAction action, int param1, int 
 		else if (strcmp(Selected, "Ban", false) == 0)
 		{
 			Menu MenuABan = new Menu(MenuHandler_AdminBan);
-			MenuABan.SetTitle("Select a Target (Ban from Tag/Colors)");
+			MenuABan.SetTitle("%T", "CCC_Menu_BanTitle", param1);
 			MenuABan.ExitBackButton = true;
 
 			AddTargetsToMenu2(MenuABan, 0, COMMAND_FILTER_NO_BOTS|COMMAND_FILTER_CONNECTED);
@@ -4030,7 +4045,7 @@ public int MenuHandler_Admin(Menu MenuAdmin, MenuAction action, int param1, int 
 		else if (strcmp(Selected, "ForceTag", false) == 0)
 		{
 			Menu MenuAFTag = new Menu(MenuHandler_AdminForceTag);
-			MenuAFTag.SetTitle("Select a Target (Force Tag)");
+			MenuAFTag.SetTitle("%T", "CCC_Menu_ForceTagTitle", param1);
 			MenuAFTag.ExitBackButton = true;
 
 			AddTargetsToMenu2(MenuAFTag, 0, COMMAND_FILTER_NO_BOTS|COMMAND_FILTER_CONNECTED);
@@ -4041,7 +4056,7 @@ public int MenuHandler_Admin(Menu MenuAdmin, MenuAction action, int param1, int 
 		else if (strcmp(Selected, "ForceTagColor", false) == 0)
 		{
 			Menu MenuAFTColor = new Menu(MenuHandler_AdminForceTagColor);
-			MenuAFTColor.SetTitle("Select a Target (Force Tag Color)");
+			MenuAFTColor.SetTitle("%T", "CCC_Menu_ForceTagColorTitle", param1);
 			MenuAFTColor.ExitBackButton = true;
 
 			AddTargetsToMenu2(MenuAFTColor, 0, COMMAND_FILTER_NO_BOTS|COMMAND_FILTER_CONNECTED);
@@ -4052,7 +4067,7 @@ public int MenuHandler_Admin(Menu MenuAdmin, MenuAction action, int param1, int 
 		else if (strcmp(Selected, "ForceNameColor", false) == 0)
 		{
 			Menu MenuAFNColor = new Menu(MenuHandler_AdminForceNameColor);
-			MenuAFNColor.SetTitle("Select a Target (Force Name Color)");
+			MenuAFNColor.SetTitle("%T", "CCC_Menu_ForceNameColorTitle", param1);
 			MenuAFNColor.ExitBackButton = true;
 
 			AddTargetsToMenu2(MenuAFNColor, 0, COMMAND_FILTER_NO_BOTS|COMMAND_FILTER_CONNECTED);
@@ -4063,7 +4078,7 @@ public int MenuHandler_Admin(Menu MenuAdmin, MenuAction action, int param1, int 
 		else if (strcmp(Selected, "ForceTextColor", false) == 0)
 		{
 			Menu MenuAFTeColor = new Menu(MenuHandler_AdminForceTextColor);
-			MenuAFTeColor.SetTitle("Select a Target (Force Text Color)");
+			MenuAFTeColor.SetTitle("%T", "CCC_Menu_ForceTextColorTitle", param1);
 			MenuAFTeColor.ExitBackButton = true;
 
 			AddTargetsToMenu2(MenuAFTeColor, 0, COMMAND_FILTER_NO_BOTS|COMMAND_FILTER_CONNECTED);
@@ -4076,11 +4091,11 @@ public int MenuHandler_Admin(Menu MenuAdmin, MenuAction action, int param1, int 
 			g_bWaitingForChatInput[param1] = false;
 			g_sInputType[param1] = "";
 			Menu_Admin(param1);
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Cancelled chat input.");
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_InputCancelled");
 		}
 		else
 		{
-			PrintToChat(param1, "congrats you broke it");
+			PrintToChat(param1, "%t", "CCC_Broken");
 		}
 
 		Menu_Admin(param1);
@@ -4113,13 +4128,13 @@ public int MenuHandler_AdminReset(Menu MenuAReset, MenuAction action, int param1
 
 		if (!target)
 		{
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Player no longer available.");
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_PlayerGone");
 
 			Menu_Admin(param1);
 		}
 		else
 		{
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Cleared {green}%N's tag {default}&{green} colors{default}.", target);
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_Admin_Cleared", target);
 			RemoveCCC(target);
 		}
 
@@ -4153,7 +4168,7 @@ public int MenuHandler_AdminBan(Menu MenuABan, MenuAction action, int param1, in
 
 		if (!target)
 		{
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Player no longer available.");
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_PlayerGone");
 
 			Menu_Admin(param1);
 		}
@@ -4163,16 +4178,16 @@ public int MenuHandler_AdminBan(Menu MenuABan, MenuAction action, int param1, in
 			g_sATargetSID[param1] = g_sSteamIDs[target];
 
 			Menu MenuABTime = new Menu(MenuHandler_AdminBanTime);
-			MenuABTime.SetTitle("Select Ban Length");
+			MenuABTime.SetTitle("%T", "CCC_Menu_BanLengthTitle", param1);
 			MenuABTime.ExitBackButton = true;
 
-			MenuABTime.AddItem("10", "10 Minutes");
-			MenuABTime.AddItem("30", "30 Minutes");
-			MenuABTime.AddItem("60", "1 Hour");
-			MenuABTime.AddItem("1440", "1 Day");
-			MenuABTime.AddItem("10080", "1 Week");
-			MenuABTime.AddItem("40320", "1 Month");
-			MenuABTime.AddItem("0", "Permanent");
+			AddMenuItemTranslated(MenuABTime, "10", param1, "CCC_Len_10m");
+			AddMenuItemTranslated(MenuABTime, "30", param1, "CCC_Len_30m");
+			AddMenuItemTranslated(MenuABTime, "60", param1, "CCC_Len_1h");
+			AddMenuItemTranslated(MenuABTime, "1440", param1, "CCC_Len_1d");
+			AddMenuItemTranslated(MenuABTime, "10080", param1, "CCC_Len_1w");
+			AddMenuItemTranslated(MenuABTime, "40320", param1, "CCC_Len_1mo");
+			AddMenuItemTranslated(MenuABTime, "0", param1, "CCC_Permanent");
 
 			MenuABTime.Display(param1, MENU_TIME_FOREVER);
 		}
@@ -4192,7 +4207,7 @@ public int MenuHandler_AdminBanTime(Menu MenuABTime, MenuAction action, int para
 	if (action == MenuAction_Cancel && param2 == MenuCancel_ExitBack)
 	{
 		Menu MenuABan = new Menu(MenuHandler_AdminBan);
-		MenuABan.SetTitle("Select a Target (Ban from Tag/Colors)");
+		MenuABan.SetTitle("%T", "CCC_Menu_BanTitle", param1);
 		MenuABan.ExitBackButton = true;
 
 		AddTargetsToMenu2(MenuABan, 0, COMMAND_FILTER_NO_BOTS|COMMAND_FILTER_CONNECTED);
@@ -4208,7 +4223,7 @@ public int MenuHandler_AdminBanTime(Menu MenuABTime, MenuAction action, int para
 
 		if (!g_iATarget[param1])
 		{
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Player no longer available.");
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_PlayerGone");
 
 			Menu_Admin(param1);
 			return 0;
@@ -4232,7 +4247,7 @@ public void Menu_Input(Menu MenuAF, int param1, int param2, char Key[32])
 
 	if (!target)
 	{
-		CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Player no longer available.");
+		CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_PlayerGone");
 		Menu_Admin(param1);
 	}
 	else
@@ -4242,13 +4257,13 @@ public void Menu_Input(Menu MenuAF, int param1, int param2, char Key[32])
 		g_bWaitingForChatInput[param1] = true;
 		g_sInputType[param1] = Key;
 		if (strcmp("MenuForceTag", Key, false) == 0)
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Please enter what you want {green}%N's{default} tag to be.", target);
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_Admin_EnterTag", target);
 		else if (strcmp("MenuForceTagColor", Key, false) == 0)
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Please enter what you want {green}%N's{default} tag color to be (#{red}RR{green}GG{blue}BB{default} HEX only!).", target);
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_Admin_EnterTagColor", target);
 		else if (strcmp("MenuForceNameColor", Key, false) == 0)
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Please enter what you want {green}%N's{default} name color to be (#{red}RR{green}GG{blue}BB{default} HEX only!).", target);
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_Admin_EnterNameColor", target);
 		else if (strcmp("MenuForceTextColor", Key, false) == 0)
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} Please enter what you want {green}%N's{default} text color to be (#{red}RR{green}GG{blue}BB{default} HEX only!).", target);
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_Admin_EnterTextColor", target);
 	}
 }
 
@@ -4354,14 +4369,14 @@ public void Menu_TagPrefs(int client)
 		return;
 
 	Menu MenuTPrefs = new Menu(MenuHandler_TagPrefs);
-	MenuTPrefs.SetTitle("Tag Options:");
+	MenuTPrefs.SetTitle("%T", "CCC_Menu_TagTitle", client);
 	MenuTPrefs.ExitBackButton = true;
 
-	MenuTPrefs.AddItem("Reset", "Clear Tag");
-	MenuTPrefs.AddItem("ResetColor", "Clear Tag Color");
-	MenuTPrefs.AddItem("ChangeTag", "Change Tag (Chat input)");
-	MenuTPrefs.AddItem("Color", "Change Tag Color");
-	MenuTPrefs.AddItem("ColorTag", "Change Tag Color (Chat input)");
+	AddMenuItemTranslated(MenuTPrefs, "Reset", client, "CCC_Menu_ClearTag");
+	AddMenuItemTranslated(MenuTPrefs, "ResetColor", client, "CCC_Menu_ClearTagColor");
+	AddMenuItemTranslated(MenuTPrefs, "ChangeTag", client, "CCC_Menu_ChangeTagInput");
+	AddMenuItemTranslated(MenuTPrefs, "Color", client, "CCC_Menu_ChangeTagColor");
+	AddMenuItemTranslated(MenuTPrefs, "ColorTag", client, "CCC_Menu_ChangeTagColorInput");
 
 	MenuTPrefs.Display(client, MENU_TIME_FOREVER);
 }
@@ -4398,29 +4413,29 @@ public int MenuHandler_TagPrefs(Menu MenuTPrefs, MenuAction action, int param1, 
 		if (strcmp(Selected, "Reset", false) == 0)
 		{
 			SetTag("", param1);
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Cleared your custom {green}tag{default}.");
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_ClearedTag");
 		}
 		else if (strcmp(Selected, "ResetColor", false) == 0)
 		{
 			if (SetColor("tagcolor", "", param1))
-				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Cleared your custom {green}tag color{default}.");
+				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_ClearedTagColor");
 		}
 		else if (strcmp(Selected, "ChangeTag", false) == 0)
 		{
 			g_bWaitingForChatInput[param1] = true;
 			g_sInputType[param1] = "ChangeTag";
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Please enter what you want your {green}tag{default} to be.");
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_EnterTag");
 		}
 		else if (strcmp(Selected, "ColorTag", false) == 0)
 		{
 			g_bWaitingForChatInput[param1] = true;
 			g_sInputType[param1] = "ColorTag";
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Please enter what you want your {green}tag color{default} to be (#{red}RR{green}GG{blue}BB{default} HEX only!).");
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_EnterTagColor");
 		}
 		else
 		{
 			Menu ColorsMenu = new Menu(MenuHandler_TagColorSub);
-			ColorsMenu.SetTitle("Pick a color:");
+			ColorsMenu.SetTitle("%T", "CCC_Menu_PickColor", param1);
 			ColorsMenu.ExitBackButton = true;
 
 			Menu_AddColors(ColorsMenu);
@@ -4441,12 +4456,12 @@ public void Menu_NameColor(int client)
 		return;
 
 	Menu MenuNColor = new Menu(MenuHandler_NameColor);
-	MenuNColor.SetTitle("Name Options:");
+	MenuNColor.SetTitle("%T", "CCC_Menu_NameTitle", client);
 	MenuNColor.ExitBackButton = true;
 
-	MenuNColor.AddItem("ResetColor", "Clear Name Color");
-	MenuNColor.AddItem("Color", "Change Name Color");
-	MenuNColor.AddItem("ColorName", "Change Name Color (Chat input)");
+	AddMenuItemTranslated(MenuNColor, "ResetColor", client, "CCC_Menu_ClearNameColor");
+	AddMenuItemTranslated(MenuNColor, "Color", client, "CCC_Menu_ChangeNameColor");
+	AddMenuItemTranslated(MenuNColor, "ColorName", client, "CCC_Menu_ChangeNameColorInput");
 
 	MenuNColor.Display(client, MENU_TIME_FOREVER);
 }
@@ -4473,18 +4488,18 @@ public int MenuHandler_NameColor(Menu MenuNColor, MenuAction action, int param1,
 		if (strcmp(Selected, "ResetColor", false) == 0)
 		{
 			if (SetColor("namecolor", "", param1))
-				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Cleared your custom {green}name color{default}.");
+				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_ClearedNameColor");
 		}
 		else if (strcmp(Selected, "ColorName", false) == 0)
 		{
 			g_bWaitingForChatInput[param1] = true;
 			g_sInputType[param1] = "ColorName";
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Please enter what you want your {green}name color{default} to be (#{red}RR{green}GG{blue}BB{default} HEX only!).");
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_EnterNameColor");
 		}
 		else
 		{
 			Menu ColorsMenu = new Menu(MenuHandler_NameColorSub);
-			ColorsMenu.SetTitle("Pick a color:");
+			ColorsMenu.SetTitle("%T", "CCC_Menu_PickColor", param1);
 			ColorsMenu.ExitBackButton = true;
 
 			Menu_AddColors(ColorsMenu);
@@ -4510,12 +4525,12 @@ public void Menu_ChatColor(int client)
 		return;
 
 	Menu MenuCColor = new Menu(MenuHandler_ChatColor);
-	MenuCColor.SetTitle("Chat Options:");
+	MenuCColor.SetTitle("%T", "CCC_Menu_ChatTitle", client);
 	MenuCColor.ExitBackButton = true;
 
-	MenuCColor.AddItem("ResetColor", "Clear Chat Text Color");
-	MenuCColor.AddItem("Color", "Change Chat Text Color");
-	MenuCColor.AddItem("ColorText", "Change Chat Text Color (Chat input)");
+	AddMenuItemTranslated(MenuCColor, "ResetColor", client, "CCC_Menu_ClearChatColor");
+	AddMenuItemTranslated(MenuCColor, "Color", client, "CCC_Menu_ChangeChatColor");
+	AddMenuItemTranslated(MenuCColor, "ColorText", client, "CCC_Menu_ChangeChatColorInput");
 
 	MenuCColor.Display(client, MENU_TIME_FOREVER);
 }
@@ -4542,18 +4557,18 @@ public int MenuHandler_ChatColor(Menu MenuCColor, MenuAction action, int param1,
 		if (strcmp(Selected, "ResetColor", false) == 0)
 		{
 			if (SetColor("textcolor", "", param1))
-				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Cleared your custom {green}text color{default}.");
+				CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_ClearedTextColor");
 		}
 		else if (strcmp(Selected, "ColorText", false) == 0)
 		{
 			g_bWaitingForChatInput[param1] = true;
 			g_sInputType[param1] = "ColorText";
-			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} Please enter what you want your {green}text color{default} to be (#{red}RR{green}GG{blue}BB{default} HEX only!).");
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_EnterTextColor");
 		}
 		else
 		{
 			Menu ColorsMenu = new Menu(MenuHandler_ChatColorSub);
-			ColorsMenu.SetTitle("Pick a color:");
+			ColorsMenu.SetTitle("%T", "CCC_Menu_PickColor", param1);
 			ColorsMenu.ExitBackButton = true;
 
 			Menu_AddColors(ColorsMenu);
@@ -4927,23 +4942,23 @@ public void ToggleCCCSettings(int client)
 
 	if (!AreClientCookiesCached(client))
 	{
-		CPrintToChat(client, "{green}[CCC]{default} Please wait, your settings are retrieved...");
+		CPrintToChat(client, "{green}[CCC]{default} %t", "CCC_SettingsLoading");
 		return;
 	}
 
 	g_bDisablePsay[client] = !g_bDisablePsay[client];
 	g_hCookie_DisablePsay.Set(client, g_bDisablePsay[client] ? "1" : "");
 
-	CPrintToChat(client, "{green}[CCC]{default} Private messages has been %s.", g_bDisablePsay[client] ? "{red}disabled" : "{green}enabled");
+	CPrintToChat(client, "{green}[CCC]{default} %t", g_bDisablePsay[client] ? "CCC_PM_NowDisabled" : "CCC_PM_NowEnabled");
 }
 
 public Action Command_PsayStatus(int client, int args)
 {
 	if (args > 1)
-		CPrintToChat(client, "{green}[CCC]{default} Usage sm_pstatus <name or #userid>");
+		CPrintToChat(client, "{green}[CCC]{default} %t", "CCC_Usage", "sm_pstatus <name or #userid>");
 
 	if (args == 0)
-		CPrintToChat(client, "{green}[CCC]{default} Your private messages are %s{default}.", g_bDisablePsay[client] ? "{red}disabled" : "{green}enabled");
+		CPrintToChat(client, "{green}[CCC]{default} %t", g_bDisablePsay[client] ? "CCC_PM_YoursDisabled" : "CCC_PM_YoursEnabled");
 
 	if (args == 1)
 	{
@@ -4953,7 +4968,7 @@ public Action Command_PsayStatus(int client, int args)
 		if (target == -1)
 			return Plugin_Handled;
 
-		CPrintToChat(client, "{green}[CCC]{default} Private messages are %s{default} for {olive}%N{default}.", g_bDisablePsay[target] ? "{red}disabled" : "{green}enabled", target);
+		CPrintToChat(client, "{green}[CCC]{default} %t", g_bDisablePsay[target] ? "CCC_PM_TargetDisabled" : "CCC_PM_TargetEnabled", target);
 	}
 
 	return Plugin_Handled;
@@ -4962,11 +4977,12 @@ public Action Command_PsayStatus(int client, int args)
 public void ShowSettingsMenu(int client)
 {
 	Menu menu = new Menu(MenuHandler_MainMenu, MENU_ACTIONS_ALL);
-	menu.SetTitle("CustomChatColors Settings", client);
+	menu.SetTitle("%T", "CCC_Settings_Title", client);
 
-	char sPsay[128], sTag[128];
-	Format(sPsay, sizeof(sPsay), "Private messages: %s", g_bDisablePsay[client] ? "Disabled" : "Enabled");
-	Format(sTag, sizeof(sTag), "Tag Settings");
+	char sPsay[128], sTag[128], sState[64];
+	Format(sState, sizeof(sState), "%T", g_bDisablePsay[client] ? "CCC_Disabled" : "CCC_Enabled", client);
+	Format(sPsay, sizeof(sPsay), "%T", "CCC_Settings_PM", client, sState);
+	Format(sTag, sizeof(sTag), "%T", "CCC_Settings_TagSettings", client);
 
 	menu.AddItem("0", sPsay);
 	menu.AddItem("1", sTag);
@@ -5012,7 +5028,7 @@ public void MenuHandler_CookieMenu(int client, CookieMenuAction action, any info
 	{
 		case(CookieMenuAction_DisplayOption):
 		{
-			Format(buffer, maxlen, "CustomChatColors Settings", client);
+			Format(buffer, maxlen, "%T", "CCC_Settings_Title", client);
 		}
 		case(CookieMenuAction_SelectOption):
 		{
