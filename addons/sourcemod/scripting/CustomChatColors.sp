@@ -3838,9 +3838,7 @@ public int MenuHandler_AdminUnBan(Menu MenuAUnBan, MenuAction action, int param1
 
 		if (!target)
 		{
-			CReplyToCommand(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_PlayerGone");
-
-			Menu_Admin(param1);
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_PlayerGone");
 		}
 		else
 		{
@@ -4093,7 +4091,6 @@ public int MenuHandler_Admin(Menu MenuAdmin, MenuAction action, int param1, int 
 		{
 			g_bWaitingForChatInput[param1] = false;
 			g_sInputType[param1] = "";
-			Menu_Admin(param1);
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_InputCancelled");
 		}
 		else
@@ -4132,8 +4129,6 @@ public int MenuHandler_AdminReset(Menu MenuAReset, MenuAction action, int param1
 		if (!target)
 		{
 			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_PlayerGone");
-
-			Menu_Admin(param1);
 		}
 		else
 		{
@@ -4248,10 +4243,10 @@ public void Menu_Input(Menu MenuAF, int param1, int param2, char Key[32])
 	int userid = StringToInt(Selected);
 	int target = GetClientOfUserId(userid);
 
+	// The caller opens the admin menu again
 	if (!target)
 	{
 		CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}-ADMIN]{default} %t", "CCC_PlayerGone");
-		Menu_Admin(param1);
 	}
 	else
 	{
