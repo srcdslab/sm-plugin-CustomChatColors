@@ -3670,7 +3670,7 @@ public Action Command_SetNameColor(int client, int args)
 {
 	if (!client)
 	{
-		PrintToServer("[CCC] Cannot use command from server console");
+		ReplyToCommand(client, "[CCC] %t", "CCC_NoConsole");
 		return Plugin_Handled;
 	}
 
@@ -3694,7 +3694,7 @@ public Action Command_ClearNameColor(int client, int args)
 {
 	if (!client)
 	{
-		PrintToServer("[CCC] Cannot use command from server console");
+		ReplyToCommand(client, "[CCC] %t", "CCC_NoConsole");
 		return Plugin_Handled;
 	}
 
@@ -3711,7 +3711,7 @@ public Action Command_SetTextColor(int client, int args)
 {
 	if (!client)
 	{
-		PrintToServer("[CCC] Cannot use command from server console");
+		ReplyToCommand(client, "[CCC] %t", "CCC_NoConsole");
 		return Plugin_Handled;
 	}
 
@@ -3735,7 +3735,7 @@ public Action Command_ClearTextColor(int client, int args)
 {
 	if (!client)
 	{
-		PrintToServer("[CCC] Cannot use command from server console");
+		ReplyToCommand(client, "[CCC] %t", "CCC_NoConsole");
 		return Plugin_Handled;
 	}
 
@@ -3748,7 +3748,7 @@ public Action Command_ToggleTag(int client, int args)
 {
 	if (!client)
 	{
-		PrintToServer("[CCC] Cannot use command from server console");
+		ReplyToCommand(client, "[CCC] %t", "CCC_NoConsole");
 		return Plugin_Handled;
 	}
 
@@ -4955,10 +4955,10 @@ public void ToggleCCCSettings(int client)
 public Action Command_PsayStatus(int client, int args)
 {
 	if (args > 1)
-		CPrintToChat(client, "{green}[CCC]{default} %t", "CCC_Usage", "sm_pstatus <name or #userid>");
+		CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_Usage", "sm_pstatus <name or #userid>");
 
 	if (args == 0)
-		CPrintToChat(client, "{green}[CCC]{default} %t", g_bDisablePsay[client] ? "CCC_PM_YoursDisabled" : "CCC_PM_YoursEnabled");
+		CReplyToCommand(client,"{green}[CCC]{default} %t", g_bDisablePsay[client] ? "CCC_PM_YoursDisabled" : "CCC_PM_YoursEnabled");
 
 	if (args == 1)
 	{
@@ -4968,7 +4968,7 @@ public Action Command_PsayStatus(int client, int args)
 		if (target == -1)
 			return Plugin_Handled;
 
-		CPrintToChat(client, "{green}[CCC]{default} %t", g_bDisablePsay[target] ? "CCC_PM_TargetDisabled" : "CCC_PM_TargetEnabled", target);
+		CReplyToCommand(client, "{green}[CCC]{default} %t", g_bDisablePsay[target] ?"CCC_PM_TargetDisabled" : "CCC_PM_TargetEnabled", target);
 	}
 
 	return Plugin_Handled;
