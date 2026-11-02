@@ -4,55 +4,121 @@
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"			"(Counter-Terrorist) {1} : {2}"
+		"fr"			"(Antiterroriste) {1} : {2}"
+		"ru"			"(Спецназ) {1} : {2}"
+		"es"			"(Antiterrorista) {1} : {2}"
+		"de"			"(Anti-Terrorist) {1} : {2}"
+		"pt"			"(Contra-Terrorista) {1} : {2}"
+		"chi"			"(反恐精英) {1} : {2}"
 	}
 	"Cstrike_Chat_CT"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"			"(Counter-Terrorist) {1} : {2}"
+		"fr"			"(Antiterroriste) {1} : {2}"
+		"ru"			"(Спецназ) {1} : {2}"
+		"es"			"(Antiterrorista) {1} : {2}"
+		"de"			"(Anti-Terrorist) {1} : {2}"
+		"pt"			"(Contra-Terrorista) {1} : {2}"
+		"chi"			"(反恐精英) {1} : {2}"
 	}
 	"Cstrike_Chat_T_Loc"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"			"(Terrorist) {1} : {2}"
+		"fr"			"(Terroriste) {1} : {2}"
+		"ru"			"(Террорист) {1} : {2}"
+		"es"			"(Terrorista) {1} : {2}"
+		"de"			"(Terrorist) {1} : {2}"
+		"pt"			"(Terrorista) {1} : {2}"
+		"chi"			"(恐怖分子) {1} : {2}"
 	}
 	"Cstrike_Chat_T"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"			"(Terrorist) {1} : {2}"
+		"fr"			"(Terroriste) {1} : {2}"
+		"ru"			"(Террорист) {1} : {2}"
+		"es"			"(Terrorista) {1} : {2}"
+		"de"			"(Terrorist) {1} : {2}"
+		"pt"			"(Terrorista) {1} : {2}"
+		"chi"			"(恐怖分子) {1} : {2}"
 	}
 	"Cstrike_Chat_CT_Dead"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"			"*DEAD*(Counter-Terrorist) {1} : {2}"
+		"fr"			"*MORT*(Antiterroriste) {1} : {2}"
+		"ru"			"*МЁРТВ*(Спецназ) {1} : {2}"
+		"es"			"*MUERTO*(Antiterrorista) {1} : {2}"
+		"de"			"*TOT*(Anti-Terrorist) {1} : {2}"
+		"pt"			"*MORTO*(Contra-Terrorista) {1} : {2}"
+		"chi"			"*死亡*(反恐精英) {1} : {2}"
 	}
 	"Cstrike_Chat_T_Dead"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"			"*DEAD*(Terrorist) {1} : {2}"
+		"fr"			"*MORT*(Terroriste) {1} : {2}"
+		"ru"			"*МЁРТВ*(Террорист) {1} : {2}"
+		"es"			"*MUERTO*(Terrorista) {1} : {2}"
+		"de"			"*TOT*(Terrorist) {1} : {2}"
+		"pt"			"*MORTO*(Terrorista) {1} : {2}"
+		"chi"			"*死亡*(恐怖分子) {1} : {2}"
 	}
 	"Cstrike_Chat_Spec"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"			"(Spectator) {1} : {2}"
+		"fr"			"(Spectateur) {1} : {2}"
+		"ru"			"(Наблюдатель) {1} : {2}"
+		"es"			"(Espectador) {1} : {2}"
+		"de"			"(Zuschauer) {1} : {2}"
+		"pt"			"(Espectador) {1} : {2}"
+		"chi"			"(观察者) {1} : {2}"
 	}
 	"Cstrike_Chat_All"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"			"{1} : {2}"
+		"fr"			"{1} : {2}"
+		"ru"			"{1} : {2}"
+		"es"			"{1} : {2}"
+		"de"			"{1} : {2}"
+		"pt"			"{1} : {2}"
+		"chi"			"{1} : {2}"
 	}
 	"Cstrike_Chat_AllDead"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"			"*DEAD* {1} : {2}"
+		"fr"			"*MORT* {1} : {2}"
+		"ru"			"*МЁРТВ* {1} : {2}"
+		"es"			"*MUERTO* {1} : {2}"
+		"de"			"*TOT* {1} : {2}"
+		"pt"			"*MORTO* {1} : {2}"
+		"chi"			"*死亡* {1} : {2}"
 	}
 	"Cstrike_Chat_AllSpec"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"			"*SPEC* {1} : {2}"
+		"fr"			"*SPEC* {1} : {2}"
+		"ru"			"*НАБЛ* {1} : {2}"
+		"es"			"*ESPEC* {1} : {2}"
+		"de"			"*ZUSCH* {1} : {2}"
+		"pt"			"*ESPEC* {1} : {2}"
+		"chi"			"*观察* {1} : {2}"
 	}
 	"Cstrike_Chat_Me"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"			"* {1} {2}"
+		"fr"			"* {1} {2}"
+		"ru"			"* {1} {2}"
+		"es"			"* {1} {2}"
+		"de"			"* {1} {2}"
+		"pt"			"* {1} {2}"
+		"chi"			"* {1} {2}"
 	}
 }
