@@ -2256,7 +2256,8 @@ bool ChangeSingleColor(int client, int iTarget, char Key[64], char sCol[64], boo
 		if (sCol[0] != '#')
 			Format(sCol, sizeof(sCol), "#%s", sCol);
 
-		SetColor(Key, sCol, iTarget, bAdmin);
+		if (!SetColor(Key, sCol, iTarget, bAdmin))
+			return false;
 
 		char sColDisplay[128];
 		Format(sColDisplay, sizeof(sColDisplay), "\x07%s%s", sCol[0], sCol[0]);
@@ -2277,7 +2278,8 @@ bool ChangeSingleColor(int client, int iTarget, char Key[64], char sCol[64], boo
 			return false;
 		}
 
-		SetColor(Key, sCol, iTarget, bAdmin);
+		if (!SetColor(Key, sCol, iTarget, bAdmin))
+			return false;
 
 		char sColDisplay[128];
 		Format(sColDisplay, sizeof(sColDisplay), "{%s}%s", sCol[0], sCol[0]);
