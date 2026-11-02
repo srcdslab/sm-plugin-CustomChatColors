@@ -705,8 +705,8 @@ void SQL_BeginRequest(Handle timer, DataPack pack, int[] iRetryCounters, int cli
 		return;
 	}
 
-	if (client)
-		iRetryCounters[client] = 0;
+	// Slot 0 is used by the requests of the server console
+	iRetryCounters[client] = 0;
 }
 
 bool DB_Connect()
@@ -1117,8 +1117,9 @@ Action SQLInsert_Replace(Handle timer, any data)
 
 	if (!bPendingTracked && !CanQueueReplaceInsert(sTrigger))
 	{
+		// userid 0 is the server console
 		int client = GetClientOfUserId(userid);
-		if (client)
+		if (client || !userid)
 			CReplyToCommand(client, "{green}[CCC]{default} %t", "CCC_ReplaceListFull", REPLACE_LIST_MAX_LENGTH);
 		delete pack;
 		return Plugin_Stop;
@@ -1363,8 +1364,9 @@ Action SQLDelete_Tag(Handle timer, any data)
 
 	char sSteamID[64];
 
-	int client = GetClientOfUserId(pack.ReadCell());
-	if (!client)
+	// userid 0 is the server console
+	int userid = pack.ReadCell();
+	if (userid && !GetClientOfUserId(userid))
 	{
 		delete pack;
 		return Plugin_Stop;
@@ -1399,8 +1401,10 @@ public void OnSQLDelete_Tag(Database db, DBResultSet results, const char[] err, 
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
-	int client = GetClientOfUserId(pack.ReadCell());
-	if (!client)
+	// userid 0 is the server console, its retries are counted in slot 0
+	int userid = pack.ReadCell();
+	int client = GetClientOfUserId(userid);
+	if (userid && !client)
 	{
 		delete pack;
 		return;
@@ -1437,9 +1441,11 @@ Action SQLInsert_Ban(Handle timer, any data)
 		return Plugin_Stop;
 	}
 
-	int client = GetClientOfUserId(pack.ReadCell());
+	// userid 0 is the server console
+	int userid = pack.ReadCell();
+	int client = GetClientOfUserId(userid);
 	int target = GetClientOfUserId(pack.ReadCell());
-	if (!client || !target)
+	if ((userid && !client) || !target)
 	{
 		delete pack;
 		return Plugin_Stop;
@@ -1516,9 +1522,11 @@ Action SQLDelete_Ban(Handle timer, any data)
 		return Plugin_Stop;
 	}
 
-	int client = GetClientOfUserId(pack.ReadCell());
+	// userid 0 is the server console
+	int userid = pack.ReadCell();
+	int client = GetClientOfUserId(userid);
 	int target = GetClientOfUserId(pack.ReadCell());
-	if (!client || !target)
+	if ((userid && !client) || !target)
 	{
 		delete pack;
 		return Plugin_Stop;
@@ -1840,8 +1848,9 @@ public void OnSQLInsert_Replace(Database db, DBResultSet results, const char[] e
 	pack.ReadCell();
 	bool bCountsTowardsLimit = view_as<bool>(pack.ReadCell());
 
+	// userid 0 is the server console, its retries are counted in slot 0
 	int client = GetClientOfUserId(userid);
-	if (!client)
+	if (userid && !client)
 	{
 		if (bCountsTowardsLimit)
 			UnmarkReplaceTriggerPending(sTrigger);
@@ -1932,7 +1941,8 @@ public void OnSQLImportError_Replace(Database db, DataPack pack, int numQueries,
 	LogError("An error occurred while importing the chat triggers, nothing was imported. (%s)", error);
 
 	pack.Reset();
-	int client = GetClientOfUserId(pack.ReadCell());
+	int userid = pack.ReadCell();
+	int client = GetClientOfUserId(userid);
 
 	char sTrigger[MAX_CHAT_TRIGGER_LENGTH];
 	char sValue[MAX_CHAT_LENGTH];
@@ -1948,6 +1958,8 @@ public void OnSQLImportError_Replace(Database db, DataPack pack, int numQueries,
 
 	if (client)
 		CPrintToChat(client, "{green}[CCC]{default} %t", "CCC_ImportFailed");
+	else if (!userid)
+		CPrintToServer("{green}[CCC]{default} %t", "CCC_ImportFailed");
 }
 
 public void OnSQLDelete_Replace(Database db, DBResultSet results, const char[] err, DataPack data)
@@ -1955,8 +1967,10 @@ public void OnSQLDelete_Replace(Database db, DBResultSet results, const char[] e
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
-	int client = GetClientOfUserId(pack.ReadCell());
-	if (!client)
+	// userid 0 is the server console, its retries are counted in slot 0
+	int userid = pack.ReadCell();
+	int client = GetClientOfUserId(userid);
+	if (userid && !client)
 	{
 		delete pack;
 		return;
@@ -2012,8 +2026,10 @@ public void OnSQLInsert_Tag(Database db, DBResultSet results, const char[] err, 
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
-	int client = GetClientOfUserId(pack.ReadCell());
-	if (!client)
+	// userid 0 is the server console, its retries are counted in slot 0
+	int userid = pack.ReadCell();
+	int client = GetClientOfUserId(userid);
+	if (userid && !client)
 	{
 		delete pack;
 		return;
@@ -2040,10 +2056,12 @@ public void OnSQLInsert_Ban(Database db, DBResultSet results, const char[] err, 
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
-	int client = GetClientOfUserId(pack.ReadCell());
+	// userid 0 is the server console
+	int userid = pack.ReadCell();
+	int client = GetClientOfUserId(userid);
 	int target = GetClientOfUserId(pack.ReadCell());
 
-	if (!client || !target)
+	if ((userid && !client) || !target)
 	{
 		delete pack;
 		return;
@@ -2086,10 +2104,12 @@ public void OnSQLDelete_Ban(Database db, DBResultSet results, const char[] err, 
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
-	int client = GetClientOfUserId(pack.ReadCell());
+	// userid 0 is the server console
+	int userid = pack.ReadCell();
+	int client = GetClientOfUserId(userid);
 	int target = GetClientOfUserId(pack.ReadCell());
 
-	if (!client || !target)
+	if ((userid && !client) || !target)
 	{
 		delete pack;
 		return;
@@ -2190,6 +2210,19 @@ bool HasFlag(int client, AdminFlag ADMFLAG)
 	return false;
 }
 
+// CPrintToChat() throws an error for the server console (client 0), reply to the command there instead
+void PrintToChatOrReply(int client, const char[] message, any ...)
+{
+	char buffer[MAX_MESSAGE_LENGTH];
+	SetGlobalTransTarget(client);
+	VFormat(buffer, sizeof(buffer), message, 3);
+
+	if (client)
+		CPrintToChat(client, "%s", buffer);
+	else
+		CReplyToCommand(client, "%s", buffer);
+}
+
 bool ChangeSingleTag(int client, int iTarget, char sTag[64], bool bAdmin)
 {
 	ReplaceString(sTag, sizeof(sTag), "\"", "'");
@@ -2197,7 +2230,7 @@ bool ChangeSingleTag(int client, int iTarget, char sTag[64], bool bAdmin)
 
 	if (SetTag(sTag, iTarget, bAdmin))
 	{
-		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetTag", iTarget, sTag);
+		PrintToChatOrReply(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetTag", iTarget, sTag);
 		return true;
 	}
 	return false;
@@ -2227,7 +2260,7 @@ bool ChangeTag(int client, bool bAdmin)
 
 	if (strlen(sTag) > 31)
 	{
-		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_TagTooLong");
+		PrintToChatOrReply(client, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_TagTooLong");
 		return false;
 	}
 
@@ -2263,18 +2296,18 @@ bool ChangeSingleColor(int client, int iTarget, char Key[64], char sCol[64], boo
 		Format(sColDisplay, sizeof(sColDisplay), "\x07%s%s", sCol[0], sCol[0]);
 
 		if (!strcmp(Key, "namecolor"))
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetNameColor", iTarget, sColDisplay);
+			PrintToChatOrReply(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetNameColor", iTarget, sColDisplay);
 		else if (!strcmp(Key, "tagcolor"))
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetTagColor", iTarget, sColDisplay);
+			PrintToChatOrReply(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetTagColor", iTarget, sColDisplay);
 		else
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetTextColor", iTarget, sColDisplay);
+			PrintToChatOrReply(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetTextColor", iTarget, sColDisplay);
 	}
 	else if ((IsSource2009() && !IsValidHex(sCol)) || !IsSource2009())
 	{
 		char value[32];
 		if (!CGetColor(sCol, value, sizeof(value)))
 		{
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_InvalidColorName");
+			PrintToChatOrReply(client, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_InvalidColorName");
 			return false;
 		}
 
@@ -2285,15 +2318,15 @@ bool ChangeSingleColor(int client, int iTarget, char Key[64], char sCol[64], boo
 		Format(sColDisplay, sizeof(sColDisplay), "{%s}%s", sCol[0], sCol[0]);
 
 		if (!strcmp(Key, "namecolor"))
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetNameColor", iTarget, sColDisplay);
+			PrintToChatOrReply(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetNameColor", iTarget, sColDisplay);
 		else if (!strcmp(Key, "tagcolor"))
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetTagColor", iTarget, sColDisplay);
+			PrintToChatOrReply(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetTagColor", iTarget, sColDisplay);
 		else
-			CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetTextColor", iTarget, sColDisplay);
+			PrintToChatOrReply(client, "{green}[{red}C{green}C{blue}C{green}%s]{default} %t", bAdmin ? "-ADMIN" : "", "CCC_SetTextColor", iTarget, sColDisplay);
 	}
 	else
 	{
-		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_InvalidColorCode");
+		PrintToChatOrReply(client, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_InvalidColorCode");
 		return false;
 	}
 	return true;
@@ -2473,7 +2506,7 @@ bool RemoveCCC(int client)
 void BanCCC(int client, int target, char Time[128])
 {
 	DataPack pack = new DataPack();
-	pack.WriteCell(GetClientUserId(client));
+	pack.WriteCell(client ? GetClientUserId(client) : 0);
 	pack.WriteCell(GetClientUserId(target));
 	pack.WriteString(Time);
 
@@ -2484,7 +2517,7 @@ void BanCCC(int client, int target, char Time[128])
 	char sTargetName[32];
 	FormatEx(targetSid, sizeof(targetSid), "%s", g_sSteamIDs[target]);
 	FormatEx(clientSid, sizeof(clientSid), "%s", g_sSteamIDs[client]);
-	GetClientName(client, sClientName, sizeof(sClientName));
+	FormatEx(sClientName, sizeof(sClientName), "%N", client);
 	GetClientName(target, sTargetName, sizeof(sTargetName));
 
 	pack.WriteString(targetSid);
@@ -2498,7 +2531,7 @@ void BanCCC(int client, int target, char Time[128])
 void UnBanCCC(int client, int target)
 {
 	DataPack pack = new DataPack();
-	pack.WriteCell(GetClientUserId(client));
+	pack.WriteCell(client ? GetClientUserId(client) : 0);
 	pack.WriteCell(GetClientUserId(target));
 	pack.WriteString(g_sSteamIDs[target]);
 
@@ -2842,7 +2875,7 @@ public Action Command_CCCAddTag(int client, int argc)
 		IsValidColorArg(sTagColor) && IsValidColorArg(sNameColor) && IsValidColorArg(sChatColor))
 	{
 		DataPack pack = new DataPack();
-		pack.WriteCell(GetClientUserId(client));
+		pack.WriteCell(client ? GetClientUserId(client) : 0);
 		pack.WriteString(sSteamID);
 		pack.WriteCell(StringToInt(sEnable));
 		pack.WriteString(sName);
@@ -2877,7 +2910,7 @@ public Action Command_CCCDeleteTag(int client, int argc)
 	if (strlen(sSteamID) > 0)
 	{
 		DataPack pack = new DataPack();
-		pack.WriteCell(GetClientUserId(client));
+		pack.WriteCell(client ? GetClientUserId(client) : 0);
 		pack.WriteString(sSteamID);
 
 		SQLDelete_Tag(null, pack);
@@ -2923,7 +2956,7 @@ public Action Command_CCCAddTrigger(int client, int argc)
 	}
 
 	DataPack pack = new DataPack();
-	pack.WriteCell(GetClientUserId(client));
+	pack.WriteCell(client ? GetClientUserId(client) : 0);
 	pack.WriteString(sTrigger);
 	pack.WriteString(sValue);
 	pack.WriteCell(0);
@@ -2953,7 +2986,7 @@ public Action Command_CCCDeleteTrigger(int client, int argc)
 	}
 
 	DataPack pack = new DataPack();
-	pack.WriteCell(GetClientUserId(client));
+	pack.WriteCell(client ? GetClientUserId(client) : 0);
 	pack.WriteString(sTrigger);
 
 	SQLDelete_Replace(null, pack);
