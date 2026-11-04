@@ -113,7 +113,6 @@ bool g_msgIsChat;
 char g_msgName[128];
 char g_msgSender[128];
 char g_msgText[MAX_CHAT_LENGTH];
-char g_msgFinal[255];
 bool g_msgIsTeammate;
 
 // The game sends SayText2 to each recipient of a chat message separately. The formatted
@@ -4794,7 +4793,7 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 	if (strlen(g_msgText) == 0)
 		return Plugin_Handled;
 
-	// Same message as the previous call of this tick: g_msgFinal already holds the result.
+	// Same message as the previous call of this tick: the formatted name, sender and text are reused.
 	int iTick = GetGameTickCount();
 	if (g_bMsgCacheValid && g_iMsgCacheTick == iTick && g_iMsgCacheAuthor == g_msgAuthor && g_bMsgCacheIsChat == g_msgIsChat
 		&& !strcmp(g_sMsgCacheInText, g_msgText) && !strcmp(g_sMsgCacheInSender, g_msgSender) && !strcmp(g_sMsgCacheInName, g_msgName))
@@ -4887,18 +4886,6 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		CFormatColor(g_msgSender, sizeof(g_msgSender), g_msgAuthor);
 	}
 
-	SetGlobalTransTarget(g_msgAuthor);
-	Format(g_msgFinal, sizeof(g_msgFinal), "%t", g_msgName, g_msgSender, g_msgText);
-
-	if (!g_msgAuthor || IsClientEnabled())
-	{
-		CFormatColor(g_msgFinal, sizeof(g_msgFinal), g_msgAuthor);
-		// Add white space
-		if (!IsSource2009() && !(g_evEngineVersion == Engine_Left4Dead) && !(g_evEngineVersion == Engine_Left4Dead2)) {
-			Format(g_msgFinal, sizeof(g_msgFinal), " %s", g_msgFinal);
-		}
-	}
-
 	strcopy(g_sMsgCacheName, sizeof(g_sMsgCacheName), g_msgName);
 	strcopy(g_sMsgCacheSender, sizeof(g_sMsgCacheSender), g_msgSender);
 	strcopy(g_sMsgCacheText, sizeof(g_sMsgCacheText), g_msgText);
@@ -4952,14 +4939,60 @@ public Action Event_PlayerSay(Event event, const char[] name, bool dontBroadcast
 		return Plugin_Continue;
 	}
 
-	Handle SayText2 = StartMessage("SayText2", players, playersNum, USERMSG_RELIABLE | USERMSG_BLOCKHOOKS);
+	// The prefix of the message ("(Counter-Terrorist)", "*DEAD*"...) comes from allchat.phrases:
+	// send one copy per recipient language instead of the author's language to everyone
+	char sFinal[255];
+	int[] group = new int[playersNum];
+	for (int i = 0; i < playersNum; i++)
+	{
+		if (!players[i])
+			continue;
+
+		int lang = GetClientLanguage(players[i]);
+		int groupNum = 0;
+		for (int j = i; j < playersNum; j++)
+		{
+			if (players[j] && GetClientLanguage(players[j]) == lang)
+			{
+				group[groupNum++] = players[j];
+				players[j] = 0;
+			}
+		}
+
+		FormatChatMessage(group[0], sFinal, sizeof(sFinal));
+		SendChatMessage(group, groupNum, sFinal);
+	}
+
+	g_msgAuthor = -1;
+
+	return Plugin_Continue;
+}
+
+// Builds the chat line of the current message in the language of client
+void FormatChatMessage(int client, char[] buffer, int maxlen)
+{
+	Format(buffer, maxlen, "%T", g_msgName, client, g_msgSender, g_msgText);
+
+	if (!g_msgAuthor || IsClientEnabled())
+	{
+		CFormatColor(buffer, maxlen, g_msgAuthor);
+		// Add white space
+		if (!IsSource2009() && !(g_evEngineVersion == Engine_Left4Dead) && !(g_evEngineVersion == Engine_Left4Dead2)) {
+			Format(buffer, maxlen, " %s", buffer);
+		}
+	}
+}
+
+void SendChatMessage(const int[] clients, int numClients, const char[] message)
+{
+	Handle SayText2 = StartMessage("SayText2", clients, numClients, USERMSG_RELIABLE | USERMSG_BLOCKHOOKS);
 
 	if (g_bProto)
 	{
 		Protobuf pb = UserMessageToProtobuf(SayText2);
 		pb.SetInt("ent_idx", g_msgAuthor);
 		pb.SetBool("chat", g_msgIsChat);
-		pb.SetString("msg_name", g_msgFinal);
+		pb.SetString("msg_name", message);
 		pb.AddString("params", "");
 		pb.AddString("params", "");
 		pb.AddString("params", "");
@@ -4970,13 +5003,10 @@ public Action Event_PlayerSay(Event event, const char[] name, bool dontBroadcast
 		BfWrite bfWrite = UserMessageToBfWrite(SayText2);
 		bfWrite.WriteByte(g_msgAuthor);
 		bfWrite.WriteByte(g_msgIsChat);
-		bfWrite.WriteString(g_msgFinal);
+		bfWrite.WriteString(message);
 	}
 
 	EndMessage();
-	g_msgAuthor = -1;
-
-	return Plugin_Continue;
 }
 
 public Action OnToggleCCCSettings(int client, int args)
