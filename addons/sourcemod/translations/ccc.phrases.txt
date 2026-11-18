@@ -1287,6 +1287,16 @@
 		"pt"			"Configurações de tag"
 		"chi"			"标签设置"
 	}
+	"CCC_NoTagAccess"
+	{
+		"en"			"You do not have access to the custom tag and colors."
+		"fr"			"Vous n'avez pas accès au tag et aux couleurs personnalisés."
+		"ru"			"У вас нет доступа к собственному тегу и цветам."
+		"es"			"No tienes acceso a la etiqueta y los colores personalizados."
+		"de"			"Du hast keinen Zugriff auf den eigenen Tag und die Farben."
+		"pt"			"Você não tem acesso à tag e às cores personalizadas."
+		"chi"			"你没有使用自定义标签和颜色的权限。"
+	}
 	"CCC_Enabled"
 	{
 		"en"			"Enabled"

@@ -2209,6 +2209,23 @@ bool HasFlag(int client, AdminFlag ADMFLAG)
 	return false;
 }
 
+// Same flag as sm_tagmenu and the other personal tag commands, and the only one whose personal row is read on join
+bool CanCustomizeTag(int client)
+{
+	return HasFlag(client, Admin_Custom1);
+}
+
+// Same flags as the "Administrative Options" entry of the main menu (sm_cccreset / sm_cccban: slay, sm_forcetag: cheats)
+bool CanUseAdminMenu(int client)
+{
+	return HasFlag(client, Admin_Slay) || HasFlag(client, Admin_Cheats);
+}
+
+bool CanUseTagMenu(int client)
+{
+	return CanCustomizeTag(client) || CanUseAdminMenu(client);
+}
+
 // CPrintToChat() throws an error for the server console (client 0), reply to the command there instead
 void PrintToChatOrReply(int client, const char[] message, any ...)
 {
@@ -3907,27 +3924,42 @@ public void Menu_Main(int client)
 	if (IsVoteInProgress())
 		return;
 
+	bool bCustomize = CanCustomizeTag(client);
+	bool bAdmin = CanUseAdminMenu(client);
+
+	if (!bCustomize && !bAdmin)
+	{
+		CPrintToChat(client, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_NoTagAccess");
+		return;
+	}
+
 	Menu MenuMain = new Menu(MenuHandler_Main);
 	MenuMain.SetTitle("%T", "CCC_Menu_MainTitle", client);
 
-	AddMenuItemTranslated(MenuMain, "Current", client, "CCC_Menu_ViewCurrent");
-	AddMenuItemTranslated(MenuMain, "Tag", client, "CCC_Menu_TagOptions");
-	AddMenuItemTranslated(MenuMain, "Name", client, "CCC_Menu_NameOptions");
-	AddMenuItemTranslated(MenuMain, "Chat", client, "CCC_Menu_ChatOptions");
+	// The personal tag and colors are only loaded back on join for ADMFLAG_CUSTOM1 (OnClientPostAdminCheck):
+	// don't offer them to anyone else, their changes would be lost on the next map
+	if (bCustomize)
+	{
+		AddMenuItemTranslated(MenuMain, "Current", client, "CCC_Menu_ViewCurrent");
+		AddMenuItemTranslated(MenuMain, "Tag", client, "CCC_Menu_TagOptions");
+		AddMenuItemTranslated(MenuMain, "Name", client, "CCC_Menu_NameOptions");
+		AddMenuItemTranslated(MenuMain, "Chat", client, "CCC_Menu_ChatOptions");
 
-	char sBuffer[128], sState[64];
-	Format(sState, sizeof(sState), "%T", g_iClientEnable[client] ? "CCC_Enabled" : "CCC_Disabled", client);
-	Format(sBuffer, sizeof(sBuffer), "%T", "CCC_Menu_ColorsAndTag", client, sState);
-	MenuMain.AddItem("CCC", sBuffer);
+		char sBuffer[128], sState[64];
+		Format(sState, sizeof(sState), "%T", g_iClientEnable[client] ? "CCC_Enabled" : "CCC_Disabled", client);
+		Format(sBuffer, sizeof(sBuffer), "%T", "CCC_Menu_ColorsAndTag", client, sState);
+		MenuMain.AddItem("CCC", sBuffer);
+	}
 
 	if (g_bWaitingForChatInput[client])
 	{
 		AddMenuItemTranslated(MenuMain, "CancelCInput", client, "CCC_Menu_CancelInput");
 	}
 
-	if (HasFlag(client, Admin_Slay) || HasFlag(client, Admin_Cheats))
+	if (bAdmin)
 	{
-		MenuMain.AddItem("", "", ITEMDRAW_SPACER);
+		if (bCustomize)
+			MenuMain.AddItem("", "", ITEMDRAW_SPACER);
 		AddMenuItemTranslated(MenuMain, "Admin", client, "CCC_Menu_AdminOptions");
 	}
 
@@ -3946,6 +3978,19 @@ public int MenuHandler_Main(Menu MenuMain, MenuAction action, int param1, int pa
 	{
 		char Selected[32];
 		MenuMain.GetItem(param2, Selected, sizeof(Selected));
+
+		// The admin flags can change while the menu is open (sm_reloadadmins, expired access)
+		bool bAllowed;
+		if (strcmp(Selected, "Admin", false) == 0)
+			bAllowed = CanUseAdminMenu(param1);
+		else
+			bAllowed = strcmp(Selected, "CancelCInput", false) == 0 || CanCustomizeTag(param1);
+
+		if (!bAllowed)
+		{
+			CPrintToChat(param1, "{green}[{red}C{green}C{blue}C{green}]{default} %t", "CCC_NoTagAccess");
+			return 0;
+		}
 
 		if (strcmp(Selected, "Tag", false) == 0)
 		{
@@ -5065,7 +5110,8 @@ public void ShowSettingsMenu(int client)
 	Format(sTag, sizeof(sTag), "%T", "CCC_Settings_TagSettings", client);
 
 	menu.AddItem("0", sPsay);
-	menu.AddItem("1", sTag);
+	// Kept (disabled) when the client cannot use the tag menu, so the item indexes stay stable
+	menu.AddItem("1", sTag, CanUseTagMenu(client) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 
 	menu.ExitBackButton = true;
 	menu.Display(client, MENU_TIME_FOREVER);
