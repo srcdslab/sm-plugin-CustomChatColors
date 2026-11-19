@@ -10,6 +10,12 @@
 		"de"			"Die Ersetzungsliste ist voll ({olive}{1}{default} Einträge). Trigger wurde nicht eingefügt."
 		"pt"			"A lista de substituição está cheia ({olive}{1}{default} entradas). O gatilho não foi inserido."
 		"chi"			"替换列表已满（{olive}{1}{default} 条）。触发词未添加。"
+		"pl"			"Lista zamian jest pełna ({olive}{1}{default} wpisów). Wyzwalacz nie został dodany."
+		"tr"			"Değiştirme listesi dolu ({olive}{1}{default} kayıt). Tetikleyici eklenmedi."
+		"it"			"L'elenco delle sostituzioni è pieno ({olive}{1}{default} voci). Il trigger non è stato inserito."
+		"ua"			"Список замін заповнений ({olive}{1}{default} записів). Тригер не додано."
+		"zho"			"替換清單已滿（{olive}{1}{default} 筆）。觸發詞未新增。"
+		"cze"			"Seznam náhrad je plný ({olive}{1}{default} položek). Spouštěč nebyl přidán."
 	}
 	"CCC_ImportFailed"
 	{
@@ -20,6 +26,12 @@
 		"de"			"Import der Chat-Trigger fehlgeschlagen, nichts wurde importiert."
 		"pt"			"A importação dos gatilhos de chat falhou, nada foi importado."
 		"chi"			"聊天触发词导入失败，未导入任何内容。"
+		"pl"			"Import wyzwalaczy czatu nie powiódł się, nic nie zostało zaimportowane."
+		"tr"			"Sohbet tetikleyicilerinin içe aktarımı başarısız oldu, hiçbir şey aktarılmadı."
+		"it"			"Importazione dei trigger della chat non riuscita, non è stato importato nulla."
+		"ua"			"Імпорт чат-тригерів не вдався, нічого не імпортовано."
+		"zho"			"聊天觸發詞匯入失敗，未匯入任何內容。"
+		"cze"			"Import chatových spouštěčů selhal, nic nebylo importováno."
 	}
 	"CCC_TagTooLong"
 	{
@@ -30,6 +42,12 @@
 		"de"			"Der Tag ist zu lang (max. 32 Zeichen)."
 		"pt"			"A tag é longa demais (máx. 32 caracteres)."
 		"chi"			"标签过长（最多 32 个字符）。"
+		"pl"			"Tag jest za długi (maks. 32 znaki)."
+		"tr"			"Etiket çok uzun (en fazla 32 karakter)."
+		"it"			"Il tag è troppo lungo (massimo 32 caratteri)."
+		"ua"			"Тег задовгий (макс. 32 символи)."
+		"zho"			"標籤太長（最多 32 個字元）。"
+		"cze"			"Tag je příliš dlouhý (max. 32 znaků)."
 	}
 	"CCC_InvalidColorName"
 	{
@@ -40,6 +58,12 @@
 		"de"			"Ungültiger Farbname angegeben."
 		"pt"			"Nome de cor inválido."
 		"chi"			"颜色名称无效。"
+		"pl"			"Podano nieprawidłową nazwę koloru."
+		"tr"			"Geçersiz bir renk adı girildi."
+		"it"			"Nome del colore non valido."
+		"ua"			"Вказано недійсну назву кольору."
+		"zho"			"提供的顏色名稱無效。"
+		"cze"			"Zadán neplatný název barvy."
 	}
 	"CCC_InvalidColorCode"
 	{
@@ -50,6 +74,12 @@
 		"de"			"Ungültiger HEX|RGB|Name-Farbcode angegeben."
 		"pt"			"Código de cor HEX|RGB|nome inválido."
 		"chi"			"HEX|RGB|名称颜色代码无效。"
+		"pl"			"Podano nieprawidłowy kod koloru HEX|RGB|nazwa."
+		"tr"			"Geçersiz bir HEX|RGB|isim renk kodu girildi."
+		"it"			"Codice colore HEX|RGB|nome non valido."
+		"ua"			"Вказано недійсний код кольору HEX|RGB|назва."
+		"zho"			"提供的 HEX|RGB|名稱 顏色代碼無效。"
+		"cze"			"Zadán neplatný kód barvy HEX|RGB|název."
 	}
 	"CCC_BannedPerm_Tag"
 	{
@@ -60,6 +90,12 @@
 		"de"			"Du bist {red}permanent gesperrt{default} und kannst deinen {green}Tag{default} nicht ändern."
 		"pt"			"Você está {red}banido permanentemente{default} de alterar sua {green}tag{default}."
 		"chi"			"你被{red}永久禁止{default}修改你的{green}标签{default}。"
+		"pl"			"Masz obecnie {red}permanentny zakaz{default} zmiany swojego {green}tagu{default}."
+		"tr"			"Şu anda {green}etiketini{default} değiştirmen {red}kalıcı olarak yasak{default}."
+		"it"			"Al momento sei {red}bannato permanentemente{default} dalla modifica del tuo {green}tag{default}."
+		"ua"			"Вам {red}назавжди заборонено{default} змінювати свій {green}тег{default}."
+		"zho"			"你目前被{red}永久禁止{default}更改你的{green}標籤{default}。"
+		"cze"			"Máte {red}trvalý zákaz{default} změny svého {green}tagu{default}."
 	}
 	"CCC_BannedPerm_TagColor"
 	{
@@ -70,6 +106,12 @@
 		"de"			"Du bist {red}permanent gesperrt{default} und kannst deine {green}Tag-Farbe{default} nicht ändern."
 		"pt"			"Você está {red}banido permanentemente{default} de alterar sua {green}cor de tag{default}."
 		"chi"			"你被{red}永久禁止{default}修改你的{green}标签颜色{default}。"
+		"pl"			"Masz obecnie {red}permanentny zakaz{default} zmiany {green}koloru tagu{default}."
+		"tr"			"Şu anda {green}etiket rengini{default} değiştirmen {red}kalıcı olarak yasak{default}."
+		"it"			"Al momento sei {red}bannato permanentemente{default} dalla modifica del {green}colore del tag{default}."
+		"ua"			"Вам {red}назавжди заборонено{default} змінювати {green}колір тегу{default}."
+		"zho"			"你目前被{red}永久禁止{default}更改你的{green}標籤顏色{default}。"
+		"cze"			"Máte {red}trvalý zákaz{default} změny {green}barvy tagu{default}."
 	}
 	"CCC_BannedPerm_NameColor"
 	{
@@ -80,6 +122,12 @@
 		"de"			"Du bist {red}permanent gesperrt{default} und kannst deine {green}Namensfarbe{default} nicht ändern."
 		"pt"			"Você está {red}banido permanentemente{default} de alterar sua {green}cor de nome{default}."
 		"chi"			"你被{red}永久禁止{default}修改你的{green}名字颜色{default}。"
+		"pl"			"Masz obecnie {red}permanentny zakaz{default} zmiany {green}koloru nicku{default}."
+		"tr"			"Şu anda {green}isim rengini{default} değiştirmen {red}kalıcı olarak yasak{default}."
+		"it"			"Al momento sei {red}bannato permanentemente{default} dalla modifica del {green}colore del nome{default}."
+		"ua"			"Вам {red}назавжди заборонено{default} змінювати {green}колір імені{default}."
+		"zho"			"你目前被{red}永久禁止{default}更改你的{green}名稱顏色{default}。"
+		"cze"			"Máte {red}trvalý zákaz{default} změny {green}barvy jména{default}."
 	}
 	"CCC_BannedPerm_TextColor"
 	{
@@ -90,6 +138,12 @@
 		"de"			"Du bist {red}permanent gesperrt{default} und kannst deine {green}Textfarbe{default} nicht ändern."
 		"pt"			"Você está {red}banido permanentemente{default} de alterar sua {green}cor de texto{default}."
 		"chi"			"你被{red}永久禁止{default}修改你的{green}文字颜色{default}。"
+		"pl"			"Masz obecnie {red}permanentny zakaz{default} zmiany {green}koloru tekstu{default}."
+		"tr"			"Şu anda {green}metin rengini{default} değiştirmen {red}kalıcı olarak yasak{default}."
+		"it"			"Al momento sei {red}bannato permanentemente{default} dalla modifica del {green}colore del testo{default}."
+		"ua"			"Вам {red}назавжди заборонено{default} змінювати {green}колір тексту{default}."
+		"zho"			"你目前被{red}永久禁止{default}更改你的{green}文字顏色{default}。"
+		"cze"			"Máte {red}trvalý zákaz{default} změny {green}barvy textu{default}."
 	}
 	"CCC_BannedTemp_Tag"
 	{
@@ -101,6 +155,12 @@
 		"de"			"Du bist derzeit {red}gesperrt{default} und kannst deinen {green}Tag{default} nicht ändern. (Verbleibende Zeit: {green}{1}{default})"
 		"pt"			"Você está {red}banido{default} de alterar sua {green}tag{default}. (Tempo restante: {green}{1}{default})"
 		"chi"			"你当前被{red}禁止{default}修改你的{green}标签{default}。（剩余时间：{green}{1}{default}）"
+		"pl"			"Masz obecnie {red}zakaz{default} zmiany swojego {green}tagu{default}. (Pozostały czas: {green}{1}{default})"
+		"tr"			"Şu anda {green}etiketini{default} değiştirmen {red}yasak{default}. (Kalan süre: {green}{1}{default})"
+		"it"			"Al momento sei {red}bannato{default} dalla modifica del tuo {green}tag{default}. (Tempo rimanente: {green}{1}{default})"
+		"ua"			"Вам {red}заборонено{default} змінювати свій {green}тег{default}. (Залишилось часу: {green}{1}{default})"
+		"zho"			"你目前被{red}禁止{default}更改你的{green}標籤{default}。（剩餘時間：{green}{1}{default}）"
+		"cze"			"Máte {red}zákaz{default} změny svého {green}tagu{default}. (Zbývající čas: {green}{1}{default})"
 	}
 	"CCC_BannedTemp_TagColor"
 	{
@@ -112,6 +172,12 @@
 		"de"			"Du bist derzeit {red}gesperrt{default} und kannst deine {green}Tag-Farbe{default} nicht ändern. (Verbleibende Zeit: {green}{1}{default})"
 		"pt"			"Você está {red}banido{default} de alterar sua {green}cor de tag{default}. (Tempo restante: {green}{1}{default})"
 		"chi"			"你当前被{red}禁止{default}修改你的{green}标签颜色{default}。（剩余时间：{green}{1}{default}）"
+		"pl"			"Masz obecnie {red}zakaz{default} zmiany {green}koloru tagu{default}. (Pozostały czas: {green}{1}{default})"
+		"tr"			"Şu anda {green}etiket rengini{default} değiştirmen {red}yasak{default}. (Kalan süre: {green}{1}{default})"
+		"it"			"Al momento sei {red}bannato{default} dalla modifica del {green}colore del tag{default}. (Tempo rimanente: {green}{1}{default})"
+		"ua"			"Вам {red}заборонено{default} змінювати {green}колір тегу{default}. (Залишилось часу: {green}{1}{default})"
+		"zho"			"你目前被{red}禁止{default}更改你的{green}標籤顏色{default}。（剩餘時間：{green}{1}{default}）"
+		"cze"			"Máte {red}zákaz{default} změny {green}barvy tagu{default}. (Zbývající čas: {green}{1}{default})"
 	}
 	"CCC_BannedTemp_NameColor"
 	{
@@ -123,6 +189,12 @@
 		"de"			"Du bist derzeit {red}gesperrt{default} und kannst deine {green}Namensfarbe{default} nicht ändern. (Verbleibende Zeit: {green}{1}{default})"
 		"pt"			"Você está {red}banido{default} de alterar sua {green}cor de nome{default}. (Tempo restante: {green}{1}{default})"
 		"chi"			"你当前被{red}禁止{default}修改你的{green}名字颜色{default}。（剩余时间：{green}{1}{default}）"
+		"pl"			"Masz obecnie {red}zakaz{default} zmiany {green}koloru nicku{default}. (Pozostały czas: {green}{1}{default})"
+		"tr"			"Şu anda {green}isim rengini{default} değiştirmen {red}yasak{default}. (Kalan süre: {green}{1}{default})"
+		"it"			"Al momento sei {red}bannato{default} dalla modifica del {green}colore del nome{default}. (Tempo rimanente: {green}{1}{default})"
+		"ua"			"Вам {red}заборонено{default} змінювати {green}колір імені{default}. (Залишилось часу: {green}{1}{default})"
+		"zho"			"你目前被{red}禁止{default}更改你的{green}名稱顏色{default}。（剩餘時間：{green}{1}{default}）"
+		"cze"			"Máte {red}zákaz{default} změny {green}barvy jména{default}. (Zbývající čas: {green}{1}{default})"
 	}
 	"CCC_BannedTemp_TextColor"
 	{
@@ -134,6 +206,12 @@
 		"de"			"Du bist derzeit {red}gesperrt{default} und kannst deine {green}Textfarbe{default} nicht ändern. (Verbleibende Zeit: {green}{1}{default})"
 		"pt"			"Você está {red}banido{default} de alterar sua {green}cor de texto{default}. (Tempo restante: {green}{1}{default})"
 		"chi"			"你当前被{red}禁止{default}修改你的{green}文字颜色{default}。（剩余时间：{green}{1}{default}）"
+		"pl"			"Masz obecnie {red}zakaz{default} zmiany {green}koloru tekstu{default}. (Pozostały czas: {green}{1}{default})"
+		"tr"			"Şu anda {green}metin rengini{default} değiştirmen {red}yasak{default}. (Kalan süre: {green}{1}{default})"
+		"it"			"Al momento sei {red}bannato{default} dalla modifica del {green}colore del testo{default}. (Tempo rimanente: {green}{1}{default})"
+		"ua"			"Вам {red}заборонено{default} змінювати {green}колір тексту{default}. (Залишилось часу: {green}{1}{default})"
+		"zho"			"你目前被{red}禁止{default}更改你的{green}文字顏色{default}。（剩餘時間：{green}{1}{default}）"
+		"cze"			"Máte {red}zákaz{default} změny {green}barvy textu{default}. (Zbývající čas: {green}{1}{default})"
 	}
 	"CCC_PM_MustEnable"
 	{
@@ -144,6 +222,12 @@
 		"de"			"Du musst private Nachrichten aktivieren, um welche zu senden."
 		"pt"			"É necessário ativar as mensagens privadas para enviá-las."
 		"chi"			"必须启用私信才能发送私信。"
+		"pl"			"Aby wysyłać wiadomości prywatne, musisz je najpierw włączyć."
+		"tr"			"Özel mesaj göndermek için özel mesajları etkinleştirmen gerekir."
+		"it"			"Per inviare messaggi privati devi prima abilitarli."
+		"ua"			"Щоб надсилати приватні повідомлення, потрібно ввімкнути їх."
+		"zho"			"必須先啟用私人訊息才能發送私人訊息。"
+		"cze"			"K odesílání soukromých zpráv je nutné je nejprve povolit."
 	}
 	"CCC_PM_Gagged"
 	{
@@ -154,6 +238,12 @@
 		"de"			"Du {red}darfst {default}diesen Befehl nicht benutzen, {red}da du geknebelt bist{default}."
 		"pt"			"Você {red}não pode {default}usar este comando {red}porque está silenciado{default}."
 		"chi"			"你{red}不能{default}使用此命令，{red}因为你已被禁言{default}。"
+		"pl"			"{red}Nie możesz {default}użyć tej komendy, {red}ponieważ masz knebel{default}."
+		"tr"			"Susturulduğun için bu komutu kullanman {red}yasak{default}."
+		"it"			"{red}Non puoi {default}usare questo comando {red}perché sei gaggato{default}."
+		"ua"			"Ви {red}не можете {default}використовувати цю команду, {red}бо вам заблоковано чат{default}."
+		"zho"			"你{red}不能{default}使用此指令，{red}因為你被禁言了{default}。"
+		"cze"			"Tento příkaz {red}nemůžete použít, protože máte zákaz chatu{default}."
 	}
 	"CCC_PM_Cooldown"
 	{
@@ -165,6 +255,12 @@
 		"de"			"Abklingzeit aktiv, warte {olive}{1} {default}Sekunden, um diesen Befehl erneut zu nutzen."
 		"pt"			"Aguarde {olive}{1} {default}segundos para usar este comando novamente."
 		"chi"			"冷却中，请等待 {olive}{1} {default}秒后再使用此命令。"
+		"pl"			"Obowiązuje cię odstęp czasu, odczekaj {olive}{1} {default}s, aby użyć tej komendy ponownie."
+		"tr"			"Bekleme süresindesin, bu komutu tekrar kullanmak için {olive}{1} {default}saniye bekle."
+		"it"			"Sei in cooldown, attendi {olive}{1} {default}secondi per usare di nuovo questo comando."
+		"ua"			"Триває перезарядка, зачекайте {olive}{1} {default}с, щоб знову використати цю команду."
+		"zho"			"冷卻中，請等待 {olive}{1} {default}秒後再使用此指令。"
+		"cze"			"Probíhá cooldown, počkejte {olive}{1} {default}s, než příkaz použijete znovu."
 	}
 	"CCC_PM_ReceiverGone"
 	{
@@ -175,6 +271,12 @@
 		"de"			"Der Empfänger ist nicht im Spiel."
 		"pt"			"O destinatário não está no jogo."
 		"chi"			"接收者不在游戏中。"
+		"pl"			"Odbiorcy nie ma w grze."
+		"tr"			"Alıcı oyunda değil."
+		"it"			"Il destinatario non è in gioco."
+		"ua"			"Одержувача немає в грі."
+		"zho"			"接收者不在遊戲中。"
+		"cze"			"Příjemce není ve hře."
 	}
 	"CCC_PM_TargetDisabledPM"
 	{
@@ -186,6 +288,12 @@
 		"de"			"{1}{default} hat private Nachrichten{red} deaktiviert{default}."
 		"pt"			"{1}{default}{red} desativou{default} as mensagens privadas."
 		"chi"			"{1}{default}已{red}关闭{default}私信。"
+		"pl"			"{1}{default} ma{red} wyłączone{default} wiadomości prywatne."
+		"tr"			"{1}{default} özel mesajları{red} kapattı{default}."
+		"it"			"{1}{default} ha{red} disattivato{default} i messaggi privati."
+		"ua"			"{1}{default} {red}вимкнув{default} приватні повідомлення."
+		"zho"			"{1}{default} 已{red}停用{default}私人訊息。"
+		"cze"			"{1}{default} má{red} vypnuté{default} soukromé zprávy."
 	}
 	"CCC_PM_ReplyHint"
 	{
@@ -196,6 +304,12 @@
 		"de"			"Benutze /r <Nachricht> zum Antworten."
 		"pt"			"Use /r <mensagem> para responder."
 		"chi"			"使用 /r <消息> 进行回复。"
+		"pl"			"Użyj /r <wiadomość>, aby odpowiedzieć."
+		"tr"			"Yanıtlamak için /r <mesaj> kullan."
+		"it"			"Usa /r <messaggio> per rispondere."
+		"ua"			"Використовуйте /r <повідомлення>, щоб відповісти."
+		"zho"			"使用 /r <訊息> 來回覆。"
+		"cze"			"Pro odpověď použijte /r <zpráva>."
 	}
 	"CCC_Usage"
 	{
@@ -207,6 +321,12 @@
 		"de"			"Verwendung: {1}"
 		"pt"			"Uso: {1}"
 		"chi"			"用法：{1}"
+		"pl"			"Użycie: {1}"
+		"tr"			"Kullanım: {1}"
+		"it"			"Uso: {1}"
+		"ua"			"Використання: {1}"
+		"zho"			"用法：{1}"
+		"cze"			"Použití: {1}"
 	}
 	"CCC_FileMissing"
 	{
@@ -218,6 +338,12 @@
 		"de"			"Datei fehlt, stelle sicher, dass \"{1}\" im Ordner \"sourcemod/configs\" liegt."
 		"pt"			"Arquivo ausente, verifique se \"{1}\" está na pasta \"sourcemod/configs\"."
 		"chi"			"文件缺失，请确认 \"{1}\" 位于 \"sourcemod/configs\" 文件夹中。"
+		"pl"			"Brak pliku, upewnij się, że \"{1}\" znajduje się w folderze \"sourcemod/configs\"."
+		"tr"			"Dosya eksik, \"{1}\" dosyasının \"sourcemod/configs\" klasöründe olduğundan emin ol."
+		"it"			"File mancante, assicurati che \"{1}\" sia nella cartella \"sourcemod/configs\"."
+		"ua"			"Файл відсутній, переконайтеся, що \"{1}\" знаходиться в папці \"sourcemod/configs\"."
+		"zho"			"找不到檔案，請確認 \"{1}\" 位於 \"sourcemod/configs\" 資料夾中。"
+		"cze"			"Soubor chybí, ujistěte se, že \"{1}\" je ve složce \"sourcemod/configs\"."
 	}
 	"CCC_DBNotConnected"
 	{
@@ -228,6 +354,12 @@
 		"de"			"Die Datenbank ist nicht verbunden, versuch es später erneut."
 		"pt"			"O banco de dados não está conectado, tente novamente mais tarde."
 		"chi"			"数据库未连接，请稍后重试。"
+		"pl"			"Baza danych nie jest połączona, spróbuj ponownie później."
+		"tr"			"Veritabanı bağlı değil, daha sonra tekrar dene."
+		"it"			"Il database non è connesso, riprova più tardi."
+		"ua"			"Базу даних не підключено, спробуйте пізніше."
+		"zho"			"資料庫未連線，請稍後再試。"
+		"cze"			"Databáze není připojena, zkuste to později."
 	}
 	"CCC_ImportedLimit"
 	{
@@ -239,6 +371,12 @@
 		"de"			"Mit Limit importiert: {olive}{1}{default} eingereiht, {olive}{2}{default} übersprungen (max. {olive}{3}{default} Einträge)."
 		"pt"			"Importado com limite: {olive}{1}{default} na fila, {olive}{2}{default} ignorado(s) (máx. {olive}{3}{default} entradas)."
 		"chi"			"限量导入：已排队 {olive}{1}{default}，跳过 {olive}{2}{default}（最多 {olive}{3}{default} 条）。"
+		"pl"			"Zaimportowano z limitem: w kolejce {olive}{1}{default}, pominięto {olive}{2}{default} (maks. {olive}{3}{default} wpisów)."
+		"tr"			"Limitle içe aktarıldı: sıraya alınan {olive}{1}{default}, atlanan {olive}{2}{default} (en fazla {olive}{3}{default} kayıt)."
+		"it"			"Importato con limite: in coda {olive}{1}{default}, saltati {olive}{2}{default} (massimo {olive}{3}{default} voci)."
+		"ua"			"Імпортовано з обмеженням: у черзі {olive}{1}{default}, пропущено {olive}{2}{default} (макс. {olive}{3}{default} записів)."
+		"zho"			"已依上限匯入：已排入 {olive}{1}{default} 筆，略過 {olive}{2}{default} 筆（最多 {olive}{3}{default} 筆）。"
+		"cze"			"Importováno s limitem: ve frontě {olive}{1}{default}, přeskočeno {olive}{2}{default} (max. {olive}{3}{default} položek)."
 	}
 	"CCC_Imported"
 	{
@@ -250,6 +388,12 @@
 		"de"			"{olive}{1}{default} Trigger importiert."
 		"pt"			"{olive}{1}{default} gatilho(s) importado(s)."
 		"chi"			"已导入 {olive}{1}{default} 个触发词。"
+		"pl"			"Zaimportowano wyzwalacze: {olive}{1}{default}."
+		"tr"			"{olive}{1}{default} tetikleyici içe aktarıldı."
+		"it"			"Importati {olive}{1}{default} trigger."
+		"ua"			"Імпортовано тригерів: {olive}{1}{default}."
+		"zho"			"已匯入 {olive}{1}{default} 個觸發詞。"
+		"cze"			"Importováno spouštěčů: {olive}{1}{default}."
 	}
 	"CCC_WrongParameters"
 	{
@@ -260,6 +404,12 @@
 		"de"			"Falsche Parameter."
 		"pt"			"Parâmetros incorretos."
 		"chi"			"参数错误。"
+		"pl"			"Nieprawidłowe parametry."
+		"tr"			"Yanlış parametreler."
+		"it"			"Parametri errati."
+		"ua"			"Неправильні параметри."
+		"zho"			"參數錯誤。"
+		"cze"			"Chybné parametry."
 	}
 	"CCC_WrongParameter"
 	{
@@ -270,6 +420,12 @@
 		"de"			"Falscher Parameter."
 		"pt"			"Parâmetro incorreto."
 		"chi"			"参数错误。"
+		"pl"			"Nieprawidłowy parametr."
+		"tr"			"Yanlış parametre."
+		"it"			"Parametro errato."
+		"ua"			"Неправильний параметр."
+		"zho"			"參數錯誤。"
+		"cze"			"Chybný parametr."
 	}
 	"CCC_TriggerEmpty"
 	{
@@ -280,6 +436,12 @@
 		"de"			"Der Trigger darf nicht leer sein"
 		"pt"			"O gatilho não pode estar vazio"
 		"chi"			"触发词不能为空"
+		"pl"			"Wyzwalacz nie może być pusty"
+		"tr"			"Tetikleyici boş olamaz"
+		"it"			"Il trigger non può essere vuoto"
+		"ua"			"Тригер не може бути порожнім"
+		"zho"			"觸發詞不可為空"
+		"cze"			"Spouštěč nesmí být prázdný"
 	}
 	"CCC_ValueEmpty"
 	{
@@ -290,6 +452,12 @@
 		"de"			"Der Wert darf nicht leer sein"
 		"pt"			"O valor não pode estar vazio"
 		"chi"			"值不能为空"
+		"pl"			"Wartość nie może być pusta"
+		"tr"			"Değer boş olamaz"
+		"it"			"Il valore non può essere vuoto"
+		"ua"			"Значення не може бути порожнім"
+		"zho"			"數值不可為空"
+		"cze"			"Hodnota nesmí být prázdná"
 	}
 	"CCC_Reloaded"
 	{
@@ -300,6 +468,12 @@
 		"de"			"CCC neu geladen."
 		"pt"			"CCC recarregado."
 		"chi"			"CCC 已重新加载。"
+		"pl"			"Przeładowano ccc."
+		"tr"			"ccc yeniden yüklendi."
+		"it"			"ccc ricaricato."
+		"ua"			"ccc перезавантажено."
+		"zho"			"已重新載入 ccc。"
+		"cze"			"ccc bylo znovu načteno."
 	}
 	"CCC_NoConsole"
 	{
@@ -310,6 +484,12 @@
 		"de"			"Dieser Befehl kann nicht von der Serverkonsole aus verwendet werden"
 		"pt"			"Não é possível usar o comando pelo console do servidor"
 		"chi"			"无法在服务器控制台使用此命令"
+		"pl"			"Nie można użyć tej komendy z konsoli serwera"
+		"tr"			"Bu komut sunucu konsolundan kullanılamaz"
+		"it"			"Impossibile usare il comando dalla console del server"
+		"ua"			"Цю команду не можна використовувати з консолі сервера"
+		"zho"			"無法從伺服器主控台使用此指令"
+		"cze"			"Příkaz nelze použít z konzole serveru"
 	}
 	"CCC_NoConsole2"
 	{
@@ -320,6 +500,12 @@
 		"de"			"Dieser Befehl kann nicht von der Serverkonsole aus verwendet werden"
 		"pt"			"Não é possível usar este comando pelo console do servidor"
 		"chi"			"无法在服务器控制台使用此命令"
+		"pl"			"Nie można użyć tej komendy z konsoli serwera"
+		"tr"			"Bu komut sunucu konsolundan kullanılamaz"
+		"it"			"Impossibile usare questo comando dalla console del server"
+		"ua"			"Цю команду не можна використовувати з консолі сервера"
+		"zho"			"無法從伺服器主控台使用此指令"
+		"cze"			"Tento příkaz nelze použít z konzole serveru"
 	}
 	"CCC_PM_NothingToReply"
 	{
@@ -330,6 +516,12 @@
 		"de"			"Du kannst auf nichts antworten, da du keine private Nachricht gesendet oder erhalten hast."
 		"pt"			"Você não pode responder porque não enviou nem recebeu nenhuma mensagem privada."
 		"chi"			"你还没有发送或收到私信，无法回复。"
+		"pl"			"Nie możesz odpowiedzieć, ponieważ nie wysłałeś ani nie otrzymałeś żadnej wiadomości prywatnej."
+		"tr"			"Özel mesaj göndermediğin veya almadığın için yanıtlayabileceğin bir şey yok."
+		"it"			"Non puoi rispondere perché non hai inviato né ricevuto alcun messaggio privato."
+		"ua"			"Ви не можете відповісти, бо не надсилали й не отримували приватних повідомлень."
+		"zho"			"你尚未發送或收到任何私人訊息，因此無法回覆。"
+		"cze"			"Nemůžete odpovědět, protože jste neodeslali ani nepřijali žádnou soukromou zprávu."
 	}
 	"CCC_PM_Disconnected"
 	{
@@ -340,6 +532,12 @@
 		"de"			"Du kannst keinem getrennten Spieler eine private Nachricht senden."
 		"pt"			"Você não pode enviar mensagem privada a um jogador desconectado."
 		"chi"			"无法向已断开连接的玩家发送私信。"
+		"pl"			"Nie możesz wysłać wiadomości prywatnej do gracza, który się rozłączył."
+		"tr"			"Bağlantısı kopmuş bir oyuncuya özel mesaj gönderemezsin."
+		"it"			"Non puoi inviare un messaggio privato a un giocatore disconnesso."
+		"ua"			"Ви не можете надіслати приватне повідомлення гравцю, який відключився."
+		"zho"			"你無法向已斷線的玩家發送私人訊息。"
+		"cze"			"Nemůžete poslat soukromou zprávu odpojenému hráči."
 	}
 	"CCC_VoteInProgress"
 	{
@@ -350,6 +548,12 @@
 		"de"			"Eine Abstimmung läuft, versuch es nach der Abstimmung erneut."
 		"pt"			"Há uma votação em andamento, tente novamente após a votação."
 		"chi"			"正在进行投票，请在投票结束后重试。"
+		"pl"			"Trwa głosowanie, spróbuj ponownie po jego zakończeniu."
+		"tr"			"Bir oylama sürüyor, oylama bittikten sonra tekrar dene."
+		"it"			"È in corso una votazione, riprova al termine."
+		"ua"			"Триває голосування, спробуйте знову після його завершення."
+		"zho"			"投票進行中，請於投票結束後再試。"
+		"cze"			"Probíhá hlasování, zkuste to znovu po jeho skončení."
 	}
 	"CCC_TagTruncated"
 	{
@@ -360,6 +564,12 @@
 		"de"			"Dein Tag ist länger als 32 Zeichen und wurde für die Anzeige gekürzt. {red}Bitte aktualisiere ihn"
 		"pt"			"Sua tag tem mais de 32 caracteres e foi cortada na exibição. {red}Atualize-a, por favor"
 		"chi"			"你的标签超过 32 个字符，显示时已被截断。{red}请更新它"
+		"pl"			"Twój tag ma ponad 32 znaki i został skrócony na potrzeby wyświetlania. {red}Zaktualizuj go"
+		"tr"			"Etiketin 32 karakterden uzun ve görüntülenmek üzere kısaltıldı. {red}Lütfen güncelle"
+		"it"			"Il tuo tag è più lungo di 32 caratteri ed è stato troncato per la visualizzazione. {red}Aggiornalo"
+		"ua"			"Ваш тег довший за 32 символи і був скорочений для відображення. {red}Будь ласка, оновіть його"
+		"zho"			"你的標籤超過 32 個字元，顯示時已被截短。{red}請更新標籤"
+		"cze"			"Váš tag je delší než 32 znaků a byl pro zobrazení zkrácen. {red}Aktualizujte jej"
 	}
 	"CCC_Admin_Cleared"
 	{
@@ -371,6 +581,12 @@
 		"de"			"Tag {default}&{green} Farben von {green}{1}{default} gelöscht."
 		"pt"			"Tag {default}e{green} cores de {green}{1}{default} apagadas."
 		"chi"			"已清除 {green}{1} 的标签{default}和{green}颜色{default}。"
+		"pl"			"Wyczyszczono tag i {green}kolory{default} gracza {green}{1}{default}."
+		"tr"			"{green}{1}{default} oyuncusunun etiketi ve renkleri temizlendi."
+		"it"			"Tag e {green}colori{default} di {green}{1}{default} azzerati."
+		"ua"			"Очищено тег і {green}кольори{default} гравця {green}{1}{default}."
+		"zho"			"已清除 {green}{1}{default} 的標籤與顏色。"
+		"cze"			"Tag a {green}barvy{default} hráče {green}{1}{default} byly vymazány."
 	}
 	"CCC_PlayerGone"
 	{
@@ -381,6 +597,12 @@
 		"de"			"Der Spieler ist nicht mehr verfügbar."
 		"pt"			"O jogador não está mais disponível."
 		"chi"			"玩家已不可用。"
+		"pl"			"Gracz nie jest już dostępny."
+		"tr"			"Oyuncu artık mevcut değil."
+		"it"			"Il giocatore non è più disponibile."
+		"ua"			"Гравець більше не доступний."
+		"zho"			"玩家已不在。"
+		"cze"			"Hráč již není k dispozici."
 	}
 	"CCC_InputCancelled"
 	{
@@ -391,6 +613,12 @@
 		"de"			"Chat-Eingabe abgebrochen."
 		"pt"			"Entrada pelo chat cancelada."
 		"chi"			"已取消聊天输入。"
+		"pl"			"Anulowano wprowadzanie na czacie."
+		"tr"			"Sohbet girişi iptal edildi."
+		"it"			"Inserimento in chat annullato."
+		"ua"			"Введення в чаті скасовано."
+		"zho"			"已取消聊天輸入。"
+		"cze"			"Zadávání v chatu bylo zrušeno."
 	}
 	"CCC_Broken"
 	{
@@ -401,6 +629,12 @@
 		"de"			"Glückwunsch, du hast es kaputt gemacht"
 		"pt"			"parabéns, você quebrou tudo"
 		"chi"			"恭喜，你把它弄坏了"
+		"pl"			"gratulacje, zepsułeś to"
+		"tr"			"tebrikler, bozdun"
+		"it"			"complimenti, l'hai rotto"
+		"ua"			"вітаю, ви це зламали"
+		"zho"			"恭喜，你把它弄壞了"
+		"cze"			"gratuluji, rozbili jste to"
 	}
 	"CCC_Admin_EnterTag"
 	{
@@ -412,6 +646,12 @@
 		"de"			"Gib den gewünschten Tag für {green}{1}{default} ein."
 		"pt"			"Digite a tag desejada para {green}{1}{default}."
 		"chi"			"请输入你想为 {green}{1}{default} 设置的标签。"
+		"pl"			"Wpisz, jaki ma być tag gracza {green}{1}{default}."
+		"tr"			"{green}{1}{default} oyuncusunun etiketinin ne olmasını istediğini yaz."
+		"it"			"Inserisci il tag che vuoi per {green}{1}{default}."
+		"ua"			"Введіть, яким має бути тег гравця {green}{1}{default}."
+		"zho"			"請輸入你想為 {green}{1}{default} 設定的標籤。"
+		"cze"			"Zadejte, jaký má být tag hráče {green}{1}{default}."
 	}
 	"CCC_Admin_EnterTagColor"
 	{
@@ -423,6 +663,12 @@
 		"de"			"Gib die gewünschte Tag-Farbe für {green}{1}{default} ein (#{red}RR{green}GG{blue}BB{default} nur HEX!)."
 		"pt"			"Digite a cor de tag desejada para {green}{1}{default} (#{red}RR{green}GG{blue}BB{default} somente HEX!)."
 		"chi"			"请输入你想为 {green}{1}{default} 设置的标签颜色（#{red}RR{green}GG{blue}BB{default} 仅限 HEX！）。"
+		"pl"			"Wpisz, jaki ma być kolor tagu gracza {green}{1}{default} (tylko HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"tr"			"{green}{1}{default} oyuncusunun etiket renginin ne olmasını istediğini yaz (yalnızca HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"it"			"Inserisci il colore del tag che vuoi per {green}{1}{default} (solo HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"ua"			"Введіть, яким має бути колір тегу гравця {green}{1}{default} (лише HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"zho"			"請輸入你想為 {green}{1}{default} 設定的標籤顏色（僅限 HEX #{red}RR{green}GG{blue}BB{default}！）。"
+		"cze"			"Zadejte, jaká má být barva tagu hráče {green}{1}{default} (pouze HEX #{red}RR{green}GG{blue}BB{default}!)."
 	}
 	"CCC_Admin_EnterNameColor"
 	{
@@ -434,6 +680,12 @@
 		"de"			"Gib die gewünschte Namensfarbe für {green}{1}{default} ein (#{red}RR{green}GG{blue}BB{default} nur HEX!)."
 		"pt"			"Digite a cor de nome desejada para {green}{1}{default} (#{red}RR{green}GG{blue}BB{default} somente HEX!)."
 		"chi"			"请输入你想为 {green}{1}{default} 设置的名字颜色（#{red}RR{green}GG{blue}BB{default} 仅限 HEX！）。"
+		"pl"			"Wpisz, jaki ma być kolor nicku gracza {green}{1}{default} (tylko HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"tr"			"{green}{1}{default} oyuncusunun isim renginin ne olmasını istediğini yaz (yalnızca HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"it"			"Inserisci il colore del nome che vuoi per {green}{1}{default} (solo HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"ua"			"Введіть, яким має бути колір імені гравця {green}{1}{default} (лише HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"zho"			"請輸入你想為 {green}{1}{default} 設定的名稱顏色（僅限 HEX #{red}RR{green}GG{blue}BB{default}！）。"
+		"cze"			"Zadejte, jaká má být barva jména hráče {green}{1}{default} (pouze HEX #{red}RR{green}GG{blue}BB{default}!)."
 	}
 	"CCC_Admin_EnterTextColor"
 	{
@@ -445,6 +697,12 @@
 		"de"			"Gib die gewünschte Textfarbe für {green}{1}{default} ein (#{red}RR{green}GG{blue}BB{default} nur HEX!)."
 		"pt"			"Digite a cor de texto desejada para {green}{1}{default} (#{red}RR{green}GG{blue}BB{default} somente HEX!)."
 		"chi"			"请输入你想为 {green}{1}{default} 设置的文字颜色（#{red}RR{green}GG{blue}BB{default} 仅限 HEX！）。"
+		"pl"			"Wpisz, jaki ma być kolor tekstu gracza {green}{1}{default} (tylko HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"tr"			"{green}{1}{default} oyuncusunun metin renginin ne olmasını istediğini yaz (yalnızca HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"it"			"Inserisci il colore del testo che vuoi per {green}{1}{default} (solo HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"ua"			"Введіть, яким має бути колір тексту гравця {green}{1}{default} (лише HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"zho"			"請輸入你想為 {green}{1}{default} 設定的文字顏色（僅限 HEX #{red}RR{green}GG{blue}BB{default}！）。"
+		"cze"			"Zadejte, jaká má být barva textu hráče {green}{1}{default} (pouze HEX #{red}RR{green}GG{blue}BB{default}!)."
 	}
 	"CCC_ClearedTag"
 	{
@@ -455,6 +713,12 @@
 		"de"			"Dein eigener {green}Tag{default} wurde gelöscht."
 		"pt"			"Sua {green}tag{default} personalizada foi apagada."
 		"chi"			"已清除你的自定义{green}标签{default}。"
+		"pl"			"Wyczyszczono twój własny {green}tag{default}."
+		"tr"			"Özel {green}etiketin{default} temizlendi."
+		"it"			"Il tuo {green}tag{default} personalizzato è stato azzerato."
+		"ua"			"Ваш власний {green}тег{default} очищено."
+		"zho"			"已清除你的自訂{green}標籤{default}。"
+		"cze"			"Váš vlastní {green}tag{default} byl vymazán."
 	}
 	"CCC_ClearedTagColor"
 	{
@@ -465,6 +729,12 @@
 		"de"			"Deine eigene {green}Tag-Farbe{default} wurde gelöscht."
 		"pt"			"Sua {green}cor de tag{default} personalizada foi apagada."
 		"chi"			"已清除你的自定义{green}标签颜色{default}。"
+		"pl"			"Wyczyszczono twój własny {green}kolor tagu{default}."
+		"tr"			"Özel {green}etiket rengin{default} temizlendi."
+		"it"			"Il tuo {green}colore del tag{default} personalizzato è stato azzerato."
+		"ua"			"Ваш власний {green}колір тегу{default} очищено."
+		"zho"			"已清除你的自訂{green}標籤顏色{default}。"
+		"cze"			"Vaše vlastní {green}barva tagu{default} byla vymazána."
 	}
 	"CCC_EnterTag"
 	{
@@ -475,6 +745,12 @@
 		"de"			"Gib deinen gewünschten {green}Tag{default} ein."
 		"pt"			"Digite a {green}tag{default} desejada."
 		"chi"			"请输入你想要的{green}标签{default}。"
+		"pl"			"Wpisz, jaki ma być twój {green}tag{default}."
+		"tr"			"{green}Etiketinin{default} ne olmasını istediğini yaz."
+		"it"			"Inserisci il {green}tag{default} che vuoi."
+		"ua"			"Введіть, яким має бути ваш {green}тег{default}."
+		"zho"			"請輸入你想要的{green}標籤{default}。"
+		"cze"			"Zadejte, jaký má být váš {green}tag{default}."
 	}
 	"CCC_EnterTagColor"
 	{
@@ -485,6 +761,12 @@
 		"de"			"Gib deine gewünschte {green}Tag-Farbe{default} ein (#{red}RR{green}GG{blue}BB{default} nur HEX!)."
 		"pt"			"Digite a {green}cor de tag{default} desejada (#{red}RR{green}GG{blue}BB{default} somente HEX!)."
 		"chi"			"请输入你想要的{green}标签颜色{default}（#{red}RR{green}GG{blue}BB{default} 仅限 HEX！）。"
+		"pl"			"Wpisz, jaki ma być twój {green}kolor tagu{default} (tylko HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"tr"			"{green}Etiket rengininin{default} ne olmasını istediğini yaz (yalnızca HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"it"			"Inserisci il {green}colore del tag{default} che vuoi (solo HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"ua"			"Введіть, яким має бути ваш {green}колір тегу{default} (лише HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"zho"			"請輸入你想要的{green}標籤顏色{default}（僅限 HEX #{red}RR{green}GG{blue}BB{default}！）。"
+		"cze"			"Zadejte, jaká má být vaše {green}barva tagu{default} (pouze HEX #{red}RR{green}GG{blue}BB{default}!)."
 	}
 	"CCC_ClearedNameColor"
 	{
@@ -495,6 +777,12 @@
 		"de"			"Deine eigene {green}Namensfarbe{default} wurde gelöscht."
 		"pt"			"Sua {green}cor de nome{default} personalizada foi apagada."
 		"chi"			"已清除你的自定义{green}名字颜色{default}。"
+		"pl"			"Wyczyszczono twój własny {green}kolor nicku{default}."
+		"tr"			"Özel {green}isim rengin{default} temizlendi."
+		"it"			"Il tuo {green}colore del nome{default} personalizzato è stato azzerato."
+		"ua"			"Ваш власний {green}колір імені{default} очищено."
+		"zho"			"已清除你的自訂{green}名稱顏色{default}。"
+		"cze"			"Vaše vlastní {green}barva jména{default} byla vymazána."
 	}
 	"CCC_EnterNameColor"
 	{
@@ -505,6 +793,12 @@
 		"de"			"Gib deine gewünschte {green}Namensfarbe{default} ein (#{red}RR{green}GG{blue}BB{default} nur HEX!)."
 		"pt"			"Digite a {green}cor de nome{default} desejada (#{red}RR{green}GG{blue}BB{default} somente HEX!)."
 		"chi"			"请输入你想要的{green}名字颜色{default}（#{red}RR{green}GG{blue}BB{default} 仅限 HEX！）。"
+		"pl"			"Wpisz, jaki ma być twój {green}kolor nicku{default} (tylko HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"tr"			"{green}İsim rengininin{default} ne olmasını istediğini yaz (yalnızca HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"it"			"Inserisci il {green}colore del nome{default} che vuoi (solo HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"ua"			"Введіть, яким має бути ваш {green}колір імені{default} (лише HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"zho"			"請輸入你想要的{green}名稱顏色{default}（僅限 HEX #{red}RR{green}GG{blue}BB{default}！）。"
+		"cze"			"Zadejte, jaká má být vaše {green}barva jména{default} (pouze HEX #{red}RR{green}GG{blue}BB{default}!)."
 	}
 	"CCC_ClearedTextColor"
 	{
@@ -515,6 +809,12 @@
 		"de"			"Deine eigene {green}Textfarbe{default} wurde gelöscht."
 		"pt"			"Sua {green}cor de texto{default} personalizada foi apagada."
 		"chi"			"已清除你的自定义{green}文字颜色{default}。"
+		"pl"			"Wyczyszczono twój własny {green}kolor tekstu{default}."
+		"tr"			"Özel {green}metin rengin{default} temizlendi."
+		"it"			"Il tuo {green}colore del testo{default} personalizzato è stato azzerato."
+		"ua"			"Ваш власний {green}колір тексту{default} очищено."
+		"zho"			"已清除你的自訂{green}文字顏色{default}。"
+		"cze"			"Vaše vlastní {green}barva textu{default} byla vymazána."
 	}
 	"CCC_EnterTextColor"
 	{
@@ -525,6 +825,12 @@
 		"de"			"Gib deine gewünschte {green}Textfarbe{default} ein (#{red}RR{green}GG{blue}BB{default} nur HEX!)."
 		"pt"			"Digite a {green}cor de texto{default} desejada (#{red}RR{green}GG{blue}BB{default} somente HEX!)."
 		"chi"			"请输入你想要的{green}文字颜色{default}（#{red}RR{green}GG{blue}BB{default} 仅限 HEX！）。"
+		"pl"			"Wpisz, jaki ma być twój {green}kolor tekstu{default} (tylko HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"tr"			"{green}Metin rengininin{default} ne olmasını istediğini yaz (yalnızca HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"it"			"Inserisci il {green}colore del testo{default} che vuoi (solo HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"ua"			"Введіть, яким має бути ваш {green}колір тексту{default} (лише HEX #{red}RR{green}GG{blue}BB{default}!)."
+		"zho"			"請輸入你想要的{green}文字顏色{default}（僅限 HEX #{red}RR{green}GG{blue}BB{default}！）。"
+		"cze"			"Zadejte, jaká má být vaše {green}barva textu{default} (pouze HEX #{red}RR{green}GG{blue}BB{default}!)."
 	}
 	"CCC_SettingsLoading"
 	{
@@ -535,6 +841,12 @@
 		"de"			"Bitte warten, deine Einstellungen werden geladen..."
 		"pt"			"Aguarde, suas configurações estão sendo carregadas..."
 		"chi"			"请稍候，正在获取你的设置..."
+		"pl"			"Proszę czekać, trwa pobieranie twoich ustawień..."
+		"tr"			"Lütfen bekle, ayarların alınıyor..."
+		"it"			"Attendi, sto recuperando le tue impostazioni..."
+		"ua"			"Зачекайте, ваші налаштування завантажуються..."
+		"zho"			"請稍候，正在取得你的設定..."
+		"cze"			"Počkejte prosím, načítají se vaše nastavení..."
 	}
 	"CCC_SetTag"
 	{
@@ -546,6 +858,12 @@
 		"de"			"Tag von {green}{1}{default} erfolgreich gesetzt auf: {green}{2}{default}!"
 		"pt"			"Tag de {green}{1}{default} definida para: {green}{2}{default}!"
 		"chi"			"已成功将 {green}{1}{default} 的标签设为：{green}{2}{default}！"
+		"pl"			"Pomyślnie ustawiono tag gracza {green}{1}{default} na: {green}{2}{default}!"
+		"tr"			"{green}{1}{default} oyuncusunun etiketi şuna ayarlandı: {green}{2}{default}!"
+		"it"			"Tag di {green}{1}{default} impostato con successo su: {green}{2}{default}!"
+		"ua"			"Тег гравця {green}{1}{default} успішно змінено на: {green}{2}{default}!"
+		"zho"			"已成功將 {green}{1}{default} 的標籤設為：{green}{2}{default}！"
+		"cze"			"Tag hráče {green}{1}{default} byl úspěšně nastaven na: {green}{2}{default}!"
 	}
 	"CCC_SetNameColor"
 	{
@@ -557,6 +875,12 @@
 		"de"			"Namensfarbe von {green}{1}{default} erfolgreich gesetzt auf: {2}{default}!"
 		"pt"			"Cor de nome de {green}{1}{default} definida para: {2}{default}!"
 		"chi"			"已成功将 {green}{1}{default} 的名字颜色设为：{2}{default}！"
+		"pl"			"Pomyślnie ustawiono kolor nicku gracza {green}{1}{default} na: {2}{default}!"
+		"tr"			"{green}{1}{default} oyuncusunun isim rengi şuna ayarlandı: {2}{default}!"
+		"it"			"Colore del nome di {green}{1}{default} impostato con successo su: {2}{default}!"
+		"ua"			"Колір імені гравця {green}{1}{default} успішно змінено на: {2}{default}!"
+		"zho"			"已成功將 {green}{1}{default} 的名稱顏色設為：{2}{default}！"
+		"cze"			"Barva jména hráče {green}{1}{default} byla úspěšně nastavena na: {2}{default}!"
 	}
 	"CCC_SetTagColor"
 	{
@@ -568,6 +892,12 @@
 		"de"			"Tag-Farbe von {green}{1}{default} erfolgreich gesetzt auf: {2}{default}!"
 		"pt"			"Cor de tag de {green}{1}{default} definida para: {2}{default}!"
 		"chi"			"已成功将 {green}{1}{default} 的标签颜色设为：{2}{default}！"
+		"pl"			"Pomyślnie ustawiono kolor tagu gracza {green}{1}{default} na: {2}{default}!"
+		"tr"			"{green}{1}{default} oyuncusunun etiket rengi şuna ayarlandı: {2}{default}!"
+		"it"			"Colore del tag di {green}{1}{default} impostato con successo su: {2}{default}!"
+		"ua"			"Колір тегу гравця {green}{1}{default} успішно змінено на: {2}{default}!"
+		"zho"			"已成功將 {green}{1}{default} 的標籤顏色設為：{2}{default}！"
+		"cze"			"Barva tagu hráče {green}{1}{default} byla úspěšně nastavena na: {2}{default}!"
 	}
 	"CCC_SetTextColor"
 	{
@@ -579,6 +909,12 @@
 		"de"			"Textfarbe von {green}{1}{default} erfolgreich gesetzt auf: {2}{default}!"
 		"pt"			"Cor de texto de {green}{1}{default} definida para: {2}{default}!"
 		"chi"			"已成功将 {green}{1}{default} 的文字颜色设为：{2}{default}！"
+		"pl"			"Pomyślnie ustawiono kolor tekstu gracza {green}{1}{default} na: {2}{default}!"
+		"tr"			"{green}{1}{default} oyuncusunun metin rengi şuna ayarlandı: {2}{default}!"
+		"it"			"Colore del testo di {green}{1}{default} impostato con successo su: {2}{default}!"
+		"ua"			"Колір тексту гравця {green}{1}{default} успішно змінено на: {2}{default}!"
+		"zho"			"已成功將 {green}{1}{default} 的文字顏色設為：{2}{default}！"
+		"cze"			"Barva textu hráče {green}{1}{default} byla úspěšně nastavena na: {2}{default}!"
 	}
 	"CCC_DisplayEnabled"
 	{
@@ -589,6 +925,12 @@
 		"de"			"Anzeige von {green}Tag und Farbe{default} {red}aktiviert{default}."
 		"pt"			"Exibição de {green}tag e cor{default} {red}ativada{default}."
 		"chi"			"{green}标签和颜色{default}显示已{red}启用{default}。"
+		"pl"			"{red}Włączono{default} wyświetlanie {green}tagu i kolorów{default}."
+		"tr"			"{green}Etiket ve renk{default} görüntüleme {red}açıldı{default}."
+		"it"			"Visualizzazione di {green}tag e colori{default} {red}attivata{default}."
+		"ua"			"Відображення {green}тегу та кольорів{default} {red}увімкнено{default}."
+		"zho"			"{green}標籤與顏色{default}顯示已{red}啟用{default}。"
+		"cze"			"Zobrazování {green}tagu a barev{default} bylo {red}zapnuto{default}."
 	}
 	"CCC_DisplayDisabled"
 	{
@@ -599,6 +941,12 @@
 		"de"			"Anzeige von {green}Tag und Farbe{default} {green}deaktiviert{default}."
 		"pt"			"Exibição de {green}tag e cor{default} {green}desativada{default}."
 		"chi"			"{green}标签和颜色{default}显示已{green}禁用{default}。"
+		"pl"			"{green}Wyłączono{default} wyświetlanie {green}tagu i kolorów{default}."
+		"tr"			"{green}Etiket ve renk{default} görüntüleme {green}kapatıldı{default}."
+		"it"			"Visualizzazione di {green}tag e colori{default} {green}disattivata{default}."
+		"ua"			"Відображення {green}тегу та кольорів{default} {green}вимкнено{default}."
+		"zho"			"{green}標籤與顏色{default}顯示已{green}停用{default}。"
+		"cze"			"Zobrazování {green}tagu a barev{default} bylo {green}vypnuto{default}."
 	}
 	"CCC_PM_NowDisabled"
 	{
@@ -609,6 +957,12 @@
 		"de"			"Private Nachrichten wurden {red}deaktiviert."
 		"pt"			"As mensagens privadas foram {red}desativadas."
 		"chi"			"私信已{red}关闭。"
+		"pl"			"Wiadomości prywatne zostały {red}wyłączone."
+		"tr"			"Özel mesajlar {red}kapatıldı."
+		"it"			"I messaggi privati sono stati {red}disattivati."
+		"ua"			"Приватні повідомлення {red}вимкнено."
+		"zho"			"私人訊息已{red}停用。"
+		"cze"			"Soukromé zprávy byly {red}vypnuty."
 	}
 	"CCC_PM_NowEnabled"
 	{
@@ -619,6 +973,12 @@
 		"de"			"Private Nachrichten wurden {green}aktiviert."
 		"pt"			"As mensagens privadas foram {green}ativadas."
 		"chi"			"私信已{green}开启。"
+		"pl"			"Wiadomości prywatne zostały {green}włączone."
+		"tr"			"Özel mesajlar {green}açıldı."
+		"it"			"I messaggi privati sono stati {green}attivati."
+		"ua"			"Приватні повідомлення {green}увімкнено."
+		"zho"			"私人訊息已{green}啟用。"
+		"cze"			"Soukromé zprávy byly {green}zapnuty."
 	}
 	"CCC_PM_YoursDisabled"
 	{
@@ -629,6 +989,12 @@
 		"de"			"Deine privaten Nachrichten sind {red}deaktiviert{default}."
 		"pt"			"Suas mensagens privadas estão {red}desativadas{default}."
 		"chi"			"你的私信已{red}关闭{default}。"
+		"pl"			"Twoje wiadomości prywatne są {red}wyłączone{default}."
+		"tr"			"Özel mesajların {red}kapalı{default}."
+		"it"			"I tuoi messaggi privati sono {red}disattivati{default}."
+		"ua"			"Ваші приватні повідомлення {red}вимкнено{default}."
+		"zho"			"你的私人訊息已{red}停用{default}。"
+		"cze"			"Vaše soukromé zprávy jsou {red}vypnuté{default}."
 	}
 	"CCC_PM_YoursEnabled"
 	{
@@ -639,6 +1005,12 @@
 		"de"			"Deine privaten Nachrichten sind {green}aktiviert{default}."
 		"pt"			"Suas mensagens privadas estão {green}ativadas{default}."
 		"chi"			"你的私信已{green}开启{default}。"
+		"pl"			"Twoje wiadomości prywatne są {green}włączone{default}."
+		"tr"			"Özel mesajların {green}açık{default}."
+		"it"			"I tuoi messaggi privati sono {green}attivati{default}."
+		"ua"			"Ваші приватні повідомлення {green}увімкнено{default}."
+		"zho"			"你的私人訊息已{green}啟用{default}。"
+		"cze"			"Vaše soukromé zprávy jsou {green}zapnuté{default}."
 	}
 	"CCC_PM_TargetDisabled"
 	{
@@ -650,6 +1022,12 @@
 		"de"			"Private Nachrichten sind für {olive}{1}{default} {red}deaktiviert{default}."
 		"pt"			"As mensagens privadas estão {red}desativadas{default} para {olive}{1}{default}."
 		"chi"			"{olive}{1}{default} 的私信已{red}关闭{default}。"
+		"pl"			"Wiadomości prywatne są {red}wyłączone{default} dla gracza {olive}{1}{default}."
+		"tr"			"Özel mesajlar {olive}{1}{default} için {red}kapalı{default}."
+		"it"			"I messaggi privati sono {red}disattivati{default} per {olive}{1}{default}."
+		"ua"			"Приватні повідомлення {red}вимкнено{default} для {olive}{1}{default}."
+		"zho"			"{olive}{1}{default} 的私人訊息已{red}停用{default}。"
+		"cze"			"Soukromé zprávy jsou pro hráče {olive}{1}{default} {red}vypnuté{default}."
 	}
 	"CCC_PM_TargetEnabled"
 	{
@@ -661,6 +1039,12 @@
 		"de"			"Private Nachrichten sind für {olive}{1}{default} {green}aktiviert{default}."
 		"pt"			"As mensagens privadas estão {green}ativadas{default} para {olive}{1}{default}."
 		"chi"			"{olive}{1}{default} 的私信已{green}开启{default}。"
+		"pl"			"Wiadomości prywatne są {green}włączone{default} dla gracza {olive}{1}{default}."
+		"tr"			"Özel mesajlar {olive}{1}{default} için {green}açık{default}."
+		"it"			"I messaggi privati sono {green}attivati{default} per {olive}{1}{default}."
+		"ua"			"Приватні повідомлення {green}увімкнено{default} для {olive}{1}{default}."
+		"zho"			"{olive}{1}{default} 的私人訊息已{green}啟用{default}。"
+		"cze"			"Soukromé zprávy jsou pro hráče {olive}{1}{default} {green}zapnuté{default}."
 	}
 	"CCC_Chat_Admins"
 	{
@@ -672,6 +1056,12 @@
 		"de"			"{1}(ADMINS) {2}{3}{default} : {4}{5}"
 		"pt"			"{1}(ADMINS) {2}{3}{default} : {4}{5}"
 		"chi"			"{1}(管理员) {2}{3}{default} : {4}{5}"
+		"pl"			"{1}(ADMINI) {2}{3}{default} : {4}{5}"
+		"tr"			"{1}(ADMİNLER) {2}{3}{default} : {4}{5}"
+		"it"			"{1}(ADMIN) {2}{3}{default} : {4}{5}"
+		"ua"			"{1}(АДМІНИ) {2}{3}{default} : {4}{5}"
+		"zho"			"{1}(管理員) {2}{3}{default} : {4}{5}"
+		"cze"			"{1}(ADMINI) {2}{3}{default} : {4}{5}"
 	}
 	"CCC_Chat_ToAdmins"
 	{
@@ -683,6 +1073,12 @@
 		"de"			"{1}(AN ADMINS) {2}{3}{default} : {4}{5}"
 		"pt"			"{1}(PARA ADMINS) {2}{3}{default} : {4}{5}"
 		"chi"			"{1}(致管理员) {2}{3}{default} : {4}{5}"
+		"pl"			"{1}(DO ADMINÓW) {2}{3}{default} : {4}{5}"
+		"tr"			"{1}(ADMİNLERE) {2}{3}{default} : {4}{5}"
+		"it"			"{1}(AGLI ADMIN) {2}{3}{default} : {4}{5}"
+		"ua"			"{1}(ДО АДМІНІВ) {2}{3}{default} : {4}{5}"
+		"zho"			"{1}(給管理員) {2}{3}{default} : {4}{5}"
+		"cze"			"{1}(ADMINŮM) {2}{3}{default} : {4}{5}"
 	}
 	"CCC_Chat_All"
 	{
@@ -694,6 +1090,12 @@
 		"de"			"{1}(ALLE) {2}{3} {default}: {4}{5}"
 		"pt"			"{1}(TODOS) {2}{3} {default}: {4}{5}"
 		"chi"			"{1}(全体) {2}{3} {default}: {4}{5}"
+		"pl"			"{1}(WSZYSCY) {2}{3} {default}: {4}{5}"
+		"tr"			"{1}(HERKES) {2}{3} {default}: {4}{5}"
+		"it"			"{1}(TUTTI) {2}{3} {default}: {4}{5}"
+		"ua"			"{1}(ВСІ) {2}{3} {default}: {4}{5}"
+		"zho"			"{1}(所有人) {2}{3} {default}: {4}{5}"
+		"cze"			"{1}(VŠICHNI) {2}{3} {default}: {4}{5}"
 	}
 	"CCC_PM_PrivateTo"
 	{
@@ -705,6 +1107,12 @@
 		"de"			"{1}(Privat an {2}{3}{4}) {5}{6} {default}: {7}{8}"
 		"pt"			"{1}(Privado para {2}{3}{4}) {5}{6} {default}: {7}{8}"
 		"chi"			"{1}(私信给 {2}{3}{4}) {5}{6} {default}: {7}{8}"
+		"pl"			"{1}(Prywatnie do {2}{3}{4}) {5}{6} {default}: {7}{8}"
+		"tr"			"{1}(Özel: {2}{3}{4}) {5}{6} {default}: {7}{8}"
+		"it"			"{1}(Privato a {2}{3}{4}) {5}{6} {default}: {7}{8}"
+		"ua"			"{1}(Приватно для {2}{3}{4}) {5}{6} {default}: {7}{8}"
+		"zho"			"{1}(私訊給 {2}{3}{4}) {5}{6} {default}: {7}{8}"
+		"cze"			"{1}(Soukromě pro {2}{3}{4}) {5}{6} {default}: {7}{8}"
 	}
 	"CCC_PM_PrivateFromTo"
 	{
@@ -716,6 +1124,12 @@
 		"de"			"{1}(Privat von {2}{3}{4} an {5}{6}{7}){default}: {8}{9}"
 		"pt"			"{1}(Privado de {2}{3}{4} para {5}{6}{7}){default}: {8}{9}"
 		"chi"			"{1}({2}{3}{4} 私信给 {5}{6}{7}){default}: {8}{9}"
+		"pl"			"{1}(Prywatnie od {2}{3}{4} do {5}{6}{7}){default}: {8}{9}"
+		"tr"			"{1}(Özel: {2}{3}{4} → {5}{6}{7}){default}: {8}{9}"
+		"it"			"{1}(Privato da {2}{3}{4} a {5}{6}{7}){default}: {8}{9}"
+		"ua"			"{1}(Приватно від {2}{3}{4} для {5}{6}{7}){default}: {8}{9}"
+		"zho"			"{1}(私訊 {2}{3}{4} 給 {5}{6}{7}){default}: {8}{9}"
+		"cze"			"{1}(Soukromě od {2}{3}{4} pro {5}{6}{7}){default}: {8}{9}"
 	}
 	"CCC_Unit_Day"
 	{
@@ -726,6 +1140,12 @@
 		"de"			"Tag"
 		"pt"			"dia"
 		"chi"			"天"
+		"pl"			"dzień"
+		"tr"			"gün"
+		"it"			"giorno"
+		"ua"			"день"
+		"zho"			"天"
+		"cze"			"den"
 	}
 	"CCC_Unit_Days"
 	{
@@ -736,6 +1156,12 @@
 		"de"			"Tage"
 		"pt"			"dias"
 		"chi"			"天"
+		"pl"			"dni"
+		"tr"			"gün"
+		"it"			"giorni"
+		"ua"			"днів"
+		"zho"			"天"
+		"cze"			"dnů"
 	}
 	"CCC_Unit_Hour"
 	{
@@ -746,6 +1172,12 @@
 		"de"			"Stunde"
 		"pt"			"hora"
 		"chi"			"小时"
+		"pl"			"godzina"
+		"tr"			"saat"
+		"it"			"ora"
+		"ua"			"година"
+		"zho"			"小時"
+		"cze"			"hodina"
 	}
 	"CCC_Unit_Hours"
 	{
@@ -756,6 +1188,12 @@
 		"de"			"Stunden"
 		"pt"			"horas"
 		"chi"			"小时"
+		"pl"			"godzin"
+		"tr"			"saat"
+		"it"			"ore"
+		"ua"			"годин"
+		"zho"			"小時"
+		"cze"			"hodin"
 	}
 	"CCC_Unit_Minute"
 	{
@@ -766,6 +1204,12 @@
 		"de"			"Minute"
 		"pt"			"minuto"
 		"chi"			"分钟"
+		"pl"			"minuta"
+		"tr"			"dakika"
+		"it"			"minuto"
+		"ua"			"хвилина"
+		"zho"			"分鐘"
+		"cze"			"minuta"
 	}
 	"CCC_Unit_Minutes"
 	{
@@ -776,6 +1220,12 @@
 		"de"			"Minuten"
 		"pt"			"minutos"
 		"chi"			"分钟"
+		"pl"			"minut"
+		"tr"			"dakika"
+		"it"			"minuti"
+		"ua"			"хвилин"
+		"zho"			"分鐘"
+		"cze"			"minut"
 	}
 	"CCC_Unit_Second"
 	{
@@ -786,6 +1236,12 @@
 		"de"			"Sekunde"
 		"pt"			"segundo"
 		"chi"			"秒"
+		"pl"			"sekunda"
+		"tr"			"saniye"
+		"it"			"secondo"
+		"ua"			"секунда"
+		"zho"			"秒"
+		"cze"			"sekunda"
 	}
 	"CCC_Unit_Seconds"
 	{
@@ -796,6 +1252,12 @@
 		"de"			"Sekunden"
 		"pt"			"segundos"
 		"chi"			"秒"
+		"pl"			"sekund"
+		"tr"			"saniye"
+		"it"			"secondi"
+		"ua"			"секунд"
+		"zho"			"秒"
+		"cze"			"sekund"
 	}
 	"CCC_Menu_UnbanTitle"
 	{
@@ -806,6 +1268,12 @@
 		"de"			"Ziel wählen (Entbannen von Tag/Farben)"
 		"pt"			"Selecione um alvo (desbanir de tag/cores)"
 		"chi"			"选择目标（解除标签/颜色封禁）"
+		"pl"			"Wybierz gracza (odbanuj z tagów/kolorów)"
+		"tr"			"Bir hedef seç (Etiket/Renk yasağını kaldır)"
+		"it"			"Seleziona un bersaglio (sblocca da tag/colori)"
+		"ua"			"Виберіть ціль (розбан тегів/кольорів)"
+		"zho"			"選擇目標（解除標籤/顏色封鎖）"
+		"cze"			"Vyberte cíl (odblokovat tagy/barvy)"
 	}
 	"CCC_Menu_ResetTitle"
 	{
@@ -816,6 +1284,12 @@
 		"de"			"Ziel wählen (Tag/Farben zurücksetzen)"
 		"pt"			"Selecione um alvo (redefinir tag/cores)"
 		"chi"			"选择目标（重置标签/颜色）"
+		"pl"			"Wybierz gracza (zresetuj tag/kolory)"
+		"tr"			"Bir hedef seç (Etiket/Renkleri sıfırla)"
+		"it"			"Seleziona un bersaglio (azzera tag/colori)"
+		"ua"			"Виберіть ціль (скинути тег/кольори)"
+		"zho"			"選擇目標（重設標籤/顏色）"
+		"cze"			"Vyberte cíl (resetovat tag/barvy)"
 	}
 	"CCC_Menu_BanTitle"
 	{
@@ -826,6 +1300,12 @@
 		"de"			"Ziel wählen (Bann von Tag/Farben)"
 		"pt"			"Selecione um alvo (banir de tag/cores)"
 		"chi"			"选择目标（封禁标签/颜色）"
+		"pl"			"Wybierz gracza (zbanuj z tagów/kolorów)"
+		"tr"			"Bir hedef seç (Etiket/Renk yasağı koy)"
+		"it"			"Seleziona un bersaglio (blocca da tag/colori)"
+		"ua"			"Виберіть ціль (бан тегів/кольорів)"
+		"zho"			"選擇目標（封鎖標籤/顏色）"
+		"cze"			"Vyberte cíl (zablokovat tagy/barvy)"
 	}
 	"CCC_Menu_ForceTagTitle"
 	{
@@ -836,6 +1316,12 @@
 		"de"			"Ziel wählen (Tag erzwingen)"
 		"pt"			"Selecione um alvo (forçar tag)"
 		"chi"			"选择目标（强制标签）"
+		"pl"			"Wybierz gracza (wymuś tag)"
+		"tr"			"Bir hedef seç (Etiketi zorla)"
+		"it"			"Seleziona un bersaglio (forza tag)"
+		"ua"			"Виберіть ціль (примусовий тег)"
+		"zho"			"選擇目標（強制標籤）"
+		"cze"			"Vyberte cíl (vynutit tag)"
 	}
 	"CCC_Menu_ForceTagColorTitle"
 	{
@@ -846,6 +1332,12 @@
 		"de"			"Ziel wählen (Tag-Farbe erzwingen)"
 		"pt"			"Selecione um alvo (forçar cor da tag)"
 		"chi"			"选择目标（强制标签颜色）"
+		"pl"			"Wybierz gracza (wymuś kolor tagu)"
+		"tr"			"Bir hedef seç (Etiket rengini zorla)"
+		"it"			"Seleziona un bersaglio (forza colore tag)"
+		"ua"			"Виберіть ціль (примусовий колір тегу)"
+		"zho"			"選擇目標（強制標籤顏色）"
+		"cze"			"Vyberte cíl (vynutit barvu tagu)"
 	}
 	"CCC_Menu_ForceNameColorTitle"
 	{
@@ -856,6 +1348,12 @@
 		"de"			"Ziel wählen (Namensfarbe erzwingen)"
 		"pt"			"Selecione um alvo (forçar cor do nome)"
 		"chi"			"选择目标（强制名字颜色）"
+		"pl"			"Wybierz gracza (wymuś kolor nicku)"
+		"tr"			"Bir hedef seç (İsim rengini zorla)"
+		"it"			"Seleziona un bersaglio (forza colore nome)"
+		"ua"			"Виберіть ціль (примусовий колір імені)"
+		"zho"			"選擇目標（強制名稱顏色）"
+		"cze"			"Vyberte cíl (vynutit barvu jména)"
 	}
 	"CCC_Menu_ForceTextColorTitle"
 	{
@@ -866,6 +1364,12 @@
 		"de"			"Ziel wählen (Textfarbe erzwingen)"
 		"pt"			"Selecione um alvo (forçar cor do texto)"
 		"chi"			"选择目标（强制文字颜色）"
+		"pl"			"Wybierz gracza (wymuś kolor tekstu)"
+		"tr"			"Bir hedef seç (Metin rengini zorla)"
+		"it"			"Seleziona un bersaglio (forza colore testo)"
+		"ua"			"Виберіть ціль (примусовий колір тексту)"
+		"zho"			"選擇目標（強制文字顏色）"
+		"cze"			"Vyberte cíl (vynutit barvu textu)"
 	}
 	"CCC_Menu_MainTitle"
 	{
@@ -876,6 +1380,12 @@
 		"de"			"Chat-Tags & Farben"
 		"pt"			"Tags e cores do chat"
 		"chi"			"聊天标签与颜色"
+		"pl"			"Tagi i kolory czatu"
+		"tr"			"Sohbet Etiketleri ve Renkleri"
+		"it"			"Tag e colori della chat"
+		"ua"			"Теги та кольори чату"
+		"zho"			"聊天標籤與顏色"
+		"cze"			"Tagy a barvy chatu"
 	}
 	"CCC_Menu_ViewCurrent"
 	{
@@ -886,6 +1396,12 @@
 		"de"			"Aktuelle Einstellungen anzeigen"
 		"pt"			"Ver configurações atuais"
 		"chi"			"查看当前设置"
+		"pl"			"Zobacz obecne ustawienia"
+		"tr"			"Mevcut ayarları görüntüle"
+		"it"			"Visualizza impostazioni attuali"
+		"ua"			"Переглянути поточні налаштування"
+		"zho"			"檢視目前設定"
+		"cze"			"Zobrazit aktuální nastavení"
 	}
 	"CCC_Menu_TagOptions"
 	{
@@ -896,6 +1412,12 @@
 		"de"			"Tag-Optionen"
 		"pt"			"Opções de tag"
 		"chi"			"标签选项"
+		"pl"			"Opcje tagu"
+		"tr"			"Etiket seçenekleri"
+		"it"			"Opzioni del tag"
+		"ua"			"Параметри тегу"
+		"zho"			"標籤選項"
+		"cze"			"Možnosti tagu"
 	}
 	"CCC_Menu_NameOptions"
 	{
@@ -906,6 +1428,12 @@
 		"de"			"Namensoptionen"
 		"pt"			"Opções de nome"
 		"chi"			"名字选项"
+		"pl"			"Opcje nicku"
+		"tr"			"İsim seçenekleri"
+		"it"			"Opzioni del nome"
+		"ua"			"Параметри імені"
+		"zho"			"名稱選項"
+		"cze"			"Možnosti jména"
 	}
 	"CCC_Menu_ChatOptions"
 	{
@@ -916,6 +1444,12 @@
 		"de"			"Chat-Optionen"
 		"pt"			"Opções de chat"
 		"chi"			"聊天选项"
+		"pl"			"Opcje czatu"
+		"tr"			"Sohbet seçenekleri"
+		"it"			"Opzioni della chat"
+		"ua"			"Параметри чату"
+		"zho"			"聊天選項"
+		"cze"			"Možnosti chatu"
 	}
 	"CCC_Menu_CancelInput"
 	{
@@ -926,6 +1460,12 @@
 		"de"			"Chat-Eingabe abbrechen"
 		"pt"			"Cancelar entrada pelo chat"
 		"chi"			"取消聊天输入"
+		"pl"			"Anuluj wpisywanie na czacie"
+		"tr"			"Sohbet girişini iptal et"
+		"it"			"Annulla inserimento in chat"
+		"ua"			"Скасувати введення в чаті"
+		"zho"			"取消聊天輸入"
+		"cze"			"Zrušit zadávání v chatu"
 	}
 	"CCC_Menu_AdminOptions"
 	{
@@ -936,6 +1476,12 @@
 		"de"			"Administrative Optionen"
 		"pt"			"Opções administrativas"
 		"chi"			"管理选项"
+		"pl"			"Opcje administracyjne"
+		"tr"			"Yönetici seçenekleri"
+		"it"			"Opzioni di amministrazione"
+		"ua"			"Адміністративні параметри"
+		"zho"			"管理選項"
+		"cze"			"Administrátorské možnosti"
 	}
 	"CCC_Menu_CurrentTitle"
 	{
@@ -946,6 +1492,12 @@
 		"de"			"Aktuelle Einstellungen:"
 		"pt"			"Configurações atuais:"
 		"chi"			"当前设置："
+		"pl"			"Obecne ustawienia:"
+		"tr"			"Mevcut ayarlar:"
+		"it"			"Impostazioni attuali:"
+		"ua"			"Поточні налаштування:"
+		"zho"			"目前設定："
+		"cze"			"Aktuální nastavení:"
 	}
 	"CCC_Menu_AdminTitle"
 	{
@@ -956,6 +1508,12 @@
 		"de"			"Chat-Tags & Farben Admin"
 		"pt"			"Admin de tags e cores do chat"
 		"chi"			"聊天标签与颜色管理"
+		"pl"			"Tagi i kolory czatu - administrator"
+		"tr"			"Sohbet Etiketleri ve Renkleri - Yönetici"
+		"it"			"Tag e colori della chat - Admin"
+		"ua"			"Теги та кольори чату - адміністратор"
+		"zho"			"聊天標籤與顏色 - 管理"
+		"cze"			"Tagy a barvy chatu - administrátor"
 	}
 	"CCC_Menu_AdminReset"
 	{
@@ -966,6 +1524,12 @@
 		"de"			"Tag & Farben eines Spielers zurücksetzen"
 		"pt"			"Redefinir a tag e cores de um jogador"
 		"chi"			"重置玩家的标签与颜色"
+		"pl"			"Zresetuj tag i kolory gracza"
+		"tr"			"Bir oyuncunun etiket ve renklerini sıfırla"
+		"it"			"Azzera tag e colori di un giocatore"
+		"ua"			"Скинути тег і кольори гравця"
+		"zho"			"重設玩家的標籤與顏色"
+		"cze"			"Resetovat tag a barvy hráče"
 	}
 	"CCC_Menu_AdminBan"
 	{
@@ -976,6 +1540,12 @@
 		"de"			"Spieler vom Tag- & Farbsystem bannen"
 		"pt"			"Banir um jogador do sistema de tags e cores"
 		"chi"			"禁止玩家使用标签与颜色系统"
+		"pl"			"Zbanuj gracza w systemie tagów i kolorów"
+		"tr"			"Bir oyuncuyu Etiket ve Renk sisteminden yasakla"
+		"it"			"Blocca un giocatore dal sistema di tag e colori"
+		"ua"			"Заборонити гравцю систему тегів і кольорів"
+		"zho"			"封鎖玩家使用標籤與顏色系統"
+		"cze"			"Zablokovat hráče v systému tagů a barev"
 	}
 	"CCC_Menu_AdminUnban"
 	{
@@ -986,6 +1556,12 @@
 		"de"			"Spieler vom Tag- & Farbsystem entbannen"
 		"pt"			"Desbanir um jogador do sistema de tags e cores"
 		"chi"			"解除玩家的标签与颜色系统封禁"
+		"pl"			"Odbanuj gracza w systemie tagów i kolorów"
+		"tr"			"Bir oyuncunun Etiket ve Renk sistemi yasağını kaldır"
+		"it"			"Sblocca un giocatore dal sistema di tag e colori"
+		"ua"			"Зняти з гравця заборону на систему тегів і кольорів"
+		"zho"			"解除玩家的標籤與顏色系統封鎖"
+		"cze"			"Odblokovat hráče v systému tagů a barev"
 	}
 	"CCC_Menu_AdminForceTag"
 	{
@@ -996,6 +1572,12 @@
 		"de"			"Tag eines Spielers erzwingen"
 		"pt"			"Forçar a tag de um jogador"
 		"chi"			"强制更改玩家的标签"
+		"pl"			"Wymuś zmianę tagu gracza"
+		"tr"			"Bir oyuncunun etiketini zorla değiştir"
+		"it"			"Cambia forzatamente il tag di un giocatore"
+		"ua"			"Примусово змінити тег гравця"
+		"zho"			"強制變更玩家的標籤"
+		"cze"			"Vynutit změnu tagu hráče"
 	}
 	"CCC_Menu_AdminForceTagColor"
 	{
@@ -1006,6 +1588,12 @@
 		"de"			"Tag-Farbe eines Spielers erzwingen"
 		"pt"			"Forçar a cor da tag de um jogador"
 		"chi"			"强制更改玩家的标签颜色"
+		"pl"			"Wymuś zmianę koloru tagu gracza"
+		"tr"			"Bir oyuncunun etiket rengini zorla değiştir"
+		"it"			"Cambia forzatamente il colore del tag di un giocatore"
+		"ua"			"Примусово змінити колір тегу гравця"
+		"zho"			"強制變更玩家的標籤顏色"
+		"cze"			"Vynutit změnu barvy tagu hráče"
 	}
 	"CCC_Menu_AdminForceNameColor"
 	{
@@ -1016,6 +1604,12 @@
 		"de"			"Namensfarbe eines Spielers erzwingen"
 		"pt"			"Forçar a cor do nome de um jogador"
 		"chi"			"强制更改玩家的名字颜色"
+		"pl"			"Wymuś zmianę koloru nicku gracza"
+		"tr"			"Bir oyuncunun isim rengini zorla değiştir"
+		"it"			"Cambia forzatamente il colore del nome di un giocatore"
+		"ua"			"Примусово змінити колір імені гравця"
+		"zho"			"強制變更玩家的名稱顏色"
+		"cze"			"Vynutit změnu barvy jména hráče"
 	}
 	"CCC_Menu_AdminForceTextColor"
 	{
@@ -1026,6 +1620,12 @@
 		"de"			"Chatfarbe eines Spielers erzwingen"
 		"pt"			"Forçar a cor do chat de um jogador"
 		"chi"			"强制更改玩家的聊天颜色"
+		"pl"			"Wymuś zmianę koloru czatu gracza"
+		"tr"			"Bir oyuncunun sohbet rengini zorla değiştir"
+		"it"			"Cambia forzatamente il colore della chat di un giocatore"
+		"ua"			"Примусово змінити колір чату гравця"
+		"zho"			"強制變更玩家的聊天顏色"
+		"cze"			"Vynutit změnu barvy chatu hráče"
 	}
 	"CCC_Menu_BanLengthTitle"
 	{
@@ -1036,6 +1636,12 @@
 		"de"			"Bann-Dauer wählen"
 		"pt"			"Selecione a duração do ban"
 		"chi"			"选择封禁时长"
+		"pl"			"Wybierz czas bana"
+		"tr"			"Yasak süresini seç"
+		"it"			"Seleziona la durata del ban"
+		"ua"			"Виберіть тривалість бану"
+		"zho"			"選擇封鎖時長"
+		"cze"			"Vyberte délku zákazu"
 	}
 	"CCC_Len_10m"
 	{
@@ -1046,6 +1652,12 @@
 		"de"			"10 Minuten"
 		"pt"			"10 minutos"
 		"chi"			"10 分钟"
+		"pl"			"10 minut"
+		"tr"			"10 Dakika"
+		"it"			"10 minuti"
+		"ua"			"10 хвилин"
+		"zho"			"10 分鐘"
+		"cze"			"10 minut"
 	}
 	"CCC_Len_30m"
 	{
@@ -1056,6 +1668,12 @@
 		"de"			"30 Minuten"
 		"pt"			"30 minutos"
 		"chi"			"30 分钟"
+		"pl"			"30 minut"
+		"tr"			"30 Dakika"
+		"it"			"30 minuti"
+		"ua"			"30 хвилин"
+		"zho"			"30 分鐘"
+		"cze"			"30 minut"
 	}
 	"CCC_Len_1h"
 	{
@@ -1066,6 +1684,12 @@
 		"de"			"1 Stunde"
 		"pt"			"1 hora"
 		"chi"			"1 小时"
+		"pl"			"1 godzina"
+		"tr"			"1 Saat"
+		"it"			"1 ora"
+		"ua"			"1 година"
+		"zho"			"1 小時"
+		"cze"			"1 hodina"
 	}
 	"CCC_Len_1d"
 	{
@@ -1076,6 +1700,12 @@
 		"de"			"1 Tag"
 		"pt"			"1 dia"
 		"chi"			"1 天"
+		"pl"			"1 dzień"
+		"tr"			"1 Gün"
+		"it"			"1 giorno"
+		"ua"			"1 день"
+		"zho"			"1 天"
+		"cze"			"1 den"
 	}
 	"CCC_Len_1w"
 	{
@@ -1086,6 +1716,12 @@
 		"de"			"1 Woche"
 		"pt"			"1 semana"
 		"chi"			"1 周"
+		"pl"			"1 tydzień"
+		"tr"			"1 Hafta"
+		"it"			"1 settimana"
+		"ua"			"1 тиждень"
+		"zho"			"1 週"
+		"cze"			"1 týden"
 	}
 	"CCC_Len_1mo"
 	{
@@ -1096,6 +1732,12 @@
 		"de"			"1 Monat"
 		"pt"			"1 mês"
 		"chi"			"1 个月"
+		"pl"			"1 miesiąc"
+		"tr"			"1 Ay"
+		"it"			"1 mese"
+		"ua"			"1 місяць"
+		"zho"			"1 個月"
+		"cze"			"1 měsíc"
 	}
 	"CCC_Permanent"
 	{
@@ -1106,6 +1748,12 @@
 		"de"			"Permanent"
 		"pt"			"Permanente"
 		"chi"			"永久"
+		"pl"			"Permanentnie"
+		"tr"			"Kalıcı"
+		"it"			"Permanente"
+		"ua"			"Назавжди"
+		"zho"			"永久"
+		"cze"			"Trvale"
 	}
 	"CCC_Menu_TagTitle"
 	{
@@ -1116,6 +1764,12 @@
 		"de"			"Tag-Optionen:"
 		"pt"			"Opções de tag:"
 		"chi"			"标签选项："
+		"pl"			"Opcje tagu:"
+		"tr"			"Etiket Seçenekleri:"
+		"it"			"Opzioni del tag:"
+		"ua"			"Параметри тегу:"
+		"zho"			"標籤選項："
+		"cze"			"Možnosti tagu:"
 	}
 	"CCC_Menu_ClearTag"
 	{
@@ -1126,6 +1780,12 @@
 		"de"			"Tag löschen"
 		"pt"			"Apagar tag"
 		"chi"			"清除标签"
+		"pl"			"Wyczyść tag"
+		"tr"			"Etiketi temizle"
+		"it"			"Azzera tag"
+		"ua"			"Очистити тег"
+		"zho"			"清除標籤"
+		"cze"			"Vymazat tag"
 	}
 	"CCC_Menu_ClearTagColor"
 	{
@@ -1136,6 +1796,12 @@
 		"de"			"Tag-Farbe löschen"
 		"pt"			"Apagar cor da tag"
 		"chi"			"清除标签颜色"
+		"pl"			"Wyczyść kolor tagu"
+		"tr"			"Etiket rengini temizle"
+		"it"			"Azzera colore del tag"
+		"ua"			"Очистити колір тегу"
+		"zho"			"清除標籤顏色"
+		"cze"			"Vymazat barvu tagu"
 	}
 	"CCC_Menu_ChangeTagInput"
 	{
@@ -1146,6 +1812,12 @@
 		"de"			"Tag ändern (Chat-Eingabe)"
 		"pt"			"Alterar tag (entrada pelo chat)"
 		"chi"			"更改标签（聊天输入）"
+		"pl"			"Zmień tag (wpisz na czacie)"
+		"tr"			"Etiketi değiştir (Sohbet girişi)"
+		"it"			"Cambia tag (input in chat)"
+		"ua"			"Змінити тег (введення в чаті)"
+		"zho"			"變更標籤（聊天輸入）"
+		"cze"			"Změnit tag (zadání v chatu)"
 	}
 	"CCC_Menu_ChangeTagColor"
 	{
@@ -1156,6 +1828,12 @@
 		"de"			"Tag-Farbe ändern"
 		"pt"			"Alterar cor da tag"
 		"chi"			"更改标签颜色"
+		"pl"			"Zmień kolor tagu"
+		"tr"			"Etiket rengini değiştir"
+		"it"			"Cambia colore del tag"
+		"ua"			"Змінити колір тегу"
+		"zho"			"變更標籤顏色"
+		"cze"			"Změnit barvu tagu"
 	}
 	"CCC_Menu_ChangeTagColorInput"
 	{
@@ -1166,6 +1844,12 @@
 		"de"			"Tag-Farbe ändern (Chat-Eingabe)"
 		"pt"			"Alterar cor da tag (entrada pelo chat)"
 		"chi"			"更改标签颜色（聊天输入）"
+		"pl"			"Zmień kolor tagu (wpisz na czacie)"
+		"tr"			"Etiket rengini değiştir (Sohbet girişi)"
+		"it"			"Cambia colore del tag (input in chat)"
+		"ua"			"Змінити колір тегу (введення в чаті)"
+		"zho"			"變更標籤顏色（聊天輸入）"
+		"cze"			"Změnit barvu tagu (zadání v chatu)"
 	}
 	"CCC_Menu_PickColor"
 	{
@@ -1176,6 +1860,12 @@
 		"de"			"Wähle eine Farbe:"
 		"pt"			"Escolha uma cor:"
 		"chi"			"选择颜色："
+		"pl"			"Wybierz kolor:"
+		"tr"			"Bir renk seç:"
+		"it"			"Scegli un colore:"
+		"ua"			"Виберіть колір:"
+		"zho"			"選擇顏色："
+		"cze"			"Vyberte barvu:"
 	}
 	"CCC_Menu_NameTitle"
 	{
@@ -1186,6 +1876,12 @@
 		"de"			"Namensoptionen:"
 		"pt"			"Opções de nome:"
 		"chi"			"名字选项："
+		"pl"			"Opcje nicku:"
+		"tr"			"İsim Seçenekleri:"
+		"it"			"Opzioni del nome:"
+		"ua"			"Параметри імені:"
+		"zho"			"名稱選項："
+		"cze"			"Možnosti jména:"
 	}
 	"CCC_Menu_ClearNameColor"
 	{
@@ -1196,6 +1892,12 @@
 		"de"			"Namensfarbe löschen"
 		"pt"			"Apagar cor do nome"
 		"chi"			"清除名字颜色"
+		"pl"			"Wyczyść kolor nicku"
+		"tr"			"İsim rengini temizle"
+		"it"			"Azzera colore del nome"
+		"ua"			"Очистити колір імені"
+		"zho"			"清除名稱顏色"
+		"cze"			"Vymazat barvu jména"
 	}
 	"CCC_Menu_ChangeNameColor"
 	{
@@ -1206,6 +1908,12 @@
 		"de"			"Namensfarbe ändern"
 		"pt"			"Alterar cor do nome"
 		"chi"			"更改名字颜色"
+		"pl"			"Zmień kolor nicku"
+		"tr"			"İsim rengini değiştir"
+		"it"			"Cambia colore del nome"
+		"ua"			"Змінити колір імені"
+		"zho"			"變更名稱顏色"
+		"cze"			"Změnit barvu jména"
 	}
 	"CCC_Menu_ChangeNameColorInput"
 	{
@@ -1216,6 +1924,12 @@
 		"de"			"Namensfarbe ändern (Chat-Eingabe)"
 		"pt"			"Alterar cor do nome (entrada pelo chat)"
 		"chi"			"更改名字颜色（聊天输入）"
+		"pl"			"Zmień kolor nicku (wpisz na czacie)"
+		"tr"			"İsim rengini değiştir (Sohbet girişi)"
+		"it"			"Cambia colore del nome (input in chat)"
+		"ua"			"Змінити колір імені (введення в чаті)"
+		"zho"			"變更名稱顏色（聊天輸入）"
+		"cze"			"Změnit barvu jména (zadání v chatu)"
 	}
 	"CCC_Menu_ChatTitle"
 	{
@@ -1226,6 +1940,12 @@
 		"de"			"Chat-Optionen:"
 		"pt"			"Opções de chat:"
 		"chi"			"聊天选项："
+		"pl"			"Opcje czatu:"
+		"tr"			"Sohbet Seçenekleri:"
+		"it"			"Opzioni della chat:"
+		"ua"			"Параметри чату:"
+		"zho"			"聊天選項："
+		"cze"			"Možnosti chatu:"
 	}
 	"CCC_Menu_ClearChatColor"
 	{
@@ -1236,6 +1956,12 @@
 		"de"			"Textfarbe löschen"
 		"pt"			"Apagar cor do texto"
 		"chi"			"清除聊天文字颜色"
+		"pl"			"Wyczyść kolor tekstu czatu"
+		"tr"			"Sohbet metin rengini temizle"
+		"it"			"Azzera colore del testo della chat"
+		"ua"			"Очистити колір тексту чату"
+		"zho"			"清除聊天文字顏色"
+		"cze"			"Vymazat barvu textu chatu"
 	}
 	"CCC_Menu_ChangeChatColor"
 	{
@@ -1246,6 +1972,12 @@
 		"de"			"Textfarbe ändern"
 		"pt"			"Alterar cor do texto"
 		"chi"			"更改聊天文字颜色"
+		"pl"			"Zmień kolor tekstu czatu"
+		"tr"			"Sohbet metin rengini değiştir"
+		"it"			"Cambia colore del testo della chat"
+		"ua"			"Змінити колір тексту чату"
+		"zho"			"變更聊天文字顏色"
+		"cze"			"Změnit barvu textu chatu"
 	}
 	"CCC_Menu_ChangeChatColorInput"
 	{
@@ -1256,6 +1988,12 @@
 		"de"			"Textfarbe ändern (Chat-Eingabe)"
 		"pt"			"Alterar cor do texto (entrada pelo chat)"
 		"chi"			"更改聊天文字颜色（聊天输入）"
+		"pl"			"Zmień kolor tekstu czatu (wpisz na czacie)"
+		"tr"			"Sohbet metin rengini değiştir (Sohbet girişi)"
+		"it"			"Cambia colore del testo della chat (input in chat)"
+		"ua"			"Змінити колір тексту чату (введення в чаті)"
+		"zho"			"變更聊天文字顏色（聊天輸入）"
+		"cze"			"Změnit barvu textu chatu (zadání v chatu)"
 	}
 	"CCC_Menu_NoBanned"
 	{
@@ -1266,6 +2004,12 @@
 		"de"			"Keine gebannten Spieler"
 		"pt"			"Nenhum jogador banido"
 		"chi"			"没有被封禁的玩家"
+		"pl"			"Brak zbanowanych graczy"
+		"tr"			"Yasaklı oyuncu yok"
+		"it"			"Nessun giocatore bannato"
+		"ua"			"Немає заблокованих гравців"
+		"zho"			"沒有被封鎖的玩家"
+		"cze"			"Žádní zablokovaní hráči"
 	}
 	"CCC_Settings_Title"
 	{
@@ -1276,6 +2020,12 @@
 		"de"			"CustomChatColors-Einstellungen"
 		"pt"			"Configurações do CustomChatColors"
 		"chi"			"CustomChatColors 设置"
+		"pl"			"Ustawienia CustomChatColors"
+		"tr"			"CustomChatColors Ayarları"
+		"it"			"Impostazioni di CustomChatColors"
+		"ua"			"Налаштування CustomChatColors"
+		"zho"			"CustomChatColors 設定"
+		"cze"			"Nastavení CustomChatColors"
 	}
 	"CCC_Settings_TagSettings"
 	{
@@ -1286,6 +2036,12 @@
 		"de"			"Tag-Einstellungen"
 		"pt"			"Configurações de tag"
 		"chi"			"标签设置"
+		"pl"			"Ustawienia tagu"
+		"tr"			"Etiket Ayarları"
+		"it"			"Impostazioni del tag"
+		"ua"			"Налаштування тегу"
+		"zho"			"標籤設定"
+		"cze"			"Nastavení tagu"
 	}
 	"CCC_NoTagAccess"
 	{
@@ -1296,6 +2052,12 @@
 		"de"			"Du hast keinen Zugriff auf den eigenen Tag und die Farben."
 		"pt"			"Você não tem acesso à tag e às cores personalizadas."
 		"chi"			"你没有使用自定义标签和颜色的权限。"
+		"pl"			"Nie masz dostępu do własnego tagu i kolorów."
+		"tr"			"Özel etiket ve renklere erişimin yok."
+		"it"			"Non hai accesso a tag e colori personalizzati."
+		"ua"			"У вас немає доступу до власного тегу та кольорів."
+		"zho"			"你沒有使用自訂標籤與顏色的權限。"
+		"cze"			"Nemáte přístup k vlastnímu tagu a barvám."
 	}
 	"CCC_Enabled"
 	{
@@ -1306,6 +2068,12 @@
 		"de"			"Aktiviert"
 		"pt"			"Ativado"
 		"chi"			"已启用"
+		"pl"			"Włączone"
+		"tr"			"Açık"
+		"it"			"Attivato"
+		"ua"			"Увімкнено"
+		"zho"			"已啟用"
+		"cze"			"Zapnuto"
 	}
 	"CCC_Disabled"
 	{
@@ -1316,6 +2084,12 @@
 		"de"			"Deaktiviert"
 		"pt"			"Desativado"
 		"chi"			"已禁用"
+		"pl"			"Wyłączone"
+		"tr"			"Kapalı"
+		"it"			"Disattivato"
+		"ua"			"Вимкнено"
+		"zho"			"已停用"
+		"cze"			"Vypnuto"
 	}
 	"CCC_Menu_ColorsAndTag"
 	{
@@ -1327,6 +2101,12 @@
 		"de"			"Farben und Tag: {1}"
 		"pt"			"Cores e tag: {1}"
 		"chi"			"颜色和标签：{1}"
+		"pl"			"Kolory i tag: {1}"
+		"tr"			"Renkler ve etiket: {1}"
+		"it"			"Colori e tag: {1}"
+		"ua"			"Кольори та тег: {1}"
+		"zho"			"顏色與標籤：{1}"
+		"cze"			"Barvy a tag: {1}"
 	}
 	"CCC_Settings_PM"
 	{
@@ -1338,6 +2118,12 @@
 		"de"			"Private Nachrichten: {1}"
 		"pt"			"Mensagens privadas: {1}"
 		"chi"			"私信：{1}"
+		"pl"			"Wiadomości prywatne: {1}"
+		"tr"			"Özel mesajlar: {1}"
+		"it"			"Messaggi privati: {1}"
+		"ua"			"Приватні повідомлення: {1}"
+		"zho"			"私人訊息：{1}"
+		"cze"			"Soukromé zprávy: {1}"
 	}
 	"CCC_MinutesRemaining"
 	{
@@ -1349,6 +2135,12 @@
 		"de"			"{1} Minuten verbleibend"
 		"pt"			"{1} minutos restantes"
 		"chi"			"剩余 {1} 分钟"
+		"pl"			"Pozostało minut: {1}"
+		"tr"			"{1} dakika kaldı"
+		"it"			"{1} minuti rimanenti"
+		"ua"			"Залишилось хвилин: {1}"
+		"zho"			"剩餘 {1} 分鐘"
+		"cze"			"Zbývá minut: {1}"
 	}
 	"CCC_Current_Tag"
 	{
@@ -1360,6 +2152,12 @@
 		"de"			"Aktueller Tag: {1}"
 		"pt"			"Tag atual: {1}"
 		"chi"			"当前标签：{1}"
+		"pl"			"Obecny tag: {1}"
+		"tr"			"Mevcut Etiket: {1}"
+		"it"			"Tag attuale: {1}"
+		"ua"			"Поточний тег: {1}"
+		"zho"			"目前標籤：{1}"
+		"cze"			"Aktuální tag: {1}"
 	}
 	"CCC_Current_TagColor"
 	{
@@ -1371,6 +2169,12 @@
 		"de"			"Aktuelle Tag-Farbe: {1}"
 		"pt"			"Cor da tag atual: {1}"
 		"chi"			"当前标签颜色：{1}"
+		"pl"			"Obecny kolor tagu: {1}"
+		"tr"			"Mevcut Etiket Rengi: {1}"
+		"it"			"Colore del tag attuale: {1}"
+		"ua"			"Поточний колір тегу: {1}"
+		"zho"			"目前標籤顏色：{1}"
+		"cze"			"Aktuální barva tagu: {1}"
 	}
 	"CCC_Current_NameColor"
 	{
@@ -1382,6 +2186,12 @@
 		"de"			"Aktuelle Namensfarbe: {1}"
 		"pt"			"Cor do nome atual: {1}"
 		"chi"			"当前名字颜色：{1}"
+		"pl"			"Obecny kolor nicku: {1}"
+		"tr"			"Mevcut İsim Rengi: {1}"
+		"it"			"Colore del nome attuale: {1}"
+		"ua"			"Поточний колір імені: {1}"
+		"zho"			"目前名稱顏色：{1}"
+		"cze"			"Aktuální barva jména: {1}"
 	}
 	"CCC_Current_ChatColor"
 	{
@@ -1393,5 +2203,11 @@
 		"de"			"Aktuelle Chatfarbe: {1}"
 		"pt"			"Cor do chat atual: {1}"
 		"chi"			"当前聊天颜色：{1}"
+		"pl"			"Obecny kolor czatu: {1}"
+		"tr"			"Mevcut Sohbet Rengi: {1}"
+		"it"			"Colore della chat attuale: {1}"
+		"ua"			"Поточний колір чату: {1}"
+		"zho"			"目前聊天顏色：{1}"
+		"cze"			"Aktuální barva chatu: {1}"
 	}
 }
