@@ -38,6 +38,7 @@ public Plugin myinfo =
 GlobalForward preLoadedForward;
 GlobalForward loadedForward;
 GlobalForward configReloadedForward;
+GlobalForward senderPrefixForward;
 
 ConVar g_cvar_GreenText;
 ConVar g_cvar_ReplaceText;
@@ -284,6 +285,7 @@ public void OnPluginStart()
 	preLoadedForward = new GlobalForward("CCC_OnUserConfigPreLoaded", ET_Event, Param_Cell);
 	loadedForward = new GlobalForward("CCC_OnUserConfigLoaded", ET_Ignore, Param_Cell);
 	configReloadedForward = new GlobalForward("CCC_OnConfigReloaded", ET_Ignore);
+	senderPrefixForward = new GlobalForward("CCC_OnSenderPrefix", ET_Ignore, Param_Cell, Param_String, Param_Cell);
 
 	g_bProto = CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "GetUserMessageType") == FeatureStatus_Available && GetUserMessageType() == UM_Protobuf;
 
@@ -4929,6 +4931,27 @@ public Action Hook_UserMessage(UserMsg msg_id, Handle bf, const int[] players, i
 		sNameColorKey = "teamcolor";
 		Format(g_msgSender, sizeof(g_msgSender), "{%s%s}%s", GetColor(sNameColorKey, sValue, sizeof(sValue)) ? "#" : "", sNameColorKey, g_msgSender);
 		CFormatColor(g_msgSender, sizeof(g_msgSender), g_msgAuthor);
+	}
+
+	// Other plugins can put a prefix before the sender name and the CCC tag (a rank tag...),
+	// for every author, CCC flags or not
+	if (!bIsAction && g_msgAuthor > 0)
+	{
+		char sPrefix[64];
+		Call_StartForward(senderPrefixForward);
+		Call_PushCell(g_msgAuthor);
+		Call_PushStringEx(sPrefix, sizeof(sPrefix), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+		Call_PushCell(sizeof(sPrefix));
+		Call_Finish();
+
+		if (sPrefix[0])
+		{
+			// FormatChatMessage colors the whole line only for CCC-enabled authors: color the
+			// prefix here for the others, their sender was already colored above
+			if (!IsClientEnabled())
+				CFormatColor(sPrefix, sizeof(sPrefix), g_msgAuthor);
+			Format(g_msgSender, sizeof(g_msgSender), "%s%s", sPrefix, g_msgSender);
+		}
 	}
 
 	strcopy(g_sMsgCacheName, sizeof(g_sMsgCacheName), g_msgName);

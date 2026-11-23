@@ -10,8 +10,8 @@
 #define _ccc_included
 
 #define CCC_V_MAJOR   "8"
-#define CCC_V_MINOR   "1"
-#define CCC_V_PATCH   "10"
+#define CCC_V_MINOR   "2"
+#define CCC_V_PATCH   "0"
 
 #define CCC_VERSION            CCC_V_MAJOR..."."...CCC_V_MINOR..."."...CCC_V_PATCH
 
@@ -223,6 +223,18 @@ forward Action CCC_OnUserConfigPreLoaded(int client);
  * @noreturn
  */
 forward void CCC_OnUserConfigLoaded(int client);
+
+/**
+ * Called while a chat message is built, to put a prefix before the sender name (and before the CCC tag).
+ * Called for every author, whether CCC colors are enabled for him or not; not for /me actions.
+ * The prefix may hold color tags ({red}, {#RRGGBB}); end it with a color tag so the name keeps its own.
+ *
+ * @param client		Author client index
+ * @param prefix		Buffer for the prefix, empty on entry
+ * @param maxlen		Size of the buffer
+ * @noreturn
+ */
+forward void CCC_OnSenderPrefix(int client, char[] prefix, int maxlen);
 
 /**
  * Called when the configuration file is reloaded with the sm_reloadccc command
